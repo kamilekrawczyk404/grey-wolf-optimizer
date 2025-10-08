@@ -1,0 +1,28 @@
+C:/Users/micha/OneDrive/Pulpit/SEM V/Algorytmy eksploracji/GrayWolf/GrayWolf/bin/Debug/net8.0/GrayWolf.exe
+C:/Users/micha/OneDrive/Pulpit/SEM V/Algorytmy eksploracji/GrayWolf/GrayWolf/bin/Debug/net8.0/GrayWolf.deps.json
+C:/Users/micha/OneDrive/Pulpit/SEM V/Algorytmy eksploracji/GrayWolf/GrayWolf/bin/Debug/net8.0/GrayWolf.runtimeconfig.json
+C:/Users/micha/OneDrive/Pulpit/SEM V/Algorytmy eksploracji/GrayWolf/GrayWolf/bin/Debug/net8.0/GrayWolf.dll
+C:/Users/micha/OneDrive/Pulpit/SEM V/Algorytmy eksploracji/GrayWolf/GrayWolf/bin/Debug/net8.0/GrayWolf.pdb
+C:/Users/micha/OneDrive/Pulpit/SEM V/Algorytmy eksploracji/GrayWolf/GrayWolf/obj/Debug/net8.0/GrayWolf.GeneratedMSBuildEditorConfig.editorconfig
+C:/Users/micha/OneDrive/Pulpit/SEM V/Algorytmy eksploracji/GrayWolf/GrayWolf/obj/Debug/net8.0/GrayWolf.AssemblyInfoInputs.cache
+C:/Users/micha/OneDrive/Pulpit/SEM V/Algorytmy eksploracji/GrayWolf/GrayWolf/obj/Debug/net8.0/GrayWolf.AssemblyInfo.cs
+C:/Users/micha/OneDrive/Pulpit/SEM V/Algorytmy eksploracji/GrayWolf/GrayWolf/obj/Debug/net8.0/GrayWolf.csproj.CoreCompileInputs.cache
+C:/Users/micha/OneDrive/Pulpit/SEM V/Algorytmy eksploracji/GrayWolf/GrayWolf/obj/Debug/net8.0/GrayWolf.dll
+C:/Users/micha/OneDrive/Pulpit/SEM V/Algorytmy eksploracji/GrayWolf/GrayWolf/obj/Debug/net8.0/refint/GrayWolf.dll
+C:/Users/micha/OneDrive/Pulpit/SEM V/Algorytmy eksploracji/GrayWolf/GrayWolf/obj/Debug/net8.0/GrayWolf.pdb
+C:/Users/micha/OneDrive/Pulpit/SEM V/Algorytmy eksploracji/GrayWolf/GrayWolf/obj/Debug/net8.0/GrayWolf.genruntimeconfig.cache
+C:/Users/micha/OneDrive/Pulpit/SEM V/Algorytmy eksploracji/GrayWolf/GrayWolf/obj/Debug/net8.0/ref/GrayWolf.dll
+/Users/kamilek/Downloads/GrayWolf/GrayWolf/bin/Debug/net8.0/GrayWolf
+/Users/kamilek/Downloads/GrayWolf/GrayWolf/bin/Debug/net8.0/GrayWolf.deps.json
+/Users/kamilek/Downloads/GrayWolf/GrayWolf/bin/Debug/net8.0/GrayWolf.runtimeconfig.json
+/Users/kamilek/Downloads/GrayWolf/GrayWolf/bin/Debug/net8.0/GrayWolf.dll
+/Users/kamilek/Downloads/GrayWolf/GrayWolf/bin/Debug/net8.0/GrayWolf.pdb
+/Users/kamilek/Downloads/GrayWolf/GrayWolf/obj/Debug/net8.0/GrayWolf.GeneratedMSBuildEditorConfig.editorconfig
+/Users/kamilek/Downloads/GrayWolf/GrayWolf/obj/Debug/net8.0/GrayWolf.AssemblyInfoInputs.cache
+/Users/kamilek/Downloads/GrayWolf/GrayWolf/obj/Debug/net8.0/GrayWolf.AssemblyInfo.cs
+/Users/kamilek/Downloads/GrayWolf/GrayWolf/obj/Debug/net8.0/GrayWolf.csproj.CoreCompileInputs.cache
+/Users/kamilek/Downloads/GrayWolf/GrayWolf/obj/Debug/net8.0/GrayWolf.dll
+/Users/kamilek/Downloads/GrayWolf/GrayWolf/obj/Debug/net8.0/refint/GrayWolf.dll
+/Users/kamilek/Downloads/GrayWolf/GrayWolf/obj/Debug/net8.0/GrayWolf.pdb
+/Users/kamilek/Downloads/GrayWolf/GrayWolf/obj/Debug/net8.0/GrayWolf.genruntimeconfig.cache
+/Users/kamilek/Downloads/GrayWolf/GrayWolf/obj/Debug/net8.0/ref/GrayWolf.dll
