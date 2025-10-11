@@ -80,7 +80,7 @@ namespace GrayWolf
 
             try 
             {
-                // File.WriteAllText(fullPath, data.ToString());
+                File.WriteAllText(fullPath, data.ToString());
                 return true;
             }
             catch (Exception ex)
