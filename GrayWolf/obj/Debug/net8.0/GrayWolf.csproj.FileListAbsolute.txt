@@ -26,3 +26,4 @@ C:/Users/micha/OneDrive/Pulpit/SEM V/Algorytmy eksploracji/GrayWolf/GrayWolf/obj
 /Users/kamilek/Downloads/GrayWolf/GrayWolf/obj/Debug/net8.0/GrayWolf.pdb
 /Users/kamilek/Downloads/GrayWolf/GrayWolf/obj/Debug/net8.0/GrayWolf.genruntimeconfig.cache
 /Users/kamilek/Downloads/GrayWolf/GrayWolf/obj/Debug/net8.0/ref/GrayWolf.dll
+/Users/kamilek/Downloads/GrayWolf/GrayWolf/obj/Debug/net8.0/GrayWolf.sourcelink.json
