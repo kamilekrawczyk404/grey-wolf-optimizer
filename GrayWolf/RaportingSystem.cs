@@ -11,7 +11,7 @@ namespace GrayWolf
 {
     internal class RaportingSystem
     {
-        int n { get; set; }
+        int n { get; set; } // rozmiar populacji
         int D { get; set; }
         int IterNum { get; set; }
         IBenchmarkFunc funkcja { get; set; }
