@@ -18,13 +18,11 @@ namespace GrayWolf
         double min { get; set; }
         double max { get; set; }
 
-        int testNum { get; set; }
-
         StringBuilder strBuilder { get; set; } = new StringBuilder();
 
         string jsonString { get; set; } = string.Empty;
 
-        public RaportingSystem(int n, int D, int IterNum, IBenchmarkFunc funkcja, double min_range, double max_range, int testNum)
+        public RaportingSystem(int n, int D, int IterNum, IBenchmarkFunc funkcja, double min_range, double max_range)
         {
             this.n = n;
             this.D = D;
@@ -32,25 +30,21 @@ namespace GrayWolf
             this.funkcja = funkcja;
             this.min = min_range;
             this.max = max_range;
-            this.testNum = testNum;
         }
-        public void InitializeTest() // powtarzamy test testNum razy i zapisujemy wyniki
+        public void InitializeTest()
         {
-            for (int j = 0; j < testNum; j++)
+            strBuilder.Append($"\n\n=== TEST ===\n");
+
+            GWOptimizer optimizer = new GWOptimizer(n, D, IterNum, funkcja, min, max);
+            (double[] najlepszy, jsonString) = optimizer.Optimise();
+            strBuilder.Append("\nNajlepsza pozycja (X_alpha):");
+
+            for (int i = 0; i < najlepszy.Length; i++)
             {
-                strBuilder.Append($"\n\n=== TEST {j + 1} ===\n");
-
-                GWOptimizer optimizer = new GWOptimizer(n, D, IterNum, funkcja, min, max);
-                (double[] najlepszy, jsonString) = optimizer.Optimise();
-                strBuilder.Append("\nNajlepsza pozycja (X_alpha):");
-
-                for (int i = 0; i < najlepszy.Length; i++)
-                {
-                    strBuilder.Append($"\nx[{i}] = {najlepszy[i]}");
-                }
-
-                strBuilder.Append("\nUżyta funkcja: " + funkcja + "\n");
+                strBuilder.Append($"\nx[{i}] = {najlepszy[i]}");
             }
+
+            strBuilder.Append("\nUżyta funkcja: " + funkcja + "\n");
 
             if (SaveData(strBuilder)) // zapisujemy raport do pliku .txt
             {
