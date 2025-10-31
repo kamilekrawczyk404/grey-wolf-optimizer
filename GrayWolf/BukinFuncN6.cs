@@ -20,7 +20,7 @@ namespace GrayWolf
         }
         public override string ToString()
         {
-            return "Bukin Function N.6 (minimum globalne = 0 w punkcie [-10,1])";
+            return "BukinN.6 Function (minimum globalne = 0 w punkcie [-10,1])";
         }
     }
 }

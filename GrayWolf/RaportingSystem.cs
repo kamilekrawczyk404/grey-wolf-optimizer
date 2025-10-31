@@ -35,6 +35,11 @@ namespace GrayWolf
         {
             strBuilder.Append($"\n\n=== TEST ===\n");
 
+            strBuilder.Append($"\nLiczba wymiarów: {D}");
+            strBuilder.Append($"\nLiczba wilków (rozmiar populacji): {n}");
+            strBuilder.Append($"\nLiczba iteracji: {IterNum}");
+            strBuilder.Append($"\nZakres wartości: [{min}, {max}]\n");
+
             GWOptimizer optimizer = new GWOptimizer(n, D, IterNum, funkcja, min, max);
             (double[] najlepszy, jsonString) = optimizer.Optimise();
             strBuilder.Append("\nNajlepsza pozycja (X_alpha):");
@@ -43,6 +48,8 @@ namespace GrayWolf
             {
                 strBuilder.Append($"\nx[{i}] = {najlepszy[i]}");
             }
+
+            strBuilder.Append("\n\nWartość funkcji celu: " + funkcja.Calculate_Value(najlepszy) + "\n\n");
 
             strBuilder.Append("\nUżyta funkcja: " + funkcja + "\n");
 

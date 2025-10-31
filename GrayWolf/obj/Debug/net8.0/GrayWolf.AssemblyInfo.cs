@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GrayWolf")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+98a4dacf09d463498161789fa91a6820ba2f8511")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+28b23c57ef34e0ed4b24b8eb7b10422b1c841fb7")]
 [assembly: System.Reflection.AssemblyProductAttribute("GrayWolf")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GrayWolf")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
