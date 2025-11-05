@@ -31,8 +31,9 @@ namespace GrayWolf
             this.max_range = max_range;
         }
 
-        public (double[], string) Optimise()
+        public (double[], string, int) Optimise()
         {
+            int algorithmRunsAmount = 0;
             Random random = new Random(); // aby oszczędzać moc
 
             var outerJsonList = new List<Dictionary<string, object>>(); // główna lista do przechowywania wszystkich testów
@@ -61,6 +62,7 @@ namespace GrayWolf
 
             for (int i = 0; i < IterNum; i++)
             {
+                algorithmRunsAmount++;
 
                 double a = 2.0 - (2.0 * i / IterNum);
                 int j = 0;//licznik wilków
@@ -143,7 +145,7 @@ namespace GrayWolf
 
             string json = JsonSerializer.Serialize(outerJsonList, new JsonSerializerOptions { WriteIndented = true }); // ładne formatowanie
 
-            return (X_alpha, json);
+            return (X_alpha, json, algorithmRunsAmount);
         }
 
         public double[][] GeneratePopulation()

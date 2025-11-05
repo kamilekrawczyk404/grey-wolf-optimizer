@@ -5,20 +5,19 @@ using GrayWolf;//bez tego błąd
 Console.WriteLine("=== Gray Wolf Optimizer ===\n");
 
 //funkcja testowa
-IBenchmarkFunc funkcja = new Rosenbrock();
+IBenchmarkFunc funkcja = new Rastrigin();
 
-
-int n = 500;        // liczba wilków
-int D = 3;         // liczba wymiarów
-int IterNum = 2000; // liczba iteracji
-double min = -10;
-double max = 10;
+int n = 10;        // liczba wilków
+int D = 2;         // liczba wymiarów
+int IterNum = 5; // liczba iteracji
+double min = -5.12;
+double max = 5.12;
+int testAmount = 10; // liczba testów
 
 //algorytm + raportowanie
 
-RaportingSystem raportingSystem = new RaportingSystem(n, D, IterNum, funkcja, min, max, 5);
+RaportingSystem raportingSystem = new RaportingSystem(n, D, IterNum, funkcja, min, max, testAmount);
 
 raportingSystem.InitializeTest();
-
 
 Console.WriteLine("\n=== KONIEC PROGRAMU ===");
