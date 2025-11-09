@@ -15,14 +15,14 @@ namespace GrayWolf
         int D { get; set; }
         int IterNum { get; set; }
         IBenchmarkFunc funkcja { get; set; }
-        double min { get; set; }
-        double max { get; set; }
+        double[] min { get; set; }
+        double[] max { get; set; }
 
         int testAmount { get; set; }
 
         string jsonString { get; set; } = string.Empty;
 
-        public RaportingSystem(int n, int D, int IterNum, IBenchmarkFunc funkcja, double min_range, double max_range, int testAmount)
+        public RaportingSystem(int n, int D, int IterNum, IBenchmarkFunc funkcja, double[] min_range, double[] max_range, int testAmount)
         {
             this.n = n;
             this.D = D;
@@ -111,7 +111,7 @@ namespace GrayWolf
             strBuilder.Append($"Liczba wymiarów (D): {D}\n");
             strBuilder.Append($"Wielkość populacji (N): {n}\n");
             strBuilder.Append($"Liczba iteracji (I): {IterNum}\n");
-            strBuilder.Append($"Zakres wartości: [{min}, {max}]\n\n");
+            strBuilder.Append($"Zakres wartości: [{string.Join(", ", min)}] do [{string.Join(", ", max)}]\n");
             strBuilder.Append($"Liczba wywołań funkcji algorytmu: {algorithmRunsAmount}\n");
             strBuilder.Append("--------------------------------------------------\n");
 

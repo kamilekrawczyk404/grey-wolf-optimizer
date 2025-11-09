@@ -7,11 +7,13 @@ Console.WriteLine("=== Gray Wolf Optimizer ===\n");
 //funkcja testowa
 IBenchmarkFunc funkcja = new Rastrigin();
 
-int n = 10;        // liczba wilków
+int n = 20;        // liczba wilków
 int D = 2;         // liczba wymiarów
-int IterNum = 5; // liczba iteracji
-double min = -5.12;
-double max = 5.12;
+int IterNum = 10; // liczba iteracji
+// w przpadku funkcji Rastrigin i podobnych zakresy są jednakowe dla wszystkich wymiarów
+// dlatego w takich przypadkach: Enumerable.Repeat(-5.12, D).ToArray();
+double[] min = Enumerable.Repeat(-5.12, D).ToArray();
+double[] max = Enumerable.Repeat(5.12, D).ToArray();
 int testAmount = 10; // liczba testów
 
 //algorytm + raportowanie

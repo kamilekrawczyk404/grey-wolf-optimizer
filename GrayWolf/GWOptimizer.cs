@@ -15,13 +15,13 @@ namespace GrayWolf
         int Dim {  get; set; }
         int IterNum {  get; set; }
         IBenchmarkFunc funkcja { get; set; }
-        double min_range { get; set; }
-        double max_range { get; set; }
+        double[] min_range { get; set; }
+        double[] max_range { get; set; }
 
         double [] X_alpha { get; set; }// jest to wektor
         double f_alpha { get; set; }
 
-        public GWOptimizer(int n, int D, int IterNum, IBenchmarkFunc funkcja, double min_range, double max_range)
+        public GWOptimizer(int n, int D, int IterNum, IBenchmarkFunc funkcja, double[] min_range, double[] max_range)
         {
             this.n = n;
             this.Dim = D;
@@ -160,7 +160,7 @@ namespace GrayWolf
                 for (int j = 0; j < Dim; j++)
                 {
                     //losowe wartości od minimum do maximum
-                    population[i][j] = min_range + (max_range - min_range) * random.NextDouble();
+                    population[i][j] = min_range[j] + (max_range[j] - min_range[j]) * random.NextDouble();
                 }
             }
 
@@ -203,13 +203,13 @@ namespace GrayWolf
 
         public void CutRange(double[] GrayWolf, int d)
         {
-            if (GrayWolf[d]>= this.max_range)
+            if (GrayWolf[d]>= this.max_range[d])
             {
-                GrayWolf[d] = this.max_range;
+                GrayWolf[d] = this.max_range[d];
             }
-            else if(GrayWolf[d] <= this.min_range)
+            else if(GrayWolf[d] <= this.min_range[d])
             {
-                GrayWolf[d] = this.min_range;
+                GrayWolf[d] = this.min_range[d];
             }
         }
     }

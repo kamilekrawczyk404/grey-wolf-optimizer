@@ -13,7 +13,7 @@ namespace GrayWolf
         {
             double x = value[0];
             double y = value[1];
-            double term1 = 100 * Math.Sqrt(Math.Abs(y - 0.01 * x * x));
+            double term1 = 100 * Math.Sqrt(Math.Abs(y - (0.01 * (x * x))));
             double term2 = 0.01 * Math.Abs(x + 10);
             double wynik = term1 + term2;
             return wynik;
