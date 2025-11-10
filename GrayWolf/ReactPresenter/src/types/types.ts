@@ -16,8 +16,8 @@ export type IterationHistory = {
 
 export type OptimizationProperties = {
   iterations: number;
-  lowerBound: number;
-  upperBound: number;
+  lowerBound: number[];
+  upperBound: number[];
   bestFitness: number[];
   solution?: number[];
   dimensions: number;
@@ -49,12 +49,12 @@ export function isWolfHistory(obj: any): obj is WolfHistory {
   }
 
   return (
-    typeof obj.isAlpha === "boolean" &&
-    typeof obj.isBeta === "boolean" &&
-    typeof obj.isGamma === "boolean" &&
-    isNumberArray(obj.fitness) &&
-    isNumberArray(obj.position) &&
-    (!("iteration" in obj) || typeof obj.iteration === "number") // Check optional property
+      typeof obj.isAlpha === "boolean" &&
+      typeof obj.isBeta === "boolean" &&
+      typeof obj.isGamma === "boolean" &&
+      isNumberArray(obj.fitness) &&
+      isNumberArray(obj.position) &&
+      (!("iteration" in obj) || typeof obj.iteration === "number") // Check optional property
   );
 }
 
@@ -69,9 +69,9 @@ export function isIterationHistory(obj: any): obj is IterationHistory {
   }
 
   return (
-    typeof obj.iteration === "number" &&
-    Array.isArray(obj.wolves) &&
-    obj.wolves.every(isWolfHistory) // Validate every wolf in the array
+      typeof obj.iteration === "number" &&
+      Array.isArray(obj.wolves) &&
+      obj.wolves.every(isWolfHistory) // Validate every wolf in the array
   );
 }
 
@@ -81,20 +81,20 @@ export function isIterationHistory(obj: any): obj is IterationHistory {
  * @returns A boolean indicating if the object is a valid OptimizationProperties type.
  */
 export function isOptimizationProperties(
-  obj: any,
+    obj: any,
 ): obj is OptimizationProperties {
   if (!obj || typeof obj !== "object") {
     return false;
   }
 
   return (
-    typeof obj.iterations === "number" &&
-    typeof obj.lowerBound === "number" &&
-    typeof obj.upperBound === "number" &&
-    typeof obj.dimensions === "number" &&
-    isNumberArray(obj.bestFitness) &&
-    Array.isArray(obj.history) &&
-    obj.history.every(isIterationHistory) // Validate every item in history
+      typeof obj.iterations === "number" &&
+      typeof obj.dimensions === "number" &&
+      isNumberArray(obj.bestFitness) &&
+      isNumberArray(obj.upperBound) &&
+      isNumberArray(obj.lowerBound) &&
+      Array.isArray(obj.history) &&
+      obj.history.every(isIterationHistory) // Validate every item in history
   );
 }
 
@@ -109,8 +109,8 @@ export function isOptimizationTest(obj: any): obj is OptimizationTest {
   }
 
   return (
-    typeof obj.description === "string" &&
-    isOptimizationProperties(obj.properties) // Validate the nested properties object
+      typeof obj.description === "string" &&
+      isOptimizationProperties(obj.properties) // Validate the nested properties object
   );
 }
 

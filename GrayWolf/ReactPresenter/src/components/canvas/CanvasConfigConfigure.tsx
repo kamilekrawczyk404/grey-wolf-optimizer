@@ -1,12 +1,9 @@
 import React, {
-  ComponentProps,
   Dispatch,
   ReactNode,
   SetStateAction,
-  useRef,
 } from "react";
 import { CanvasConfig, Wolf } from "./GwoCanvas";
-import { hexToRgbConverter } from "../../utils/colorConverter";
 import SectionContainer from "../SectionContainer";
 import { layoutColors } from "../../colors";
 import Slider from "../form/Slider";

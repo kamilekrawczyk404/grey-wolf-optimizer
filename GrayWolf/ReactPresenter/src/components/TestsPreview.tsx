@@ -58,8 +58,9 @@ const TestsPreview = ({
               title={property}
               value={
                 ["bestFitness", "solution"].includes(property)
-                  ? (value as number[]).map((n) => Math.round(n)).join(",")
-                  : (value as number)
+                  ? (value as number[]).map((n) => Math.round(n)).join(", ")
+                  : ["lowerBound", "upperBound"].includes(property) ? (value as number[]).join(", ")
+                : (value as number)
               }
             />
           ))}
@@ -86,7 +87,7 @@ const Parameter = ({
         {title.split("").map((l) => (l === l.toUpperCase() ? ` ${l}` : l))}
       </span>
       <span className={`font-semibold text-md ${layoutColors.cyan.text.light}`}>
-        {typeof value === "string" ? value.split(" ")[0] : value}
+        {typeof value === "string" && title.toLowerCase().includes("function") ? value.split(" ")[0] : value}
       </span>
     </div>
   );

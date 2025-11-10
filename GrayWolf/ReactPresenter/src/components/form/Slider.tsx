@@ -22,7 +22,7 @@ const Slider = ({
         >
           {title?.toUpperCase()}
         </label>
-        <span className={`font-mono text-xs ${layoutColors.cyan.text.primary}`}>
+        <span className={`font-mono text-xs`}>
           {value}ms
         </span>
       </div>

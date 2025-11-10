@@ -32,7 +32,7 @@ function App() {
 
     if (
       currentTest &&
-      currentIteration === currentTest.properties.history.length - 1
+      currentIteration === currentTest.properties.history.length
     ) {
       setCurrentIteration(0);
     }
@@ -61,7 +61,7 @@ function App() {
       const length = currentTest.properties.history.length;
 
       setCurrentIteration((prev) => {
-        if (prev + 1 >= length) {
+        if (prev + 1 > length) {
           setAnimationStatus({ isRunning: false, isCompleted: true });
           return prev;
         } else {

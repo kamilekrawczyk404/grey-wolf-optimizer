@@ -51,16 +51,17 @@ const flattenPointTo2D = (position: number[]): Point => {
 
 const preparePointForCanvas = (
   position: number[],
-  properties: { lowerBound: number; upperBound: number },
+  properties: { lowerBound: number[]; upperBound: number[] },
   canvasSize: number,
 ): Point => {
   const flatPoint = flattenPointTo2D(position);
   const { lowerBound, upperBound } = properties;
 
-  const range = upperBound - lowerBound;
+  const rangeX = upperBound[0] - lowerBound[0];
+  const rangeY = upperBound[1] - lowerBound[1];
 
-  const canvasX = ((flatPoint.x - lowerBound) / range) * canvasSize;
-  const canvasY = ((flatPoint.y - lowerBound) / range) * canvasSize;
+  const canvasX = ((flatPoint.x - lowerBound[0]) / rangeX) * canvasSize;
+  const canvasY = ((flatPoint.y - lowerBound[1]) / rangeY) * canvasSize;
 
   return { x: canvasX, y: canvasY };
 };
@@ -250,21 +251,21 @@ const GwoCanvas = ({
 
     // adding bounds
     ctx.fillStyle = colors.text;
-    ctx.fillText(properties.lowerBound.toString(), 2, size / 2 + 20);
+    ctx.fillText(properties.lowerBound[0].toString(), 2, size / 2 + 20);
     ctx.fillText(
-      properties.lowerBound.toString(),
-      size / 2 - properties.lowerBound.toString().length * 10,
+      properties.lowerBound[1].toString(),
+      size / 2 - properties.lowerBound[1].toString().length * 10,
       size - 6,
     );
 
     ctx.fillText(
-      properties.upperBound.toString(),
-      size / 2 - properties.lowerBound.toString().length * 8,
+      properties.upperBound[0].toString(),
+      size / 2 - properties.lowerBound[0].toString().length * 8,
       15,
     );
     ctx.fillText(
-      properties.upperBound.toString(),
-      size - properties.lowerBound.toString().length * 8,
+      properties.upperBound[1].toString(),
+      size - properties.lowerBound[1].toString().length * 8,
       size / 2 + 20,
     );
 
@@ -348,7 +349,7 @@ const AnimationsControls = ({
         style={{ width: `${(length.toString().length * 2 + 1) * 9}px` }}
         className={"font-mono text-xs"}
       >
-        {iteration + 1}/{length}
+        {iteration}/{length}
       </span>
       <RangeInput
         step={1}
@@ -356,7 +357,6 @@ const AnimationsControls = ({
         max={length}
         value={iteration}
         onMouseDown={() => onAnimationPause()}
-        onMouseUp={() => onAnimationStart()}
         onChange={(e) => onIterationChange(parseInt(e.target.value))}
       />
     </div>
