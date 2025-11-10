@@ -47,8 +47,6 @@ namespace GrayWolf
                 GWOptimizer optimizer = new GWOptimizer(n, D, IterNum, funkcja, min, max);
                 (double[] najlepszy, string jsonString, algorithmRunsAmount) = optimizer.Optimise();
 
-                // Console.WriteLine("strong json -> " + jsonString);
-
                 double objectiveScore = funkcja.Calculate_Value(najlepszy);
 
                 allSolutionVectors.Add(najlepszy);
@@ -155,8 +153,6 @@ namespace GrayWolf
                 Console.WriteLine("\nNie udało się zapisać raportu.");
             }
 
-            Console.WriteLine("json format still -> " + bestJsonString);
-
             if (SaveJson(bestJsonString)) // zapisujemy raport do pliku .json
             {
                 Console.WriteLine("Plik JSON został zapisany na Pulpicie.");
@@ -208,7 +204,6 @@ namespace GrayWolf
             string fullPath = Path.Combine(defaultPath, fileName);
             try
             {
-                Console.WriteLine("string " + jsonString);
                 File.WriteAllText(fullPath, jsonString);
                 return true;
             }
