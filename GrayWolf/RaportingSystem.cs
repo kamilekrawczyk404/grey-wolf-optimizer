@@ -153,7 +153,7 @@ namespace GrayWolf
                 Console.WriteLine("\nNie udało się zapisać raportu.");
             }
 
-            if (SaveJson(jsonString)) // zapisujemy raport do pliku .json
+            if (SaveJson(bestJsonString)) // zapisujemy raport do pliku .json
             {
                 Console.WriteLine("Plik JSON został zapisany na Pulpicie.");
             }
