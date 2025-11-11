@@ -5,15 +5,15 @@ using GrayWolf;//bez tego błąd
 Console.WriteLine("=== Gray Wolf Optimizer ===\n");
 
 //funkcja testowa
-IBenchmarkFunc funkcja = new Rastrigin();
+IBenchmarkFunc funkcja = new Rosenbrock();
 
-int n = 20;        // liczba wilków
+int n = 80;        // liczba wilków
 int D = 2;         // liczba wymiarów
-int IterNum = 10; // liczba iteracji
+int IterNum = 60; // liczba iteracji
 // w przpadku funkcji Rastrigin i podobnych zakresy są jednakowe dla wszystkich wymiarów
 // dlatego w takich przypadkach: Enumerable.Repeat(-5.12, D).ToArray();
-double[] min = Enumerable.Repeat(-5.12, D).ToArray();
-double[] max = Enumerable.Repeat(5.12, D).ToArray();
+double[] min = Enumerable.Repeat(-5.0, D).ToArray();
+double[] max = Enumerable.Repeat(10.0, D).ToArray();
 int testAmount = 10; // liczba testów
 
 //algorytm + raportowanie

@@ -19,10 +19,9 @@ const TestsPreview = ({
   const [selectedTestIndex, setSelectedTestIndex] = useState<number>(0);
 
   const selectedTest = tests[selectedTestIndex];
-  // add solution as native property (only (0,0,0,...,0) for now)
+
   const { history, ...restProperties } = {
     ...selectedTest.properties,
-    solution: [0, 0],
   };
 
   useEffect(() => {
@@ -40,7 +39,7 @@ const TestsPreview = ({
         }}
         renderItem={(item, index) => (
           <div
-            className={`px-2 h-12 flex items-center min-w-32 max-w-40 border-b-2 truncate cursor-pointer transition-all ${
+            className={`px-3 h-12 flex items-center min-w-32 border-b-2 truncate cursor-pointer transition-all ${
               index === selectedTestIndex
                 ? `${layoutColors.neutral.text.light} ${layoutColors.neutral.background.light} ${layoutColors.cyan.border.light}`
                 : `${layoutColors.neutral.text.dark}`
@@ -57,9 +56,9 @@ const TestsPreview = ({
               key={property}
               title={property}
               value={
-                ["bestFitness", "solution"].includes(property)
-                  ? (value as number[]).map((n) => Math.round(n)).join(", ")
-                  : ["lowerBound", "upperBound"].includes(property) ? (value as number[]).join(", ")
+                ["bestFitness"].includes(property)
+                  ? (value as number[]).map((n) => (Math.round(n * 100)) / 100).slice(0,2).join(", ")
+                  : ["lowerBound", "upperBound", "solution"].includes(property) ? (value as number[]).slice(0,2).join(", ")
                 : (value as number)
               }
             />

@@ -10,6 +10,7 @@ import CanvasConfigConfigure from "./components/canvas/CanvasConfigConfigure";
 import TestsPreview from "./components/TestsPreview";
 import TestsNotFound from "./components/TestsNotFound";
 import { layoutColors } from "./colors";
+import Optimization from "./components/Optimization";
 
 export type AnimationStatus = { isCompleted: boolean; isRunning: boolean };
 
@@ -42,17 +43,19 @@ function App() {
     setCurrentIteration(nextIteration);
   }, []);
 
-  const handleSingleFileLoaded = useCallback(
-    (userTests: OptimizationTest[], isLast: boolean) => {
-      const newTests = [...tests, ...userTests];
-      setTests(newTests);
+  const handleSingleFileLoaded = (userTests: OptimizationTest[], isLast: boolean) => {
+      setTests(prev => {
+        const updatedTests = [...prev, ...userTests];
 
-      if (isLast) {
-        setCurrentTest(newTests[0]);
-      }
-    },
-    [tests],
-  );
+        if (isLast) {
+          console.log("setting this -> ", updatedTests[0])
+          setCurrentTest(updatedTests[0]);
+        }
+
+        console.log("updated", updatedTests)
+        return updatedTests;
+      });
+    }
 
   useEffect(() => {
     if (currentTest === null || !animationStatus.isRunning) return;

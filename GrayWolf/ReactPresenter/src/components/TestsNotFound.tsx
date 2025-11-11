@@ -4,6 +4,20 @@ import { layoutColors } from "../colors";
 import { isOptimizationTestArray, OptimizationTest } from "../types/types";
 import useFileUploader from "../hooks/fileUploader";
 
+const getSolutionPointFromTestDesc = (description: string): number[] =>  {
+  console.log(description);
+  const regex = /w punkcie \[([^\]]+)\]/;
+  const match = description.match(regex);
+
+  if (match && match[1]) {
+    console.log(":D -> ", match[1].toString().split(","))
+    return match[1].toString().split(",").map(e => parseFloat(e)).slice(0,2);
+  } else {
+    // return default value
+    return [0,0];
+  }
+}
+
 type TestsNotFoundProps = {
   onSingleFileLoaded: (tests: OptimizationTest[], isLast: boolean) => any;
 };
@@ -46,7 +60,16 @@ const TestsNotFound = ({ onSingleFileLoaded }: TestsNotFoundProps) => {
               break;
             }
 
-            onSingleFileLoaded(parsedFile, ++i === files.length);
+            // find solution inside description
+            const updatedFile = (parsedFile as OptimizationTest[]).map(f => ({
+              ...f,
+              properties: {
+                ...f.properties,
+                solution: getSolutionPointFromTestDesc(f.properties.benchmarkFunction)
+              }
+            }));
+
+            onSingleFileLoaded(updatedFile, ++i === files.length);
           }
         }
       } catch (error) {

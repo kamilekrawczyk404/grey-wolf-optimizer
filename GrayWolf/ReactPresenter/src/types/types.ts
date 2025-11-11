@@ -19,6 +19,7 @@ export type OptimizationProperties = {
   lowerBound: number[];
   upperBound: number[];
   bestFitness: number[];
+  benchmarkFunction: string;
   solution?: number[];
   dimensions: number;
   history: IterationHistory[];
@@ -88,6 +89,7 @@ export function isOptimizationProperties(
   }
 
   return (
+      typeof obj.benchmarkFunction === "string" &&
       typeof obj.iterations === "number" &&
       typeof obj.dimensions === "number" &&
       isNumberArray(obj.bestFitness) &&

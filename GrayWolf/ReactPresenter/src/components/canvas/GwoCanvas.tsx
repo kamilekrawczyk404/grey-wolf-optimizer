@@ -49,6 +49,16 @@ const flattenPointTo2D = (position: number[]): Point => {
   return { x: position[0], y: position[1] };
 };
 
+const mapX = ({rangeX, lowerBound, size, value}: {value: number,  rangeX: number, lowerBound: number[], size: number }): number => {
+  if (rangeX === 0) return size / 2;
+  return ((value - lowerBound[0]) / rangeX) * size;
+};
+
+const mapY = ({rangeY, lowerBound, size, value}: {value: number,  rangeY: number, lowerBound: number[], size: number }): number => {
+  if (rangeY === 0) return size / 2;
+  return (1 - ((value - lowerBound[1]) / rangeY)) * size;
+};
+
 const preparePointForCanvas = (
   position: number[],
   properties: { lowerBound: number[]; upperBound: number[] },
@@ -60,8 +70,8 @@ const preparePointForCanvas = (
   const rangeX = upperBound[0] - lowerBound[0];
   const rangeY = upperBound[1] - lowerBound[1];
 
-  const canvasX = ((flatPoint.x - lowerBound[0]) / rangeX) * canvasSize;
-  const canvasY = ((flatPoint.y - lowerBound[1]) / rangeY) * canvasSize;
+  const canvasX = mapX({rangeX, lowerBound, size: canvasSize, value: flatPoint.x})
+  const canvasY = mapY({rangeY, lowerBound, size: canvasSize, value: flatPoint.y})
 
   return { x: canvasX, y: canvasY };
 };
@@ -153,37 +163,59 @@ const GwoCanvas = ({
 
     ctx.clearRect(0, 0, size, size);
 
+    const { lowerBound, upperBound } = properties;
+    const rangeX = upperBound[0] - lowerBound[0];
+    const rangeY = upperBound[1] - lowerBound[1];
+
     // drawing grid
     ctx.fillStyle = colors.text;
     ctx.font = "12px Monaco";
     ctx.lineWidth = 1;
-
-    const step = size / gridLines;
-
     ctx.strokeStyle = colors.grid;
+
+    const stepX = rangeX / gridLines;
+    const stepY = rangeY / gridLines;
+
+    // Draw vertical grid lines
     for (let i = 0; i <= gridLines; i++) {
-      const pos = i * step;
+      const valueX = lowerBound[0] + stepX * i;
+      const pixelX = mapX({rangeX, lowerBound, size, value: valueX});
       ctx.beginPath();
-      ctx.moveTo(pos, 0);
-      ctx.lineTo(pos, size);
+      ctx.moveTo(pixelX, 0);
+      ctx.lineTo(pixelX, size);
       ctx.stroke();
+    }
+    // Draw horizontal grid lines
+    for (let i = 0; i <= gridLines; i++) {
+      const valueY = lowerBound[1] + stepY * i;
+      const pixelY = mapY({rangeY, lowerBound, size, value: valueY});
       ctx.beginPath();
-      ctx.moveTo(0, pos);
-      ctx.lineTo(size, pos);
+      ctx.moveTo(0, pixelY);
+      ctx.lineTo(size, pixelY);
       ctx.stroke();
     }
 
     // drawing axis
     ctx.strokeStyle = colors.axis;
-    ctx.beginPath();
-    ctx.moveTo(0, size / 2);
-    ctx.lineTo(size, size / 2);
-    ctx.stroke();
+    ctx.lineWidth = 2; // Make axes thicker
 
-    ctx.beginPath();
-    ctx.moveTo(size / 2, 0);
-    ctx.lineTo(size / 2, size);
-    ctx.stroke();
+    // Draw X-Axis (where Y=0)
+    if (0 >= lowerBound[1] && 0 <= upperBound[1]) {
+      const yPixelForXAxis = mapY({rangeY, lowerBound, size, value: 0});
+      ctx.beginPath();
+      ctx.moveTo(0, yPixelForXAxis);
+      ctx.lineTo(size, yPixelForXAxis);
+      ctx.stroke();
+    }
+    // Draw Y-Axis (where X=0)
+    if (0 >= lowerBound[0] && 0 <= upperBound[0]) {
+      const xPixelForYAxis = mapX({rangeX, lowerBound, size, value: 0});
+      ctx.beginPath();
+      ctx.moveTo(xPixelForYAxis, 0);
+      ctx.lineTo(xPixelForYAxis, size);
+      ctx.stroke();
+    }
+    ctx.lineWidth = 1; // Reset line width
 
     if (iteration < 0) {
       return;
@@ -249,50 +281,41 @@ const GwoCanvas = ({
         });
     }
 
-    // adding bounds
+    // adding bounds text (positioned relative to axes)
     ctx.fillStyle = colors.text;
-    ctx.fillText(properties.lowerBound[0].toString(), 2, size / 2 + 20);
-    ctx.fillText(
-      properties.lowerBound[1].toString(),
-      size / 2 - properties.lowerBound[1].toString().length * 10,
-      size - 6,
-    );
+    const yPixelForXAxis = 0 >= lowerBound[1] && 0 <= upperBound[1] ? mapY({rangeY, lowerBound, size, value: 0}) : size - 10;
+    const xPixelForYAxis = 0 >= lowerBound[0] && 0 <= upperBound[0] ? mapX({rangeX, lowerBound, size, value: 0}) : 10;
 
-    ctx.fillText(
-      properties.upperBound[0].toString(),
-      size / 2 - properties.lowerBound[0].toString().length * 8,
-      15,
-    );
-    ctx.fillText(
-      properties.upperBound[1].toString(),
-      size - properties.lowerBound[1].toString().length * 8,
-      size / 2 + 20,
-    );
+    ctx.textAlign = "left";
+    ctx.fillText(properties.lowerBound[0].toString(), 2, yPixelForXAxis + 20);
+    ctx.textAlign = "right";
+    ctx.fillText(properties.upperBound[0].toString(), size - 2, yPixelForXAxis + 20);
+
+    ctx.textAlign = "center";
+    ctx.fillText(properties.lowerBound[1].toString(), xPixelForYAxis, size - 6);
+    ctx.fillText(properties.upperBound[1].toString(), xPixelForYAxis, 15);
+
 
     // drawing solution
-    // for now min value of the function is located at point [0,0]
-    const solution = preparePointForCanvas(
-      // properties.solution,
-      [0, 0],
-      properties,
-      size,
-    );
+    const solutionPoint = flattenPointTo2D(properties.solution ?? [0, 0]);
+    // Map solution using NEW mappers
+    const solution = { x: mapX({rangeX, lowerBound, size, value: solutionPoint.x}), y: mapY({rangeY, size, lowerBound, value: solutionPoint.y}) };
 
     ctx.fillStyle = colors.solution;
     ctx.beginPath();
     ctx.rect(
-      solution.x - options.solutionSize / 6,
-      solution.y - options.solutionSize / 2,
-      options.solutionSize / 3,
-      options.solutionSize,
+        solution.x - options.solutionSize / 6,
+        solution.y - options.solutionSize / 2,
+        options.solutionSize / 3,
+        options.solutionSize,
     );
     ctx.fill();
     ctx.beginPath();
     ctx.rect(
-      solution.x - options.solutionSize / 2,
-      solution.y - options.solutionSize / 6,
-      options.solutionSize,
-      options.solutionSize / 3,
+        solution.x - options.solutionSize / 2,
+        solution.y - options.solutionSize / 6,
+        options.solutionSize,
+        options.solutionSize / 3,
     );
     ctx.fill();
   }, [history, properties, options, iteration, bounds]);
