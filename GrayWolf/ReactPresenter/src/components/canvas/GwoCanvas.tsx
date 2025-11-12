@@ -223,11 +223,13 @@ const GwoCanvas = ({
 
     // drawing wolves
     if (history) {
-      history
+      const currentIterations = history
         .slice(
           iteration > visibleIterations ? iteration - visibleIterations : 0,
           iteration,
-        )
+        );
+
+      currentIterations
         // assign to each wolf his iteration number
         .map((h) => h.wolves.map((w) => ({ ...w, iteration: h.iteration })))
         // flat to achieve one array
@@ -237,48 +239,47 @@ const GwoCanvas = ({
           const rankDifference = getSortingWolfRank(a) - getSortingWolfRank(b);
 
           return (
-            rankDifference + (!rankDifference ? a.iteration - b.iteration : 0)
+              rankDifference + (!rankDifference ? a.iteration - b.iteration : 0)
           );
         })
         .forEach((wolf) => {
-          // based on the previous iterations, make the points to be less visible, so user can follow wolves position easier
-          const colorOpacity =
-            1 -
-            (wolf.iteration % (visibleIterations || 1)) /
-              (visibleIterations || 1);
+        // based on the previous iterations, make the points to be less visible, so user can follow wolves position easier
+        const colorOpacity =
+            (visibleIterations < iteration ? (Math.abs((iteration - wolf.iteration) - visibleIterations) + 1) : wolf.iteration + 1) /
+            currentIterations.length;
 
-          if (wolf.position.length < 2) return;
+        if (wolf.position.length < 2) return;
 
-          // prepare point for canvas bounds
-          const { x, y } = preparePointForCanvas(
+        // prepare point for canvas bounds
+        const { x, y } = preparePointForCanvas(
             wolf.position,
             properties,
             size,
-          );
+        );
 
-          // based on the wolf role, assign proper color for easier distinguishing
-          const { alpha, beta, delta, gamma } = Object.fromEntries(
+        // based on the wolf role, assign proper color for easier distinguishing
+        const { alpha, beta, delta, gamma } = Object.fromEntries(
             Object.entries(colors.wolfs).map(([wolfType, rgbColor]) => [
               wolfType,
               addAlphaToRgb(rgbColor, colorOpacity),
             ]),
-          );
+        );
 
-          let color = delta;
-          if (wolf.isAlpha) color = alpha;
-          else if (wolf.isBeta) color = beta;
-          else if (wolf.isGamma) {
-            color = gamma;
-          }
+        let color = delta;
+        if (wolf.isAlpha) color = alpha;
+        else if (wolf.isBeta) color = beta;
+        else if (wolf.isGamma) {
+          color = gamma;
+        }
 
-          ctx.beginPath();
-          ctx.arc(x, y, wolfRadius, 0, 2 * Math.PI);
-          ctx.fillStyle = color;
-          ctx.fill();
-          ctx.strokeStyle = "#333";
-          ctx.lineWidth = 1;
-          ctx.stroke();
-        });
+        ctx.beginPath();
+        ctx.arc(x, y, wolfRadius, 0, 2 * Math.PI);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.strokeStyle = "#333";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      });
     }
 
     // adding bounds text (positioned relative to axes)

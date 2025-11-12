@@ -48,11 +48,9 @@ function App() {
         const updatedTests = [...prev, ...userTests];
 
         if (isLast) {
-          console.log("setting this -> ", updatedTests[0])
           setCurrentTest(updatedTests[0]);
         }
 
-        console.log("updated", updatedTests)
         return updatedTests;
       });
     }
