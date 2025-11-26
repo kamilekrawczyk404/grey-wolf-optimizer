@@ -57,3 +57,30 @@ C:\Users\taran\Source\Repos\grey-wolf-optimizer\GrayWolf\obj\Debug\net8.0\refint
 C:\Users\taran\Source\Repos\grey-wolf-optimizer\GrayWolf\obj\Debug\net8.0\GrayWolf.pdb
 C:\Users\taran\Source\Repos\grey-wolf-optimizer\GrayWolf\obj\Debug\net8.0\GrayWolf.genruntimeconfig.cache
 C:\Users\taran\Source\Repos\grey-wolf-optimizer\GrayWolf\obj\Debug\net8.0\ref\GrayWolf.dll
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\bin\Debug\net8.0\GrayWolf.exe
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\bin\Debug\net8.0\GrayWolf.deps.json
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\bin\Debug\net8.0\GrayWolf.runtimeconfig.json
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\bin\Debug\net8.0\GrayWolf.dll
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\bin\Debug\net8.0\GrayWolf.pdb
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\obj\Debug\net8.0\GrayWolf.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\obj\Debug\net8.0\GrayWolf.AssemblyInfoInputs.cache
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\obj\Debug\net8.0\GrayWolf.AssemblyInfo.cs
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\obj\Debug\net8.0\GrayWolf.csproj.CoreCompileInputs.cache
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\obj\Debug\net8.0\GrayWolf.sourcelink.json
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\obj\Debug\net8.0\GrayWolf.dll
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\obj\Debug\net8.0\refint\GrayWolf.dll
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\obj\Debug\net8.0\GrayWolf.pdb
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\obj\Debug\net8.0\GrayWolf.genruntimeconfig.cache
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\obj\Debug\net8.0\ref\GrayWolf.dll
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\bin\Debug\net8.0\Microsoft.DotNet.PlatformAbstractions.dll
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\bin\Debug\net8.0\Microsoft.Extensions.DependencyInjection.dll
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\bin\Debug\net8.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\bin\Debug\net8.0\Microsoft.Extensions.DependencyModel.dll
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\bin\Debug\net8.0\Microsoft.Extensions.Diagnostics.Abstractions.dll
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\bin\Debug\net8.0\Microsoft.Extensions.Hosting.Abstractions.dll
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\bin\Debug\net8.0\Microsoft.Extensions.Logging.Abstractions.dll
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\bin\Debug\net8.0\Microsoft.Extensions.ObjectPool.dll
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\bin\Debug\net8.0\Microsoft.Extensions.Options.dll
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\bin\Debug\net8.0\Newtonsoft.Json.dll
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\obj\Debug\net8.0\GrayWolf.csproj.AssemblyReference.cache
+C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\obj\Debug\net8.0\GrayWolf.csproj.Up2Date

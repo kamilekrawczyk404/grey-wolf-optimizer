@@ -5,9 +5,9 @@ import { layoutColors } from "../colors";
 import SectionContainer from "./SectionContainer";
 
 type TestsPreviewProps = {
-  tests: OptimizationTest[];
-  onTestChange: (test: OptimizationTest) => any;
-  isRunning: boolean;
+    tests: OptimizationTest[];
+    onTestChange?: (test: OptimizationTest) => void;
+    isRunning?: boolean;
 };
 const TestsPreview = ({
   tests,
@@ -19,15 +19,18 @@ const TestsPreview = ({
   const [selectedTestIndex, setSelectedTestIndex] = useState<number>(0);
 
   const selectedTest = tests[selectedTestIndex];
-  // add solution as native property (only (0,0,0,...,0) for now)
+
   const { history, ...restProperties } = {
     ...selectedTest.properties,
     solution: [0, 0],
   };
 
-  useEffect(() => {
-    onTestChange(tests[selectedTestIndex]);
-  }, [selectedTestIndex, onTestChange, tests]);
+useEffect(() => {
+    if (onTestChange) {
+        onTestChange(tests[selectedTestIndex]);
+    }
+}, [selectedTestIndex, onTestChange, tests]);
+
 
   return (
     <div className={"flex flex-col w-full h-full space-y-2 justify-between"}>

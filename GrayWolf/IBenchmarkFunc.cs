@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace GrayWolf
 {
-    internal interface IBenchmarkFunc
+    public interface IBenchmarkFunc
     {
         double Calculate_Value(double[] value);
     }
