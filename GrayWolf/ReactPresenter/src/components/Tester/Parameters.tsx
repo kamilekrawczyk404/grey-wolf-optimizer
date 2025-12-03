@@ -18,7 +18,7 @@ const Parameters: React.FC = () => {
         Error?: string;
     }>({});
 
-    const benchmarkOptions = ["Rastrigin", "Sphere", "Ackley", "Griewank"];
+    const benchmarkOptions = ["Rastrigin", "Sphere", "Beale", "RosenBrock"];
 
     const runOptimizer = async () => {
         setLoading(true);
