@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GrayWolf
+namespace GrayWolf.Interfaces
 {
     public interface IBenchmarkFunc
     {

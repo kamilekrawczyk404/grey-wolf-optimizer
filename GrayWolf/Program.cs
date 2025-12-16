@@ -1,13 +1,14 @@
 ﻿using GrayWolf;
+using GrayWolf.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Text.Json;
-
+using System.IO;
+using GrayWolf.Algorithms; 
 
 var builder = WebApplication.CreateBuilder(args);
-
 
 builder.Services.AddCors(options =>
 {
@@ -21,7 +22,6 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-
 app.UseCors();
 
 //ENDPOINT
@@ -31,62 +31,96 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request) =>
     {
         Console.WriteLine("Otrzymano request do /api/optimizer/run");
 
-
         var optimizerRequest = await JsonSerializer.DeserializeAsync<OptimizerRequest>(request.Body);
 
         if (optimizerRequest == null)
         {
-            Console.WriteLine("Błąd: Niepoprawne body requestu");
             return Results.BadRequest("Invalid request body");
         }
 
-        Console.WriteLine($"Parametry testu: PopulationSize={optimizerRequest.PopulationSize}, Dimensions={optimizerRequest.Dimensions}, Iterations={optimizerRequest.Iterations}, LowerBound={optimizerRequest.LowerBound}, UpperBound={optimizerRequest.UpperBound}, Function={optimizerRequest.Function}");
+        Console.WriteLine($"Algorytm: {optimizerRequest.Algorithm}, Pop={optimizerRequest.PopulationSize}, Iter={optimizerRequest.Iterations}");
 
         var function = BenchmarkFactory.GetFunction(optimizerRequest.Function);
 
-        GWOptimizer optimizer = new GWOptimizer(
-            optimizerRequest.PopulationSize,
-            optimizerRequest.Dimensions,
-            optimizerRequest.Iterations,
-            function,
-            optimizerRequest.LowerBound,
-            optimizerRequest.UpperBound
-        );
+        //Wybór algorytmu i pliku stanu
+        IOptimizationAlgorithm optimizer;
+        string stateFileName;
 
-        var (bestSolution, historyJson) = optimizer.Optimise();
+        switch (optimizerRequest.Algorithm)
+        {
+            case "Aquila":
+                optimizer = new AquilaOptimizer(
+                    optimizerRequest.PopulationSize,
+                    optimizerRequest.Dimensions,
+                    optimizerRequest.Iterations,
+                    function,
+                    optimizerRequest.LowerBound,
+                    optimizerRequest.UpperBound
+                );
+                stateFileName = "aquila_state.json";
+                break;
 
-        Console.WriteLine("Test został przeprowadzony pomyślnie!");
-        Console.WriteLine($"Najlepsze rozwiązanie: {string.Join(", ", bestSolution)}");
+            case "GWO":
+            default:
+                optimizer = new GWOptimizer(
+                    optimizerRequest.PopulationSize,
+                    optimizerRequest.Dimensions,
+                    optimizerRequest.Iterations,
+                    function,
+                    optimizerRequest.LowerBound,
+                    optimizerRequest.UpperBound
+                );
+                stateFileName = "gwo_state.json";
+                break;
+        }
 
+        
+        if (File.Exists(stateFileName)) File.Delete(stateFileName);
 
-        int n = optimizerRequest.PopulationSize;
-        int D = optimizerRequest.Dimensions;
-        int IterNum = optimizerRequest.Iterations;
-        IBenchmarkFunc funkcja = BenchmarkFactory.GetFunction(optimizerRequest.Function);
-        double min = optimizerRequest.LowerBound;
-        double max = optimizerRequest.UpperBound;
+        optimizer.Solve();
 
-        RaportingSystem raportingSystem = new RaportingSystem(n, D, IterNum, funkcja, min, max);
-        raportingSystem.InitializeTest();
+        var bestSolution = optimizer.XBest;
 
+        
+        string historyJson = "{}";
+        if (File.Exists(stateFileName))
+        {
+            historyJson = await File.ReadAllTextAsync(stateFileName);
+        }
 
-        Console.WriteLine("RaportingSystem został utworzony i test zainicjalizowany.");
+        Console.WriteLine("Test (API) zakończony sukcesem.");
 
-        //zwrot wyników, może kiedyś się przydać
+        //RAPORTOWANIE
+        try
+        {
+            RaportingSystem raportingSystem = new RaportingSystem(
+                optimizerRequest.PopulationSize,
+                optimizerRequest.Dimensions,
+                optimizerRequest.Iterations,
+                function,
+                optimizerRequest.LowerBound,
+                optimizerRequest.UpperBound
+            );
+            raportingSystem.InitializeTest();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Błąd w RaportingSystem: {ex.Message}");
+        }
+
         return Results.Ok(new
         {
             BestSolution = bestSolution,
             HistoryJson = historyJson,
-            Message = "Test przeprowadzono pomyślnie i zapisano wynik"
+            Message = $"Test algorytmu {optimizer.Name} przeprowadzono pomyślnie."
         });
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Wystąpił błąd: {ex.Message}");
+        Console.WriteLine($"Wystąpił błąd krytyczny: {ex.Message}");
         return Results.Problem(ex.Message);
     }
 });
-
 
 app.Urls.Add("http://localhost:5000");
 app.Run();
@@ -94,6 +128,7 @@ app.Run();
 
 public class OptimizerRequest
 {
+    public string Algorithm { get; set; } //nowe pole dla wyboru algorytmu
     public int PopulationSize { get; set; }
     public int Dimensions { get; set; }
     public int Iterations { get; set; }

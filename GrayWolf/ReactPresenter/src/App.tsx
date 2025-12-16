@@ -11,7 +11,8 @@ import TestsPreview from "./components/TestsPreview";
 import TestsNotFound from "./components/TestsNotFound";
 import { layoutColors } from "./colors";
 import TestView from "./components/Tester/TestView";
-import Parameters from "./components/Tester/Parameters";
+//import Parameters from "./components/Tester/Parameters";
+
 
 export type AnimationStatus = { isCompleted: boolean; isRunning: boolean };
 
@@ -25,7 +26,7 @@ function App() {
     const [currentIteration, setCurrentIteration] = useState<number>(-1);
     const [canvasConfig, setCanvasConfig] = useState<CanvasConfig>(defaultConfig);
 
-    // stan zak³adek
+    //stan zak³adek
     const [activeTab, setActiveTab] = useState<"test" | "wizualizator">("test");
 
     const pauseAnimation = useCallback(() => {
@@ -112,7 +113,7 @@ function App() {
             </div>
 
             {/* !!!!!!!!!!!!!!!!!ZAK£ADKA TEST VIEW!!!!!!!!!!!! */}
-            {activeTab === "test" && <Parameters />}
+            {activeTab === "test" && <TestView />}
 
             {activeTab === "wizualizator" && (
                 <div
