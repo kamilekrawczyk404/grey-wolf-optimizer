@@ -6,7 +6,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Text.Json;
 using System.IO;
-using GrayWolf.Algorithms; 
+using GrayWolf.Algorithms;
+using GrayWolf.Model;
+using GrayWolf.Services;
+using System.Diagnostics; // only for Debug.WriteLine
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -74,44 +77,33 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request) =>
                 break;
         }
 
-        
-        if (File.Exists(stateFileName)) File.Delete(stateFileName);
-
         optimizer.Solve();
-
-        var bestSolution = optimizer.XBest;
-
-        
-        string historyJson = "{}";
-        if (File.Exists(stateFileName))
-        {
-            historyJson = await File.ReadAllTextAsync(stateFileName);
-        }
 
         Console.WriteLine("Test (API) zakończony sukcesem.");
 
-        //RAPORTOWANIE
-        try
-        {
-            RaportingSystem raportingSystem = new RaportingSystem(
-                optimizerRequest.PopulationSize,
-                optimizerRequest.Dimensions,
-                optimizerRequest.Iterations,
-                function,
-                optimizerRequest.LowerBound,
-                optimizerRequest.UpperBound
-            );
-            raportingSystem.InitializeTest();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Błąd w RaportingSystem: {ex.Message}");
-        }
+        var reportingSystem = new RaportingSystem();
+
+        List<IterationLog> historyLogs = new List<IterationLog>();
+        if (optimizer is GWOptimizer gwo) historyLogs = gwo.FullHistory;
+        else if (optimizer is AquilaOptimizer aquila) historyLogs = aquila.FullHistory;
+
+        reportingSystem.GenerateReport(
+            optimizer.Name,
+            function,
+            optimizer.XBest,
+            optimizer.FBest,
+            historyLogs,
+            optimizerRequest.Iterations,
+            optimizerRequest.PopulationSize,
+            optimizerRequest.Dimensions,
+            optimizerRequest.LowerBound,
+            optimizerRequest.UpperBound
+        );
 
         return Results.Ok(new
         {
-            BestSolution = bestSolution,
-            HistoryJson = historyJson,
+            BestSolution = optimizer.XBest,
+            HistoryJson = historyLogs,
             Message = $"Test algorytmu {optimizer.Name} przeprowadzono pomyślnie."
         });
     }
@@ -147,6 +139,7 @@ public static class BenchmarkFactory
             "Sphere" => new SphereFunc(),
             "Beale" => new BealeFunc(),
             "RosenBrock" => new Rosenbrock(),
+            "BukinN6" => new BukinFuncN6(),
             _ => new Rastrigin()
         };
     }

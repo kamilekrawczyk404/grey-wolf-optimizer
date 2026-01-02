@@ -5,19 +5,11 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using GrayWolf.Interfaces;
+using GrayWolf.Model;
+using GrayWolf.Services;
 
 namespace GrayWolf.Algorithms
 {
-    public class AquilaState
-    {
-        public int Iteration { get; set; }
-        public double[][] Population { get; set; }
-        public double[] FitnessValues { get; set; }
-        public double[] BestPosition { get; set; }
-        public double BestFitness { get; set; }
-        public int EvaluationCount { get; set; }
-    }
-
     public class AquilaMath
     {
         private readonly Random _random = new Random();
@@ -174,39 +166,41 @@ namespace GrayWolf.Algorithms
             double[] y_values;
             int startIter = 0;
 
-            if (File.Exists(StateFile))
-            {
-                try
-                {
-                    string jsonString = File.ReadAllText(StateFile);
-                    AquilaState state = JsonSerializer.Deserialize<AquilaState>(jsonString);
+            var checkpoint = CheckpointService.LoadCheckpoint(StateFile);
 
-                    if (state != null && state.Population != null)
-                    {
-                        startIter = state.Iteration;
-                        population = state.Population;
-                        y_values = state.FitnessValues;
-                        XBest = state.BestPosition;
-                        FBest = state.BestFitness;
-                        NumberOfEvaluationFitnessFunction = state.EvaluationCount;
-                    }
-                    else
-                    {
-                        throw new Exception();
-                    }
-                }
-                catch
+            if (checkpoint != null && checkpoint.AlgorithmName == Name && checkpoint.FunctionName == funkcja.ToString())
+            {
+                startIter = checkpoint.CurrentIteration;
+                population = checkpoint.Population;
+                y_values = checkpoint.FitnessValues;
+                FullHistory = checkpoint.HistoryLogs ?? new List<IterationLog>();
+                NumberOfEvaluationFitnessFunction = checkpoint.EvaluationsCount;
+
+                // Universal Global Best
+                XBest = checkpoint.GlobalBestPosition;
+                FBest = checkpoint.GlobalBestFitness;
+
+                // Algorithm-specific data
+                if (!string.IsNullOrEmpty(checkpoint.AlgorithmSpecificDataJson))
                 {
-                    population = GeneratePopulation();
-                    y_values = Calculate(population);
-                    UpdateBest(population, y_values);
+                    try
+                    {
+                        var specificData = JsonSerializer.Deserialize<AquilaSpecificData>(checkpoint.AlgorithmSpecificDataJson);
+                        // if Aquila had specific data, load it here
+                    }
+                    catch
+                    {
+                        // Handle deserialization errors if necessary
+                    }
                 }
             }
             else
             {
+                // No valid checkpoint found, start fresh
                 population = GeneratePopulation();
                 y_values = Calculate(population);
                 UpdateBest(population, y_values);
+                NumberOfEvaluationFitnessFunction = n;
             }
 
             if (XBest == null)
@@ -283,21 +277,37 @@ namespace GrayWolf.Algorithms
                     }
                 }
 
-                AquilaState state = new AquilaState
+                if ((t + 1) % 10 == 0 || t == IterNum - 1)
                 {
-                    Iteration = t + 1,
-                    Population = population,
-                    FitnessValues = y_values,
-                    BestPosition = XBest,
-                    BestFitness = FBest,
-                    EvaluationCount = NumberOfEvaluationFitnessFunction
-                };
+                    var aquilaSpecificData = new AquilaSpecificData
+                    {
+                        // Populate with any Aquila-specific data if needed
+                        BestPosition = XBest,
+                        BestScore = FBest
+                    };
 
-                string jsonState = JsonSerializer.Serialize(state);
-                File.WriteAllText(StateFile, jsonState);
+                    var checkpointAutoSave = new CheckpointData
+                    {
+                        AlgorithmName = Name,
+                        FunctionName = funkcja.ToString(),
+                        CurrentIteration = t + 1,
+                        Population = population,
+                        FitnessValues = y_values,
+                        GlobalBestPosition = XBest,
+                        GlobalBestFitness = FBest,
+                        EvaluationsCount = NumberOfEvaluationFitnessFunction,
+                        PopulationSize = n,
+                        Dimensions = Dim,
+                        HistoryLogs = FullHistory,
+                        AlgorithmSpecificDataJson = JsonSerializer.Serialize(aquilaSpecificData)
+                    };
+
+                    CheckpointService.SaveCheckpoint(StateFile, checkpointAutoSave);
+                }
             }
-
-            GenerateReactJson();
+            // clean up checkpoint after completion
+            // we can also potentially keep it for future runs
+            CheckpointService.ClearCheckpoint(StateFile);
 
             return FBest;
         }
@@ -374,7 +384,7 @@ namespace GrayWolf.Algorithms
 
         private void LogHistory(int iteration, double[][] population, double[] fitness)
         {
-            var wolvesLog = new List<WolfLog>();
+            var aquilaLog = new List<EntityLog>();
 
             double currentMin = double.MaxValue;
             int bestIndex = -1;
@@ -392,52 +402,54 @@ namespace GrayWolf.Algorithms
             {
                 double[] posCopy = (double[])population[k].Clone();
 
-                wolvesLog.Add(new WolfLog
+                aquilaLog.Add(new EntityLog
                 {
                     Position = posCopy,
                     Fitness = fitness[k],
-                    IsAlpha = (k == bestIndex),
-                    IsBeta = false,
-                    IsDelta = false
+                    Role = (k == bestIndex) ? "Best" : "Hawk", // Mark the best solution
+                    IsLeader = (k == bestIndex) // Only the best is leader
                 });
             }
 
             FullHistory.Add(new IterationLog
             {
                 Iteration = iteration,
-                Wolves = wolvesLog
+                Entities = aquilaLog
             });
         }
 
-        private void GenerateReactJson()
-        {
-            var report = new ReactReport
-            {
-                Description = $"Aquila Test - {funkcja}",
-                Properties = new ReportProperties
-                {
-                    Dimensions = Dim,
-                    Iterations = IterNum,
-                    LowerBound = min_range,
-                    UpperBound = max_range,
-                    BenchmarkFunction = funkcja.ToString(),
-                    PopulationSize = n,
-                    BestFitness = FBest,
-                    BestSolution = XBest,
-                    History = FullHistory
-                }
-            };
 
-            var outputList = new List<ReactReport> { report };
+        // TO-DO: Delete this method later if not needed
 
-            var options = new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            };
+        //private void GenerateReactJson()
+        //{
+        //    var report = new ReactReport
+        //    {
+        //        Description = $"Aquila Test - {funkcja}",
+        //        Properties = new ReportProperties
+        //        {
+        //            Dimensions = Dim,
+        //            Iterations = IterNum,
+        //            LowerBound = min_range,
+        //            UpperBound = max_range,
+        //            BenchmarkFunction = funkcja.ToString(),
+        //            PopulationSize = n,
+        //            BestFitness = FBest,
+        //            BestSolution = XBest,
+        //            History = FullHistory
+        //        }
+        //    };
 
-            string json = JsonSerializer.Serialize(outputList, options);
-            File.WriteAllText(StateFile, json);
-        }
+        //    var outputList = new List<ReactReport> { report };
+
+        //    var options = new JsonSerializerOptions
+        //    {
+        //        WriteIndented = true,
+        //        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        //    };
+
+        //    string json = JsonSerializer.Serialize(outputList, options);
+        //    File.WriteAllText(StateFile, json);
+        //}
     }
 }

@@ -23,5 +23,7 @@ namespace GrayWolf
         {
             return "BukinN.6 Function (minimum globalne = 0 w punkcie [-10,1])";
         }
+
+        public double[][] GlobalMinimum => new[] { new double[] { -10.0, 1.0 } };
     }
 }

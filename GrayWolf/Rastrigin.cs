@@ -27,5 +27,7 @@ namespace GrayWolf
         {
             return "Rastrigin (minimum globalne = 0 w punkcie [0,0,...,0])";
         }
+
+        public double[][] GlobalMinimum => new[] { new double[] { 0.0, 0.0 } };
     }
 }

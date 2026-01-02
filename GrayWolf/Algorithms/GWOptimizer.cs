@@ -6,55 +6,12 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using GrayWolf.Interfaces;
 using System.Linq;
+using GrayWolf.Model;
+using GrayWolf.Services;
+using System.Diagnostics;
 
 namespace GrayWolf.Algorithms
 {
-    public class ReactReport
-    {
-        public string Description { get; set; } = "Gray Wolf Optimization Test";
-        public ReportProperties Properties { get; set; }
-    }
-
-    public class ReportProperties
-    {
-        public int Iterations { get; set; }
-        public double LowerBound { get; set; }
-        public double UpperBound { get; set; }
-        public int Dimensions { get; set; }
-        public string BenchmarkFunction { get; set; }
-        public int PopulationSize { get; set; }
-        public double[] BestSolution { get; set; }
-        public double BestFitness { get; set; }
-        public List<IterationLog> History { get; set; }
-    }
-
-    public class IterationLog
-    {
-        public int Iteration { get; set; }
-        public List<WolfLog> Wolves { get; set; }
-    }
-
-    public class WolfLog
-    {
-        public bool IsAlpha { get; set; }
-        public bool IsBeta { get; set; }
-        public bool IsDelta { get; set; }
-        public double Fitness { get; set; }
-        public double[] Position { get; set; }
-    }
-
-    public class GwoState
-    {
-        public int Iteration { get; set; }
-        public double[][] Population { get; set; }
-        public double[] FitnessValues { get; set; }
-        public double[] Alpha { get; set; }
-        public double[] Beta { get; set; }
-        public double[] Delta { get; set; }
-        public double FAlpha { get; set; }
-        public int EvaluationCount { get; set; }
-    }
-
     internal class GWOptimizer : IOptimizationAlgorithm
     {
         public string Name { get; set; } = "Gray Wolf Optimizer";
@@ -95,57 +52,41 @@ namespace GrayWolf.Algorithms
             double[] y_values;
             int startIter = 0;
 
-            if (File.Exists(StateFile))
+            var checkpoint = CheckpointService.LoadCheckpoint(StateFile);
+
+            if (checkpoint != null && checkpoint.AlgorithmName == Name && checkpoint.FunctionName == funkcja.ToString())
             {
-                try
-                {
-                    string jsonString = File.ReadAllText(StateFile);
-                    GwoState state = JsonSerializer.Deserialize<GwoState>(jsonString);
+                startIter = checkpoint.CurrentIteration;
+                population = checkpoint.Population;
+                y_values = checkpoint.FitnessValues;
+                FullHistory = checkpoint.HistoryLogs ?? new List<IterationLog>();
+                NumberOfEvaluationFitnessFunction = checkpoint.EvaluationsCount;
 
-                    if (state != null && state.Population != null)
-                    {
-                        startIter = state.Iteration;
-                        population = state.Population;
-                        y_values = state.FitnessValues;
-                        X_alpha = state.Alpha;
-                        X_beta = state.Beta;
-                        X_delta = state.Delta;
-                        f_alpha = state.FAlpha;
-                        NumberOfEvaluationFitnessFunction = state.EvaluationCount;
-                    }
-                    else
-                    {
-                        throw new Exception();
-                    }
-                }
-                catch
-                {
-                    population = GeneratePopulation();
-                    y_values = Calculate(population);
-                    SortPopulationAndValues(ref population, ref y_values);
+                XBest = checkpoint.GlobalBestPosition;
+                FBest = checkpoint.GlobalBestFitness;
 
-                    X_alpha = population[0];
-                    X_beta = population[1];
-                    X_delta = population[2];
-                    f_alpha = y_values[0];
-                    NumberOfEvaluationFitnessFunction = n;
-                }
+                // Wyciąganie specyficznych danych GWO z checkpointu
+                var gwoData = JsonSerializer.Deserialize<GwoSpecificData>(checkpoint.AlgorithmSpecificDataJson);
+                X_alpha = gwoData.AlphaPosition;
+                X_beta = gwoData.BetaPosition;
+                X_delta = gwoData.DeltaPosition;
+                f_alpha = gwoData.AlphaScore;
             }
             else
+            // jeśli nie ma checkpointu, to inicjalizujemy populację
             {
                 population = GeneratePopulation();
                 y_values = Calculate(population);
                 SortPopulationAndValues(ref population, ref y_values);
-
-                X_alpha = population[0];
-                X_beta = population[1];
-                X_delta = population[2];
+                X_alpha = (double[])population[0].Clone(); // klonowanie, aby uniknąć referencji
+                X_beta = (double[])population[1].Clone();
+                X_delta = (double[])population[2].Clone();
                 f_alpha = y_values[0];
+
+                XBest = X_alpha ?? new double[Dim];
+                FBest = f_alpha;
                 NumberOfEvaluationFitnessFunction = n;
             }
-
-            XBest = X_alpha ?? new double[Dim];
-            FBest = f_alpha;
 
             for (int i = startIter; i < IterNum; i++)
             {
@@ -187,6 +128,7 @@ namespace GrayWolf.Algorithms
                 }
 
                 SortPopulationAndValues(ref population, ref y_values);
+                // TO-DO: or should it be clones?
                 X_alpha = population[0];
                 X_beta = population[1];
                 X_delta = population[2];
@@ -195,23 +137,46 @@ namespace GrayWolf.Algorithms
                 XBest = X_alpha;
                 FBest = f_alpha;
 
-                GwoState state = new GwoState
+                if (i % 10 == 0 || i == IterNum - 1)
                 {
-                    Iteration = i + 1,
-                    Population = population,
-                    FitnessValues = y_values,
-                    Alpha = X_alpha,
-                    Beta = X_beta,
-                    Delta = X_delta,
-                    FAlpha = f_alpha,
-                    EvaluationCount = NumberOfEvaluationFitnessFunction
-                };
+                    var gwoSpecificData = new GwoSpecificData
+                    {
+                        AlphaPosition = X_alpha,
+                        AlphaScore = f_alpha,
+                        BetaPosition = X_beta,
+                        BetaScore = y_values[1],
+                        DeltaPosition = X_delta,
+                        DeltaScore = y_values[2],
 
-                string jsonState = JsonSerializer.Serialize(state);
-                File.WriteAllText(StateFile, jsonState);
+                    };
+
+                    var checkpointAutoSave = new CheckpointData
+                    {
+                        AlgorithmName = Name,
+                        FunctionName = funkcja.ToString(),
+                        CurrentIteration = i + 1,
+                        Population = population,
+                        FitnessValues = y_values,
+                        GlobalBestPosition = X_alpha,
+                        GlobalBestFitness = f_alpha,
+                        EvaluationsCount = NumberOfEvaluationFitnessFunction,
+                        HistoryLogs = FullHistory,
+
+                        Dimensions = Dim,
+                        PopulationSize = n,
+
+                        AlgorithmSpecificDataJson = JsonSerializer.Serialize(gwoSpecificData),
+                    };
+
+                    CheckpointService.SaveCheckpoint(StateFile, checkpointAutoSave);
+                }
+
+                // string jsonState = JsonSerializer.Serialize(state);
+                // File.WriteAllText(StateFile, jsonState);
             }
-
-            GenerateReactJson();
+            // if checkpoint was successfully loaded, we can delete it after completing the optimization
+            // but we also can save it for future resumption
+            CheckpointService.ClearCheckpoint(StateFile);
 
             return f_alpha;
         }
@@ -272,57 +237,79 @@ namespace GrayWolf.Algorithms
 
         private void LogHistory(int iteration, double[][] population, double[] fitness)
         {
-            var wolvesLog = new List<WolfLog>();
+            var entitiesLog = new List<EntityLog>();
             for (int k = 0; k < population.Length; k++)
             {
                 double[] posCopy = (double[])population[k].Clone();
-
-                wolvesLog.Add(new WolfLog
+                entitiesLog.Add(new EntityLog
                 {
                     Position = posCopy,
                     Fitness = fitness[k],
-                    IsAlpha = k == 0,
-                    IsBeta = k == 1,
-                    IsDelta = k == 2
+                    IsLeader = k < 3,
+                    Role = k == 0 ? "Alpha" : k == 1 ? "Beta" : k == 2 ? "Delta" : "Wolf"
                 });
             }
-
             FullHistory.Add(new IterationLog
             {
                 Iteration = iteration,
-                Wolves = wolvesLog
+                Entities = entitiesLog
             });
         }
 
-        private void GenerateReactJson()
-        {
-            var report = new ReactReport
-            {
-                Description = $"GWO Test - {funkcja}",
-                Properties = new ReportProperties
-                {
-                    Dimensions = Dim,
-                    Iterations = IterNum,
-                    LowerBound = min_range,
-                    UpperBound = max_range,
-                    BenchmarkFunction = funkcja.ToString(),
-                    PopulationSize = n,
-                    BestFitness = FBest,
-                    BestSolution = XBest,
-                    History = FullHistory
-                }
-            };
+        //private void LogHistory(int iteration, double[][] population, double[] fitness)
+        //{
+        //    var wolvesLog = new List<WolfLog>();
+        //    for (int k = 0; k < population.Length; k++)
+        //    {
+        //        double[] posCopy = (double[])population[k].Clone();
 
-            var outputList = new List<ReactReport> { report };
+        //        wolvesLog.Add(new WolfLog
+        //        {
+        //            Position = posCopy,
+        //            Fitness = fitness[k],
+        //            IsAlpha = k == 0,
+        //            IsBeta = k == 1,
+        //            IsDelta = k == 2
+        //        });
+        //    }
 
-            var options = new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            };
+        //    FullHistory.Add(new IterationLog
+        //    {
+        //        Iteration = iteration,
+        //        Wolves = wolvesLog
+        //    });
+        //}
 
-            string json = JsonSerializer.Serialize(outputList, options);
-            File.WriteAllText(StateFile, json);
-        }
+        // TO-DO: delete this method later, since we transferred it to Program.cs
+        //private void GenerateReactJson()
+        //{
+        //    var report = new ReactReport
+        //    {
+        //        Description = $"GWO Test - {funkcja}",
+        //        Properties = new ReportProperties
+        //        {
+        //            Dimensions = Dim,
+        //            Iterations = IterNum,
+        //            LowerBound = min_range,
+        //            UpperBound = max_range,
+        //            BenchmarkFunction = funkcja.ToString(),
+        //            PopulationSize = n,
+        //            BestFitness = FBest,
+        //            BestSolution = XBest,
+        //            History = FullHistory
+        //        }
+        //    };
+
+        //    var outputList = new List<ReactReport> { report };
+
+        //    var options = new JsonSerializerOptions
+        //    {
+        //        WriteIndented = true,
+        //        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        //    };
+
+        //    string json = JsonSerializer.Serialize(outputList, options);
+        //    File.WriteAllText(StateFile, json);
+        //}
     }
 }
