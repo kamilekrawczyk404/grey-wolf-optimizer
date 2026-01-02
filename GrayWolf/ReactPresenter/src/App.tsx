@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import "./App.css";
 import TestView from "./components/Tester/TestView";
 import Presenter from "./components/Presenter";
+import TestResultsModal from "./components/modal/TestResultsModal";
+import {useModal} from "./context/ModalContext";
 
 
 export type AnimationStatus = { isCompleted: boolean; isRunning: boolean };
@@ -42,6 +44,8 @@ function App() {
             {activeTab === "test" && <TestView />}
 
             {activeTab === "wizualizator" && <Presenter/>}
+            
+            <TestResultsModal />
         </div>
     );
 }

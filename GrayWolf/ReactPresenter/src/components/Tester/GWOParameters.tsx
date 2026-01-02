@@ -2,6 +2,7 @@
 import { useState } from "react";
 //jak się psuje to coś nie tak
 import SectionContainer from "../SectionContainer";
+import {useModal} from "../../context/ModalContext";
 
 const GWOParameters: React.FC = () => {
     const [iterations, setIterations] = useState<number>(80);
@@ -19,6 +20,8 @@ const GWOParameters: React.FC = () => {
     }>({});
 
     const benchmarkOptions = ["Rastrigin", "Sphere", "Beale", "RosenBrock"];
+
+    const {setActiveModal} = useModal()
 
     const runOptimizer = async () => {
         setLoading(true);
@@ -53,6 +56,7 @@ const GWOParameters: React.FC = () => {
                 HistoryJson: data.HistoryJson,
                 Message: data.Message
             });
+            setActiveModal('test-results')
         } catch (error) {
             setResult({ Error: (error as Error).message });
         } finally {

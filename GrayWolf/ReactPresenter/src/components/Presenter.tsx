@@ -47,7 +47,6 @@ const Presenter = () => {
     );
 
     useEffect(() => {
-        console.log(animationStatus)
         if (currentTest === null || !animationStatus.isRunning) return;
 
         const animation = setInterval(() => {
