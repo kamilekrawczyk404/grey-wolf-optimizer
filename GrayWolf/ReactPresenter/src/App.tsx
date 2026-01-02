@@ -10,8 +10,9 @@ import CanvasConfigConfigure from "./components/canvas/CanvasConfigConfigure";
 import TestsPreview from "./components/TestsPreview";
 import TestsNotFound from "./components/TestsNotFound";
 import { layoutColors } from "./colors";
-import TestView from "./components/Tester/TestView";
+import { MultiTabTestRunner as MultiTabTestView } from "./components/Tester/MultiTabTestView";
 //import Parameters from "./components/Tester/Parameters";
+import { Toaster } from "sonner";
 
 
 export type AnimationStatus = { isCompleted: boolean; isRunning: boolean };
@@ -113,7 +114,7 @@ function App() {
             </div>
 
             {/* !!!!!!!!!!!!!!!!!ZAK£ADKA TEST VIEW!!!!!!!!!!!! */}
-            {activeTab === "test" && <TestView />}
+            {activeTab === "test" && <MultiTabTestView />}
 
             {activeTab === "wizualizator" && (
                 <div
@@ -156,6 +157,12 @@ function App() {
                     )}
                 </div>
             )}
+
+            <Toaster
+                position="bottom-right"
+                theme="dark"
+                richColors
+            />
         </div>
     );
 }

@@ -126,3 +126,14 @@ export function isOptimizationTestArray(obj: any): obj is OptimizationTest[] {
 export type HeaderProps = HTMLAttributes<HTMLHeadingElement> & {
   accent?: boolean;
 };
+export enum Algorithms {
+    GWO = "GWO",
+    Aquila = "Aquila",
+}
+
+export enum BenchmarkFunctions {
+    Rastrigin = "Rastrigin",
+    Sphere = "Sphere",
+    Beale = "Beale",
+    RosenBrock = "RosenBrock",
+}

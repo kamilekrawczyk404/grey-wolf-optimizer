@@ -84,3 +84,30 @@ C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\bin\D
 C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\bin\Debug\net8.0\Newtonsoft.Json.dll
 C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\obj\Debug\net8.0\GrayWolf.csproj.AssemblyReference.cache
 C:\Users\micha\OneDrive\Pulpit\SEM V\Zastosowanie metod\Wolf\.git\GrayWolf\obj\Debug\net8.0\GrayWolf.csproj.Up2Date
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\bin\Debug\net8.0\GrayWolf.exe
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\bin\Debug\net8.0\GrayWolf.deps.json
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\bin\Debug\net8.0\GrayWolf.runtimeconfig.json
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\bin\Debug\net8.0\GrayWolf.dll
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\bin\Debug\net8.0\GrayWolf.pdb
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\bin\Debug\net8.0\Microsoft.DotNet.PlatformAbstractions.dll
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\bin\Debug\net8.0\Microsoft.Extensions.DependencyInjection.dll
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\bin\Debug\net8.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\bin\Debug\net8.0\Microsoft.Extensions.DependencyModel.dll
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\bin\Debug\net8.0\Microsoft.Extensions.Diagnostics.Abstractions.dll
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\bin\Debug\net8.0\Microsoft.Extensions.Hosting.Abstractions.dll
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\bin\Debug\net8.0\Microsoft.Extensions.Logging.Abstractions.dll
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\bin\Debug\net8.0\Microsoft.Extensions.ObjectPool.dll
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\bin\Debug\net8.0\Microsoft.Extensions.Options.dll
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\bin\Debug\net8.0\Newtonsoft.Json.dll
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\obj\Debug\net8.0\GrayWolf.csproj.AssemblyReference.cache
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\obj\Debug\net8.0\GrayWolf.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\obj\Debug\net8.0\GrayWolf.AssemblyInfoInputs.cache
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\obj\Debug\net8.0\GrayWolf.AssemblyInfo.cs
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\obj\Debug\net8.0\GrayWolf.csproj.CoreCompileInputs.cache
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\obj\Debug\net8.0\GrayWolf.sourcelink.json
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\obj\Debug\net8.0\GrayWolf.csproj.Up2Date
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\obj\Debug\net8.0\GrayWolf.dll
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\obj\Debug\net8.0\refint\GrayWolf.dll
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\obj\Debug\net8.0\GrayWolf.pdb
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\obj\Debug\net8.0\GrayWolf.genruntimeconfig.cache
+C:\Users\pipi4\source\repos\grey-wolf-optimizer-new\GrayWolf\obj\Debug\net8.0\ref\GrayWolf.dll

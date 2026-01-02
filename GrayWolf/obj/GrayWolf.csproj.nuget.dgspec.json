@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\micha\\OneDrive\\Pulpit\\SEM V\\Zastosowanie metod\\Wolf\\.git\\GrayWolf\\GrayWolf.csproj": {}
+    "C:\\Users\\pipi4\\Source\\Repos\\grey-wolf-optimizer-new\\GrayWolf\\GrayWolf.csproj": {}
   },
   "projects": {
-    "C:\\Users\\micha\\OneDrive\\Pulpit\\SEM V\\Zastosowanie metod\\Wolf\\.git\\GrayWolf\\GrayWolf.csproj": {
+    "C:\\Users\\pipi4\\Source\\Repos\\grey-wolf-optimizer-new\\GrayWolf\\GrayWolf.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\micha\\OneDrive\\Pulpit\\SEM V\\Zastosowanie metod\\Wolf\\.git\\GrayWolf\\GrayWolf.csproj",
+        "projectUniqueName": "C:\\Users\\pipi4\\Source\\Repos\\grey-wolf-optimizer-new\\GrayWolf\\GrayWolf.csproj",
         "projectName": "GrayWolf",
-        "projectPath": "C:\\Users\\micha\\OneDrive\\Pulpit\\SEM V\\Zastosowanie metod\\Wolf\\.git\\GrayWolf\\GrayWolf.csproj",
-        "packagesPath": "C:\\Users\\micha\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\micha\\OneDrive\\Pulpit\\SEM V\\Zastosowanie metod\\Wolf\\.git\\GrayWolf\\obj\\",
+        "projectPath": "C:\\Users\\pipi4\\Source\\Repos\\grey-wolf-optimizer-new\\GrayWolf\\GrayWolf.csproj",
+        "packagesPath": "C:\\Users\\pipi4\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\pipi4\\Source\\Repos\\grey-wolf-optimizer-new\\GrayWolf\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\micha\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\pipi4\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -26,6 +26,7 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -44,7 +45,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.100"
+        "SdkAnalysisLevel": "9.0.300"
       },
       "frameworks": {
         "net8.0": {
@@ -74,7 +75,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.103/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.308/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
