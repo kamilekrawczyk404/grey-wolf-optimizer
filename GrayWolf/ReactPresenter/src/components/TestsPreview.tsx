@@ -22,20 +22,18 @@ const TestsPreview = ({
 
   const { history, ...restProperties } = {
     ...selectedTest.properties,
-    solution: [0, 0],
   };
 
-useEffect(() => {
+  useEffect(() => {
     if (onTestChange) {
         onTestChange(tests[selectedTestIndex]);
     }
-}, [selectedTestIndex, onTestChange, tests]);
-
+  }, [selectedTestIndex, onTestChange, tests]);
 
   return (
     <div className={"flex flex-col w-full h-full space-y-2 justify-between"}>
       <ItemsCarousel
-        className={`relative items-end h-12 border-[1px] divide-x divide-neutral-700 rounded-md ${layoutColors.neutral.border.primary}`}
+        className={`relative items-end h-12 border-[1px] divide-x divide-neutral-700 rounded-lg ${layoutColors.neutral.border.primary}`}
         items={testTitles}
         onIndexChange={(index) => {
           if (isRunning) return;
@@ -43,11 +41,12 @@ useEffect(() => {
         }}
         renderItem={(item, index) => (
           <div
-            className={`px-2 h-12 flex items-center min-w-32 max-w-40 border-b-2 truncate cursor-pointer transition-all ${
+            className={`px-2 h-12 items-center min-w-32 max-w-48 border-b-2 cursor-pointer transition-all text-nowrap text-ellipsis overflow-hidden place-content-center ${
               index === selectedTestIndex
                 ? `${layoutColors.neutral.text.light} ${layoutColors.neutral.background.light} ${layoutColors.cyan.border.light}`
                 : `${layoutColors.neutral.text.dark}`
             }`}
+            title={item}
           >
             {item}
           </div>
@@ -60,9 +59,11 @@ useEffect(() => {
               key={property}
               title={property}
               value={
-                ["bestFitness", "solution"].includes(property)
-                  ? (value as number[]).map((n) => Math.round(n)).join(",")
-                  : (value as number)
+                ["solution", "bestSolution"].includes(property)
+                  ? (value as number[]).map((n) =>( Math.round(n * 10000) / 10000).toString()).join(", ")
+                  : property === 'benchmarkFunction'
+                        ? (value as string).substring(0, (value as string).indexOf(' '))
+                        : (value as number)
               }
             />
           ))}
@@ -89,7 +90,7 @@ const Parameter = ({
         {title.split("").map((l) => (l === l.toUpperCase() ? ` ${l}` : l))}
       </span>
       <span className={`font-semibold text-md ${layoutColors.cyan.text.light}`}>
-        {typeof value === "string" ? value.split(" ")[0] : value}
+        {value}
       </span>
     </div>
   );

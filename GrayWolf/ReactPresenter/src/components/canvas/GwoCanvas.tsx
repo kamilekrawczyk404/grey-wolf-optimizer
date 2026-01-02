@@ -9,7 +9,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPause, faPlay } from "@fortawesome/free-solid-svg-icons";
 import { AnimationStatus } from "../../App";
 import { layoutColors } from "../../colors";
-import Slider from "../form/Slider";
 import RangeInput from "../form/RangeInput";
 
 export type Wolf = "alpha" | "beta" | "delta" | "gamma";
@@ -68,7 +67,7 @@ const preparePointForCanvas = (
 const getSortingWolfRank = (wolf: WolfHistory): number => {
   if (wolf.isAlpha) return 4;
   if (wolf.isBeta) return 3;
-  if (wolf.isGamma) return 2;
+  if (wolf.isDelta) return 2;
   return 1;
 };
 
@@ -231,12 +230,10 @@ const GwoCanvas = ({
             ]),
           );
 
-          let color = delta;
+          let color = gamma;
           if (wolf.isAlpha) color = alpha;
           else if (wolf.isBeta) color = beta;
-          else if (wolf.isGamma) {
-            color = gamma;
-          }
+          else if (wolf.isDelta) color = delta;
 
           ctx.beginPath();
           ctx.arc(x, y, wolfRadius, 0, 2 * Math.PI);
@@ -348,7 +345,7 @@ const AnimationsControls = ({
         style={{ width: `${(length.toString().length * 2 + 1) * 9}px` }}
         className={"font-mono text-xs"}
       >
-        {iteration + 1}/{length}
+        {iteration}/{length}
       </span>
       <RangeInput
         step={1}
@@ -356,7 +353,6 @@ const AnimationsControls = ({
         max={length}
         value={iteration}
         onMouseDown={() => onAnimationPause()}
-        onMouseUp={() => onAnimationStart()}
         onChange={(e) => onIterationChange(parseInt(e.target.value))}
       />
     </div>
