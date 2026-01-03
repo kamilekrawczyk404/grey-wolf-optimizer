@@ -1,0 +1,9 @@
+/GrayWolf/ReactPresenter/node_modules
+GrayWolf/ReactPresenter/package-lock.json
+
+# Visual Studio cache/options
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates

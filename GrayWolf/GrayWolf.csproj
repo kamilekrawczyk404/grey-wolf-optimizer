@@ -12,4 +12,9 @@
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.3.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="ReactPresenter\src\lib\" />
+    <Folder Include="ReactPresenter\src\stores\" />
+  </ItemGroup>
+
 </Project>
