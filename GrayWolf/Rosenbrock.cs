@@ -26,5 +26,7 @@ namespace GrayWolf
         {
             return "Rosenbrock (minimum globalne = 0 w punkcie [1,1,...,1])";
         }
+
+        public double[][] GlobalMinimum => new[] { new double[] { 1.0, 1.0 } };
     }
 }

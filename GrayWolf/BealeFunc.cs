@@ -26,5 +26,7 @@ namespace GrayWolf
         {
             return "Beale Function (minimum globalne = 0 w punkcie [3,0.5])";
         }
+
+        public double[][] GlobalMinimum => new[] { new double[] { 3.0, 0.5 } };
     }
 }

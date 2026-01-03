@@ -9,5 +9,6 @@ namespace GrayWolf.Interfaces
     public interface IBenchmarkFunc
     {
         double Calculate_Value(double[] value);
+        double[][] GlobalMinimum { get; }
     }
 }

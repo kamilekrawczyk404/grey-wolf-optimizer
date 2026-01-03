@@ -23,14 +23,14 @@ const RangeInput = ({
         value={value}
         onChange={onChange}
         className={
-          "h-2 w-full cursor-pointer appearance-none bg-transparent rounded-md transition-all disabled:saturate-0"
+          "h-2 w-full cursor-pointer appearance-none bg-transparent rounded-md disabled:saturate-0"
         }
       />
       <div
         style={{
           width: `${(value / (max || 1)) * 100}%`,
         }}
-        className={`absolute top-1/2 h-1 rounded-md left-0 bg-cyan-500 transition-all ${
+        className={`absolute top-1/2 h-1 rounded-md left-0 bg-cyan-500 ${
           disabled ? "saturate-0" : ""
         }`}
       />
