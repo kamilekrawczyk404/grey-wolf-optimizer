@@ -1,8 +1,13 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { useEffect, useRef } from "react";
-import { type TestSession, type TestFormValues, useTestStore, testFormSchema, Algorithms, BenchmarkFunctions } from "@/stores/test-store";
+import {
+    type TestSession,
+    useTestStore,
+    Algorithms,
+    BenchmarkFunctions,
+    SingleTestFormValues, SingleTestResult, singleTestFormSchema
+} from "@/stores/test-store";
 import { BENCHMARK_CONFIGS, ALGORITHM_CONFIGS } from "@/stores/benchmark-configs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,8 +44,8 @@ export function TestConfigurationForm({ session }: TestConfigurationFormProps) {
     } = useTestStore();
     const previousTabRef = useRef<string>(activeTab);
 
-    const form = useForm<TestFormValues>({
-        resolver: zodResolver(testFormSchema),
+    const form = useForm<SingleTestFormValues>({
+        resolver: zodResolver(singleTestFormSchema),
         defaultValues: session.config,
     });
 
@@ -67,7 +72,7 @@ export function TestConfigurationForm({ session }: TestConfigurationFormProps) {
                 const benchmarkConfig = BENCHMARK_CONFIGS[value.benchmarkFunction as BenchmarkFunctions];
 
                 if (benchmarkConfig) {
-                    // Aktualizuj tylko pola zwi¹zane z benchmark function
+                    // Aktualizuj tylko pola zwiï¿½zane z benchmark function
                     form.setValue("lowerBound", benchmarkConfig.lowerBound);
                     form.setValue("upperBound", benchmarkConfig.upperBound);
                     form.setValue("dimensions", benchmarkConfig.dimensions);
@@ -78,7 +83,7 @@ export function TestConfigurationForm({ session }: TestConfigurationFormProps) {
                 const algorithmConfig = ALGORITHM_CONFIGS[value.algorithm as Algorithms];
 
                 if (algorithmConfig) {
-                    // Aktualizuj tylko pola zwi¹zane z algorytmem
+                    // Aktualizuj tylko pola zwiï¿½zane z algorytmem
                     form.setValue("populationSize", algorithmConfig.populationSize);
                     form.setValue("iterations", algorithmConfig.iterations);
                 }
@@ -111,7 +116,7 @@ export function TestConfigurationForm({ session }: TestConfigurationFormProps) {
         updateSessionConfig,
     ]);
 
-    const onSubmit = async (values: TestFormValues) => {
+    const onSubmit = async (values: SingleTestFormValues) => {
         const startTime = Date.now();
 
         try {
@@ -149,7 +154,8 @@ export function TestConfigurationForm({ session }: TestConfigurationFormProps) {
             const data = await response.json();
             const duration = (Date.now() - startTime) / 1000;
 
-            const result = {
+            const result: SingleTestResult = {
+                type: "single",
                 algorithm: values.algorithm,
                 benchmarkFunction: values.benchmarkFunction,
                 bestSolution: data.bestSolution,
@@ -175,6 +181,7 @@ export function TestConfigurationForm({ session }: TestConfigurationFormProps) {
             const errorMessage = error instanceof Error ? error.message : "Unknown error";
 
             setTestResult(activeTab, {
+                type: "single",
                 algorithm: values.algorithm,
                 benchmarkFunction: values.benchmarkFunction,
                 bestSolution: [],

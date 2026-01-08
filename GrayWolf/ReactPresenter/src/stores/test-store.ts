@@ -8,7 +8,8 @@ export type SessionStatus = "idle" | "running" | "completed" | "error" | "cancel
 export { Algorithms, BenchmarkFunctions };
 
 // Schema Zod
-export const testFormSchema = z.object({
+
+export const singleTestFormSchema = z.object({
     algorithm: z.nativeEnum(Algorithms),
     populationSize: z.number().min(10).max(1000),
     dimensions: z.number().min(1).max(100),
@@ -16,14 +17,32 @@ export const testFormSchema = z.object({
     lowerBound: z.number(),
     upperBound: z.number(),
     benchmarkFunction: z.nativeEnum(BenchmarkFunctions),
+    selectedAlgorithms: z.array(z.nativeEnum(Algorithms)).optional()
 }).refine((data) => data.upperBound > data.lowerBound, {
     message: "Upper bound must be greater than lower bound",
     path: ["upperBound"],
 });
 
-export type TestFormValues = z.infer<typeof testFormSchema>;
+export const multiTestFormSchema = z.object({
+    algorithm: z.nativeEnum(Algorithms).optional(),
+    benchmarkFunction: z.nativeEnum(BenchmarkFunctions),
+    selectedAlgorithms: z.array(z.nativeEnum(Algorithms)).refine(value => value.length > 0, {
+        message: 'You must select at least one algorithm'
+    }),
+    populationSize: z.number().min(10).max(1000),
+    dimensions: z.number().min(2).max(100),
+    iterations: z.number().min(10).max(10000),
+    lowerBound: z.number(),
+    upperBound: z.number()
+})
 
-export interface TestResult {
+export type SingleTestFormValues = z.infer<typeof singleTestFormSchema>;
+export type MultiTestFormValues = z.infer<typeof multiTestFormSchema>
+
+export type TestMode = "single" | "multi";
+
+export interface SingleTestResult {
+    type: "single"
     algorithm: string;
     benchmarkFunction: string;
     bestSolution: number[];
@@ -33,10 +52,30 @@ export interface TestResult {
     error?: string;
 }
 
+export interface ComparisionRow {
+    algorithm: string;
+    duration: number;
+    bestSolution: number[],
+    status: "success" | "failed",
+    error?: string
+}
+
+export interface MultiTestResult {
+    type: "multi",
+    benchmarkFunction: string;
+    results: ComparisionRow[],
+    message?: string
+}
+
+export type TestFormValues = SingleTestFormValues | MultiTestFormValues
+
+export type TestResult = SingleTestResult | MultiTestResult
+
 export interface TestSession {
     id: string;
+    mode: TestMode,
     name: string;
-    config: TestFormValues;
+    config: TestFormValues
     status: SessionStatus;
     result: TestResult | null;
     startTime?: number;
@@ -48,8 +87,7 @@ export interface TestSession {
 interface TestStore {
     sessions: TestSession[];
     activeTab: string;
-
-    addSession: () => void;
+    addSession: (mode: TestMode) => void;
     removeSession: (id: string) => void;
     updateSession: (id: string, updates: Partial<TestSession>) => void;
     setActiveTab: (id: string) => void;
@@ -111,7 +149,8 @@ export const useTestStore = create<TestStore>()(
             sessions: [
                 {
                     id: crypto.randomUUID(),
-                    name: "Test Session 1",
+                    mode: 'single',
+                    name: "Single Test 1",
                     config: getDefaultConfig(),
                     status: "idle",
                     result: null,
@@ -128,10 +167,13 @@ export const useTestStore = create<TestStore>()(
                 }
             },
 
-            addSession: () => {
+            addSession: (mode: TestMode = 'single') => {
                 const newSession: TestSession = {
                     id: crypto.randomUUID(),
-                    name: `Test Session ${get().sessions.length + 1}`,
+                    mode,
+                    name: mode === 'single'
+                        ? `Single Test ${get().sessions.filter(s => s.mode === 'single').length + 1}`
+                        : `Comparision ${get().sessions.filter(s => s.mode === 'multi').length + 1}`,
                     config: getDefaultConfig(),
                     status: "idle",
                     result: null,
