@@ -64,6 +64,36 @@ namespace GrayWolf.Services
             SaveJson(jsonContent, algorithmName);
         }
 
+        public void GenerateComparisonReport(string functionName, List<ComparisonResult> results)
+        {
+            StringBuilder strBuilder = new StringBuilder();
+            strBuilder.Append($"\n\n=== RAPORT PORÓWNAWCZY DLA FUNKCJI: {functionName} ===\n");
+            strBuilder.Append($"Data: {DateTime.Now}\n\n");
+            strBuilder.Append(new string('-', 90) + "\n");
+            strBuilder.Append($"{"Algorytm",-20} {"Najlepszy Fitness",-20} {"Czas (ms)",-15} {"Ilość Iteracji",-15}\n");
+            strBuilder.Append(new string('-', 90) + "\n");
+
+            foreach(var result in results.OrderBy(x => x.BestFitness))
+            {
+                strBuilder.Append($"{result.AlgorithmName,-20} {result.BestFitness,-20:F4} {result.Iterations,-15}\n");
+            }
+
+            strBuilder.Append(new string('-', 90) + "\n");
+            strBuilder.Append("Szczegóły poszczególnych uruchomień\n");
+
+            foreach(var result in results)
+            {
+                strBuilder.Append($"\n--- {result.AlgorithmName} ---\n");
+                strBuilder.Append("Pozycja: [");
+                strBuilder.Append(string.Join(", ", result.BestSolution.Select(x => x.ToString("F5"))));
+                strBuilder.AppendLine("]");
+            }
+
+            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"Comparison_Report_{functionName}_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.txt");
+
+            File.WriteAllText(path, strBuilder.ToString());
+        }
+
         private bool SaveData(StringBuilder data, string algName)
         {
             string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"{algName}_Raport_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.txt");

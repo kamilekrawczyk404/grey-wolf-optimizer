@@ -1,15 +1,15 @@
 ﻿using GrayWolf;
+using GrayWolf.Algorithms;
 using GrayWolf.Interfaces;
+using GrayWolf.Model;
+using GrayWolf.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System.Text.Json;
-using System.IO;
-using GrayWolf.Algorithms;
-using GrayWolf.Model;
-using GrayWolf.Services;
 using System.Diagnostics; // only for Debug.WriteLine
+using System.IO;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,18 +28,25 @@ var app = builder.Build();
 app.UseCors();
 
 //ENDPOINT
-app.MapPost("/api/optimizer/run", async (HttpRequest request) =>
+app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken ct) =>
 {
+    string? runId = null;
     try
     {
         Console.WriteLine("Otrzymano request do /api/optimizer/run");
 
-        var optimizerRequest = await JsonSerializer.DeserializeAsync<OptimizerRequest>(request.Body);
+        var optimizerRequest = await JsonSerializer.DeserializeAsync<OptimizerRequest>(request.Body, cancellationToken: ct);
 
         if (optimizerRequest == null)
         {
             return Results.BadRequest("Invalid request body");
         }
+
+        runId = string.IsNullOrEmpty(optimizerRequest.RunId) ? Guid.NewGuid().ToString() : optimizerRequest.RunId;
+        string uniqueStateFileName = $"chckpnt_{optimizerRequest.Algorithm.ToLower()}_state_{runId}.json";
+
+        Console.WriteLine($"RunId: {runId}");
+        Console.WriteLine($"Unikalny plik stanu: {uniqueStateFileName}");
 
         Console.WriteLine($"Algorytm: {optimizerRequest.Algorithm}, Pop={optimizerRequest.PopulationSize}, Iter={optimizerRequest.Iterations}");
 
@@ -58,9 +65,9 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request) =>
                     optimizerRequest.Iterations,
                     function,
                     optimizerRequest.LowerBound,
-                    optimizerRequest.UpperBound
+                    optimizerRequest.UpperBound,
+                    uniqueStateFileName
                 );
-                stateFileName = "aquila_state.json";
                 break;
 
             case "GWO":
@@ -71,13 +78,13 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request) =>
                     optimizerRequest.Iterations,
                     function,
                     optimizerRequest.LowerBound,
-                    optimizerRequest.UpperBound
+                    optimizerRequest.UpperBound,
+                    uniqueStateFileName
                 );
-                stateFileName = "gwo_state.json";
                 break;
         }
 
-        optimizer.Solve();
+        optimizer.Solve(ct);
 
         Console.WriteLine("Test (API) zakończony sukcesem.");
 
@@ -102,15 +109,126 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request) =>
 
         return Results.Ok(new
         {
+            RunId = runId,
             BestSolution = optimizer.XBest,
             HistoryJson = historyLogs,
             Message = $"Test algorytmu {optimizer.Name} przeprowadzono pomyślnie."
         });
     }
+    // jeśli użytkownik anulował request (np. zamknął przeglądarkę)
+    catch (OperationCanceledException)
+    {
+        Console.WriteLine("Optymalizacja została anulowana przez klienta.");
+        return Results.Json(new
+        {
+            RunId = runId,
+            Message = "Optymalizacja została anulowana przez klienta."
+        }, statusCode: 499); // 499 Client Closed Request
+    }
     catch (Exception ex)
     {
         Console.WriteLine($"Wystąpił błąd krytyczny: {ex.Message}");
-        return Results.Problem(ex.Message);
+        // zwracamy RunID (GUID) nawet w przypadku błędu, aby frontend mógł powiązać błąd z sesją
+        return Results.Json(new
+        {
+            RunId = runId,
+            Error = ex.Message
+        }, statusCode: 500);
+    }
+});
+
+// ENDPOINT - pobieranie aktywnych/nie zakończonych sesji optymalizacyjnych
+app.MapGet("/api/optimizer/checkpoints", () =>
+{
+    // pobieramy wszystkie pliki zaczynające się od "chckpnt_" i kończące na ".json"
+    var checkpointFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), "chckpnt_*.json");
+
+    var activeSessions = new List<object>();
+
+    foreach (var file in checkpointFiles)
+    {
+        try
+        {
+            // odczytujemy podstawowe dane z pliku checkpoint
+            var content = File.ReadAllText(file);
+            var checkpointData = JsonSerializer.Deserialize<CheckpointData>(content);
+
+            // wyciągamy RunId (GUID) z nazwy pliku
+            string fileName = Path.GetFileNameWithoutExtension(file);
+            string runId = fileName.Split("_").Last();
+
+            activeSessions.Add(new
+            {
+                RunId = runId,
+                Algorithm = checkpointData.AlgorithmName,
+                Function = checkpointData.FunctionName,
+                PopulationSize = checkpointData.PopulationSize,
+                Dimensions = checkpointData.Dimensions,
+                CurrentIteration = checkpointData.CurrentIteration,
+                GlobalBestFitness = checkpointData.GlobalBestFitness,
+                EvaluationsCount = checkpointData.EvaluationsCount,
+                LastUpdated = File.GetLastWriteTime(file)
+            });
+        }
+        catch
+        {
+            // plik może być obecnie używany lub uszkodzony, pomijamy go
+            continue;
+        }
+    }
+
+    return Results.Ok(activeSessions);
+});
+
+// ENDPOINT - porównanie algorytmów
+app.MapPost("/api/optimizer/compare", (GenerateComparisonRequest request) =>
+{
+    try
+    {
+        Console.WriteLine("Otrzymano request do /api/optimizer/compare");
+
+        var reportingSystem = new RaportingSystem();
+        reportingSystem.GenerateComparisonReport(request.FunctionName, request.Results);
+        Console.WriteLine("Raport porównawczy wygenerowany pomyślnie.");
+        return Results.Ok(new
+        {
+            Message = "Raport porównawczy wygenerowany pomyślnie."
+        });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Wystąpił błąd krytyczny podczas generowania raportu porównawczego: {ex.Message}");
+        return Results.Json(new
+        {
+            Error = ex.Message
+        }, statusCode: 500);
+    }
+});
+
+// ENDPOINT - usuwanie checkpointu
+app.MapDelete("/api/optimizer/checkpoint/{runId}", (string runId) =>
+{
+    try
+    {
+        string fileNamePattern = $"chckpnt_*_{runId}.json";
+        var files = Directory.GetFiles(Directory.GetCurrentDirectory(), fileNamePattern);
+        if (files.Length == 0)
+        {
+            return Results.NotFound(new { Message = "Checkpoint not found." });
+        }
+        foreach (var file in files)
+        {
+            File.Delete(file);
+        }
+        return Results.Ok(new { Message = "Checkpoint deleted successfully." });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error deleting checkpoint: {ex.Message}");
+        return Results.Json(new
+        {
+            Error = ex.Message
+        }, statusCode: 500);
     }
 });
 
@@ -121,6 +239,8 @@ app.Run();
 public class OptimizerRequest
 {
     public string Algorithm { get; set; } //nowe pole dla wyboru algorytmu
+    public string? RunId { get; set; } //opcjonalne pole dla identyfikatora uruchomienia, jeśli dostajemy je z frontendu
+    // w przeciwnym razie genjerujemy nowe
     public int PopulationSize { get; set; }
     public int Dimensions { get; set; }
     public int Iterations { get; set; }

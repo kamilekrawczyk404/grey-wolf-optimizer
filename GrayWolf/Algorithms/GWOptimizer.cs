@@ -31,10 +31,10 @@ namespace GrayWolf.Algorithms
         double[] X_delta { get; set; }
         double f_alpha { get; set; }
 
-        private const string StateFile = "gwo_state.json";
+        private readonly string _stateFilePath;
         public List<IterationLog> FullHistory { get; set; } = new List<IterationLog>();
 
-        public GWOptimizer(int n, int D, int IterNum, IBenchmarkFunc funkcja, double min_range, double max_range)
+        public GWOptimizer(int n, int D, int IterNum, IBenchmarkFunc funkcja, double min_range, double max_range, string stateFilePath)
         {
             this.n = n;
             Dim = D;
@@ -42,9 +42,10 @@ namespace GrayWolf.Algorithms
             this.funkcja = funkcja;
             this.min_range = min_range;
             this.max_range = max_range;
+            _stateFilePath = stateFilePath;
         }
 
-        public double Solve()
+        public double Solve(CancellationToken cancellationToken = default)
         {
             Random random = new Random(); // aby oszczędzać moc
 
@@ -52,7 +53,7 @@ namespace GrayWolf.Algorithms
             double[] y_values;
             int startIter = 0;
 
-            var checkpoint = CheckpointService.LoadCheckpoint(StateFile);
+            var checkpoint = CheckpointService.LoadCheckpoint(_stateFilePath);
 
             if (checkpoint != null && checkpoint.AlgorithmName == Name && checkpoint.FunctionName == funkcja.ToString())
             {
@@ -90,6 +91,8 @@ namespace GrayWolf.Algorithms
 
             for (int i = startIter; i < IterNum; i++)
             {
+                // sprawdzanie anulowania
+                cancellationToken.ThrowIfCancellationRequested();
                 LogHistory(i, population, y_values);
 
                 double a = 2.0 - 2.0 * i / IterNum;
@@ -97,6 +100,7 @@ namespace GrayWolf.Algorithms
 
                 foreach (double[] GrayWolf in population)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     for (int d = 0; d < Dim; d++)
                     {
                         double r1 = random.NextDouble();
@@ -139,6 +143,7 @@ namespace GrayWolf.Algorithms
 
                 if (i % 10 == 0 || i == IterNum - 1)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     var gwoSpecificData = new GwoSpecificData
                     {
                         AlphaPosition = X_alpha,
@@ -168,7 +173,7 @@ namespace GrayWolf.Algorithms
                         AlgorithmSpecificDataJson = JsonSerializer.Serialize(gwoSpecificData),
                     };
 
-                    CheckpointService.SaveCheckpoint(StateFile, checkpointAutoSave);
+                    CheckpointService.SaveCheckpoint(_stateFilePath, checkpointAutoSave);
                 }
 
                 // string jsonState = JsonSerializer.Serialize(state);
@@ -176,7 +181,7 @@ namespace GrayWolf.Algorithms
             }
             // if checkpoint was successfully loaded, we can delete it after completing the optimization
             // but we also can save it for future resumption
-            CheckpointService.ClearCheckpoint(StateFile);
+            CheckpointService.ClearCheckpoint(_stateFilePath);
 
             return f_alpha;
         }
