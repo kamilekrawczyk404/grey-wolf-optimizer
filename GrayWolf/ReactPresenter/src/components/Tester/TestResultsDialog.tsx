@@ -24,9 +24,9 @@ import {
     AlertCircle,
     Clock,
     Activity,
-    Users, BarChart3, Table,
+    Users, BarChart3,
 } from "lucide-react";
-import {TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
 
 interface TestResultsDialogProps {
     open: boolean;
@@ -101,9 +101,11 @@ export function TestResultsDialog({
     if (session.result.type === 'multi') {
         const result = session.result as MultiTestResult;
 
+        console.log(result.results)
+
         return (
             <Dialog open={open} onOpenChange={(val) => !val && handleClose()}>
-                <DialogContent className="max-w-4xl bg-neutral-900 border-neutral-800">
+                <DialogContent className="max-w-5xl bg-neutral-900 border-neutral-800">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-white">
                             <BarChart3 className="text-blue-500" />
@@ -136,8 +138,18 @@ export function TestResultsDialog({
                                         </TableCell>
                                         <TableCell className="text-neutral-300">{row.duration.toFixed(3)}s</TableCell>
                                         <TableCell className="font-mono text-blue-300">
-                                            {/* Tutaj wyświetlamy wartość funkcji celu (mniejsza = lepsza dla minimalizacji) */}
-                                            {row.status === 'success' ? row.bestSolution.map(n => (<span className={'mr-2'}>{n.toExponential(4)}</span>)) : '-'}
+                                            <ScrollArea className="h-[120px] min-h-0 rounded-md border border-neutral-700 p-3 bg-neutral-950">
+                                                <div className="text-sm text-white font-mono leading-relaxed space-y-1">
+                                                    {row.bestSolution.map((value, index) => (
+                                                        <div key={index} className="flex justify-between py-1 border-b border-neutral-800 last:border-0">
+                                                            <span className="text-neutral-500">x[{index}]</span>
+                                                            <span className="text-green-400">
+                                                        {typeof value === 'number' ? value.toExponential(6) : value}
+                                                    </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </ScrollArea>
                                         </TableCell>
                                     </TableRow>
                                 ))}

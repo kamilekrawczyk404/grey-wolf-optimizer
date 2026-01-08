@@ -24,6 +24,7 @@ import { TestConfigurationForm } from "./TestConfigurationForm";
 import { RunningTestView } from "./RunningTestView";
 import { TestResultsDialog } from "./TestResultsDialog";
 import {NavigationTab} from "@/App";
+import {MultiAlgorithmConfigurationForm} from "@/components/Tester/MultiAlgorithmConfigurationForm";
 
 interface MultiTabTestRunnerProps {
     activeNavigationTab: NavigationTab
@@ -305,9 +306,11 @@ export function MultiTabTestRunner({ activeNavigationTab }: MultiTabTestRunnerPr
                     <TabsContent key={session.id} value={session.id} className="mt-0">
                         {session.status === "running" ? (
                             <RunningTestView session={session} />
-                        ) : (
-                            <TestConfigurationForm session={session} />
-                        )}
+                        ) : (activeNavigationTab === NavigationTab.Test
+                                ? <TestConfigurationForm session={session} />
+                                : <MultiAlgorithmConfigurationForm session={session}/>
+                            )
+                        }
                     </TabsContent>
                 ))}
             </Tabs>
