@@ -64,6 +64,8 @@ namespace GrayWolf.Services
             SaveJson(jsonContent, algorithmName);
         }
 
+        // public void GenerateComparisonReport
+
         private bool SaveData(StringBuilder data, string algName)
         {
             string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"{algName}_Raport_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.txt");

@@ -45,7 +45,7 @@ namespace GrayWolf.Algorithms
             _stateFilePath = stateFilePath;
         }
 
-        public double Solve()
+        public double Solve(CancellationToken cancellationToken = default)
         {
             Random random = new Random(); // aby oszczędzać moc
 
@@ -91,6 +91,8 @@ namespace GrayWolf.Algorithms
 
             for (int i = startIter; i < IterNum; i++)
             {
+                // sprawdzanie anulowania
+                cancellationToken.ThrowIfCancellationRequested();
                 LogHistory(i, population, y_values);
 
                 double a = 2.0 - 2.0 * i / IterNum;
@@ -98,6 +100,7 @@ namespace GrayWolf.Algorithms
 
                 foreach (double[] GrayWolf in population)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     for (int d = 0; d < Dim; d++)
                     {
                         double r1 = random.NextDouble();
@@ -140,6 +143,7 @@ namespace GrayWolf.Algorithms
 
                 if (i % 10 == 0 || i == IterNum - 1)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     var gwoSpecificData = new GwoSpecificData
                     {
                         AlphaPosition = X_alpha,

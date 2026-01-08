@@ -10,7 +10,7 @@ namespace GrayWolf.Interfaces
     {
         string Name { get; set; }
 
-        double Solve();
+        double Solve(CancellationToken cancellationToken = default);
 
         double[] XBest { get; set; }
 

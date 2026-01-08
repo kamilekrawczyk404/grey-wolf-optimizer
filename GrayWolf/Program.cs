@@ -28,14 +28,14 @@ var app = builder.Build();
 app.UseCors();
 
 //ENDPOINT
-app.MapPost("/api/optimizer/run", async (HttpRequest request) =>
+app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken ct) =>
 {
     string? runId = null;
     try
     {
         Console.WriteLine("Otrzymano request do /api/optimizer/run");
 
-        var optimizerRequest = await JsonSerializer.DeserializeAsync<OptimizerRequest>(request.Body);
+        var optimizerRequest = await JsonSerializer.DeserializeAsync<OptimizerRequest>(request.Body, cancellationToken: ct);
 
         if (optimizerRequest == null)
         {
@@ -84,7 +84,7 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request) =>
                 break;
         }
 
-        optimizer.Solve();
+        optimizer.Solve(ct);
 
         Console.WriteLine("Test (API) zakończony sukcesem.");
 
@@ -114,6 +114,16 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request) =>
             HistoryJson = historyLogs,
             Message = $"Test algorytmu {optimizer.Name} przeprowadzono pomyślnie."
         });
+    }
+    // jeśli użytkownik anulował request (np. zamknął przeglądarkę)
+    catch (OperationCanceledException)
+    {
+        Console.WriteLine("Optymalizacja została anulowana przez klienta.");
+        return Results.Json(new
+        {
+            RunId = runId,
+            Message = "Optymalizacja została anulowana przez klienta."
+        }, statusCode: 499); // 499 Client Closed Request
     }
     catch (Exception ex)
     {
