@@ -205,6 +205,33 @@ app.MapPost("/api/optimizer/compare", (GenerateComparisonRequest request) =>
     }
 });
 
+// ENDPOINT - usuwanie checkpointu
+app.MapDelete("/api/optimizer/checkpoint/{runId}", (string runId) =>
+{
+    try
+    {
+        string fileNamePattern = $"chckpnt_*_{runId}.json";
+        var files = Directory.GetFiles(Directory.GetCurrentDirectory(), fileNamePattern);
+        if (files.Length == 0)
+        {
+            return Results.NotFound(new { Message = "Checkpoint not found." });
+        }
+        foreach (var file in files)
+        {
+            File.Delete(file);
+        }
+        return Results.Ok(new { Message = "Checkpoint deleted successfully." });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error deleting checkpoint: {ex.Message}");
+        return Results.Json(new
+        {
+            Error = ex.Message
+        }, statusCode: 500);
+    }
+});
+
 app.Urls.Add("http://localhost:5000");
 app.Run();
 
