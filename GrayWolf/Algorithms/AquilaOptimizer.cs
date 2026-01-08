@@ -141,12 +141,12 @@ namespace GrayWolf.Algorithms
         private readonly double _alpha = 0.1;
         private readonly double _delta = 0.1;
 
-        private const string StateFile = "aquila_state.json";
+        private readonly string _stateFilePath;
         public List<IterationLog> FullHistory { get; set; } = new List<IterationLog>();
 
         private AquilaMath _math;
 
-        public AquilaOptimizer(int n, int D, int IterNum, IBenchmarkFunc funkcja, double min_range, double max_range)
+        public AquilaOptimizer(int n, int D, int IterNum, IBenchmarkFunc funkcja, double min_range, double max_range, string stateFilePath)
         {
             this.n = n;
             this.Dim = D;
@@ -154,6 +154,8 @@ namespace GrayWolf.Algorithms
             this.funkcja = funkcja;
             this.min_range = min_range;
             this.max_range = max_range;
+
+            _stateFilePath = stateFilePath;
 
             _math = new AquilaMath(D, alpha: _alpha, delta: _delta);
         }
@@ -166,7 +168,7 @@ namespace GrayWolf.Algorithms
             double[] y_values;
             int startIter = 0;
 
-            var checkpoint = CheckpointService.LoadCheckpoint(StateFile);
+            var checkpoint = CheckpointService.LoadCheckpoint(_stateFilePath);
 
             if (checkpoint != null && checkpoint.AlgorithmName == Name && checkpoint.FunctionName == funkcja.ToString())
             {
@@ -302,12 +304,12 @@ namespace GrayWolf.Algorithms
                         AlgorithmSpecificDataJson = JsonSerializer.Serialize(aquilaSpecificData)
                     };
 
-                    CheckpointService.SaveCheckpoint(StateFile, checkpointAutoSave);
+                    CheckpointService.SaveCheckpoint(_stateFilePath, checkpointAutoSave);
                 }
             }
             // clean up checkpoint after completion
             // we can also potentially keep it for future runs
-            CheckpointService.ClearCheckpoint(StateFile);
+            CheckpointService.ClearCheckpoint(_stateFilePath);
 
             return FBest;
         }
