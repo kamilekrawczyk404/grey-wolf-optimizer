@@ -22,7 +22,7 @@ export type OptimizationProperties = {
   upperBound: number;
   bestFitness: number;
   bestSolution: number[];
-  solution: number[]
+  solution: number[];
   dimensions: number;
   benchmarkFunction: string;
   history: IterationHistory[];
@@ -47,7 +47,7 @@ export function isWolfHistory(obj: any): obj is WolfHistory {
     typeof obj.isBeta === "boolean" &&
     typeof obj.isDelta === "boolean" &&
     // isNumberArray(obj.fitness) &&
-    typeof obj.fitness === 'number' &&
+    typeof obj.fitness === "number" &&
     isNumberArray(obj.position) &&
     (!("iteration" in obj) || typeof obj.iteration === "number") // Check optional property
   );
@@ -66,7 +66,7 @@ export function isIterationHistory(obj: any): obj is IterationHistory {
 }
 
 export function isOptimizationProperties(
-  obj: any,
+  obj: any
 ): obj is OptimizationProperties {
   if (!obj || typeof obj !== "object") {
     return false;
@@ -103,13 +103,14 @@ export type HeaderProps = HTMLAttributes<HTMLHeadingElement> & {
   accent?: boolean;
 };
 export enum Algorithms {
-    GWO = "GWO",
-    Aquila = "Aquila",
+  GWO = "GWO",
+  Aquila = "Aquila",
 }
 
 export enum BenchmarkFunctions {
-    Rastrigin = "Rastrigin",
-    Sphere = "Sphere",
-    Beale = "Beale",
-    RosenBrock = "RosenBrock",
+  Rastrigin = "Rastrigin",
+  Sphere = "Sphere",
+  Beale = "Beale",
+  RosenBrock = "RosenBrock",
+  BukinN6 = "BukinN6",
 }
