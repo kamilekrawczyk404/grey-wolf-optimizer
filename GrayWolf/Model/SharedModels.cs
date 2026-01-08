@@ -55,4 +55,18 @@ namespace GrayWolf.Model
         public double BestFitness { get; set; }
         public double[][] GlobalMinimumCoords { get; set; }
     }
+
+    public class ComparisonResult
+    {
+        public string AlgorithmName { get; set; }
+        public double BestFitness { get; set; }
+        public double[] BestSolution { get; set; }
+        public int Iterations { get; set; }
+    }
+
+    public class GenerateComparisonRequest
+    {
+        public string FunctionName { get; set; }
+        public List<ComparisonResult> Results { get; set; }
+    }
 }

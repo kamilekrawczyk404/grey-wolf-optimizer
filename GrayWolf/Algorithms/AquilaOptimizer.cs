@@ -160,7 +160,7 @@ namespace GrayWolf.Algorithms
             _math = new AquilaMath(D, alpha: _alpha, delta: _delta);
         }
 
-        public double Solve()
+        public double Solve(CancellationToken cancellationToken)
         {
             Random random = new Random();
 
@@ -217,6 +217,7 @@ namespace GrayWolf.Algorithms
 
             for (int t = startIter; t < IterNum; t++)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 LogHistory(t, population, y_values);
 
                 List<double> xMean = CalculateMeanPopulation(population);
@@ -224,6 +225,7 @@ namespace GrayWolf.Algorithms
 
                 for (int i = 0; i < n; i++)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     List<double> xCurrent = population[i].ToList();
                     double currentFitness = y_values[i];
 
@@ -281,6 +283,7 @@ namespace GrayWolf.Algorithms
 
                 if ((t + 1) % 10 == 0 || t == IterNum - 1)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     var aquilaSpecificData = new AquilaSpecificData
                     {
                         // Populate with any Aquila-specific data if needed

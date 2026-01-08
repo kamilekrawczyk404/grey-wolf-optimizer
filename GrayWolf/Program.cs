@@ -180,6 +180,31 @@ app.MapGet("/api/optimizer/checkpoints", () =>
     return Results.Ok(activeSessions);
 });
 
+// ENDPOINT - porównanie algorytmów
+app.MapPost("/api/optimizer/compare", (GenerateComparisonRequest request) =>
+{
+    try
+    {
+        Console.WriteLine("Otrzymano request do /api/optimizer/compare");
+
+        var reportingSystem = new RaportingSystem();
+        reportingSystem.GenerateComparisonReport(request.FunctionName, request.Results);
+        Console.WriteLine("Raport porównawczy wygenerowany pomyślnie.");
+        return Results.Ok(new
+        {
+            Message = "Raport porównawczy wygenerowany pomyślnie."
+        });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Wystąpił błąd krytyczny podczas generowania raportu porównawczego: {ex.Message}");
+        return Results.Json(new
+        {
+            Error = ex.Message
+        }, statusCode: 500);
+    }
+});
+
 app.Urls.Add("http://localhost:5000");
 app.Run();
 
