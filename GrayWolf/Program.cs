@@ -145,7 +145,7 @@ app.MapGet("/api/optimizer/checkpoints", () =>
 
             // wyciągamy RunId (GUID) z nazwy pliku
             string fileName = Path.GetFileNameWithoutExtension(file);
-            string runId = fileName.Replace("_", "");
+            string runId = fileName.Split("_").Last();
 
             activeSessions.Add(new
             {
