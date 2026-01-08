@@ -43,77 +43,175 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
         }
 
         runId = string.IsNullOrEmpty(optimizerRequest.RunId) ? Guid.NewGuid().ToString() : optimizerRequest.RunId;
-        string uniqueStateFileName = $"chckpnt_{optimizerRequest.Algorithm.ToLower()}_state_{runId}.json";
+        
 
         Console.WriteLine($"RunId: {runId}");
-        Console.WriteLine($"Unikalny plik stanu: {uniqueStateFileName}");
 
         Console.WriteLine($"Algorytm: {optimizerRequest.Algorithm}, Pop={optimizerRequest.PopulationSize}, Iter={optimizerRequest.Iterations}");
 
         var function = BenchmarkFactory.GetFunction(optimizerRequest.Function);
 
-        //Wybór algorytmu i pliku stanu
-        IOptimizationAlgorithm optimizer;
-        string stateFileName;
-
-        switch (optimizerRequest.Algorithm)
+        if (optimizerRequest.Trials < 1)
         {
-            case "Aquila":
-                optimizer = new AquilaOptimizer(
-                    optimizerRequest.PopulationSize,
-                    optimizerRequest.Dimensions,
-                    optimizerRequest.Iterations,
-                    function,
-                    optimizerRequest.LowerBound,
-                    optimizerRequest.UpperBound,
-                    uniqueStateFileName
-                );
-                break;
-
-            case "GWO":
-            default:
-                optimizer = new GWOptimizer(
-                    optimizerRequest.PopulationSize,
-                    optimizerRequest.Dimensions,
-                    optimizerRequest.Iterations,
-                    function,
-                    optimizerRequest.LowerBound,
-                    optimizerRequest.UpperBound,
-                    uniqueStateFileName
-                );
-                break;
+            return Results.BadRequest("Liczba prób musi być co najmniej 1.");
         }
 
-        optimizer.Solve(ct);
 
-        Console.WriteLine("Test (API) zakończony sukcesem.");
 
-        var reportingSystem = new RaportingSystem();
-
-        List<IterationLog> historyLogs = new List<IterationLog>();
-        if (optimizer is GWOptimizer gwo) historyLogs = gwo.FullHistory;
-        else if (optimizer is AquilaOptimizer aquila) historyLogs = aquila.FullHistory;
-
-        reportingSystem.GenerateReport(
-            optimizer.Name,
-            function,
-            optimizer.XBest,
-            optimizer.FBest,
-            historyLogs,
-            optimizerRequest.Iterations,
-            optimizerRequest.PopulationSize,
-            optimizerRequest.Dimensions,
-            optimizerRequest.LowerBound,
-            optimizerRequest.UpperBound
-        );
-
-        return Results.Ok(new
+        if (optimizerRequest.Trials == 1)
         {
-            RunId = runId,
-            BestSolution = optimizer.XBest,
-            HistoryJson = historyLogs,
-            Message = $"Test algorytmu {optimizer.Name} przeprowadzono pomyślnie."
-        });
+            // Wybór algorytmu na podstawie pola Algorithm w optimizerRequest oraz utworzenie unikalnej nazwy pliku checkpoint
+            IOptimizationAlgorithm optimizer;
+            string uniqueStateFileName = $"chckpnt_{optimizerRequest.Algorithm.ToLower()}_state_{runId}.json";
+
+            switch (optimizerRequest.Algorithm)
+            {
+                case "Aquila":
+                    optimizer = new AquilaOptimizer(
+                        optimizerRequest.PopulationSize,
+                        optimizerRequest.Dimensions,
+                        optimizerRequest.Iterations,
+                        function,
+                        optimizerRequest.LowerBound,
+                        optimizerRequest.UpperBound,
+                        uniqueStateFileName
+                    );
+                    break;
+
+                case "GWO":
+                default:
+                    optimizer = new GWOptimizer(
+                        optimizerRequest.PopulationSize,
+                        optimizerRequest.Dimensions,
+                        optimizerRequest.Iterations,
+                        function,
+                        optimizerRequest.LowerBound,
+                        optimizerRequest.UpperBound,
+                        uniqueStateFileName
+                    );
+                    break;
+            }
+
+            optimizer.Solve(ct);
+
+            Console.WriteLine("Test (API) zakończony sukcesem.");
+
+            var reportingSystem = new RaportingSystem();
+
+            List<IterationLog> historyLogs = new List<IterationLog>();
+            if (optimizer is GWOptimizer gwo) historyLogs = gwo.FullHistory;
+            else if (optimizer is AquilaOptimizer aquila) historyLogs = aquila.FullHistory;
+
+            reportingSystem.GenerateReport(
+                optimizer.Name,
+                function,
+                optimizer.XBest,
+                optimizer.FBest,
+                historyLogs,
+                optimizerRequest.Iterations,
+                optimizerRequest.PopulationSize,
+                optimizerRequest.Dimensions,
+                optimizerRequest.LowerBound,
+                optimizerRequest.UpperBound
+            );
+
+            return Results.Ok(new
+            {
+                RunId = runId,
+                BestSolution = optimizer.XBest,
+                HistoryJson = historyLogs,
+                Message = $"Test algorytmu {optimizer.Name} przeprowadzono pomyślnie."
+            });
+        }
+        else
+        {
+            // TO-DO: checkpointing dla wielu prób, jeśli potrzebne
+            Console.WriteLine($"Rozpoczynanie {optimizerRequest.Trials} prób dla algorytmu {optimizerRequest.Algorithm}");
+
+            var trials = new List<TrialResult>();
+
+            for (int trialNum = 1; trialNum <= optimizerRequest.Trials; trialNum++)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                Console.WriteLine($"Rozpoczynanie próby {trialNum}/{optimizerRequest.Trials}...");
+
+                // dla wielu prób nie mamy checkpointingu, więc używamy tymczasowej nazwy pliku
+
+                string tempStateFileName = $"temp_chckpnt_{optimizerRequest.Algorithm.ToLower()}_{runId}_trial{trialNum}.json";
+
+                IOptimizationAlgorithm optimizer;
+
+                switch (optimizerRequest.Algorithm)
+                {
+                    case "Aquila":
+                        optimizer = new AquilaOptimizer(
+                            optimizerRequest.PopulationSize,
+                            optimizerRequest.Dimensions,
+                            optimizerRequest.Iterations,
+                            function,
+                            optimizerRequest.LowerBound,
+                            optimizerRequest.UpperBound,
+                            tempStateFileName
+                        );
+                        break;
+                    case "GWO":
+                    default:
+                        optimizer = new GWOptimizer(
+                            optimizerRequest.PopulationSize,
+                            optimizerRequest.Dimensions,
+                            optimizerRequest.Iterations,
+                            function,
+                            optimizerRequest.LowerBound,
+                            optimizerRequest.UpperBound,
+                            tempStateFileName
+                        );
+                        break;
+                }
+
+                optimizer.Solve(ct);
+
+                List<IterationLog> historyLogs = new List<IterationLog>();
+                if (optimizer is GWOptimizer gwo) historyLogs = gwo.FullHistory;
+                else if (optimizer is AquilaOptimizer aquila) historyLogs = aquila.FullHistory;
+
+                trials.Add(new TrialResult
+                {
+                    TrialNumber = trialNum,
+                    BestSolution = optimizer.XBest,
+                    BestFitness = optimizer.FBest,
+                    EvaluationsCount = optimizer.NumberOfEvaluationFitnessFunction,
+                    HistoryLogs = historyLogs
+                });
+
+                // usuwamy tymczasowy plik checkpoint po zakończeniu próby
+                CheckpointService.ClearCheckpoint(tempStateFileName);
+                Console.WriteLine($"Próba {trialNum} zakończona. Najlepszy fitness: {optimizer.FBest}");
+            }
+
+            var stats = StatisticsService.CalculateStats(trials);
+
+            var reportingSystem = new RaportingSystem();
+            reportingSystem.GenerateMultiTrialReport(
+                optimizerRequest.Algorithm,
+                function,
+                stats,
+                optimizerRequest.Iterations,
+                optimizerRequest.PopulationSize,
+                optimizerRequest.Dimensions,
+                optimizerRequest.LowerBound,
+                optimizerRequest.UpperBound
+            );
+
+            return Results.Ok(new
+            {
+                RunId = runId,
+                AlgorithmName = optimizerRequest.Algorithm,
+                FunctionName = optimizerRequest.Function,
+                Statistics = stats,
+                Message = $"Przeprowadzono {optimizerRequest.Trials} prób algorytmu {optimizerRequest.Algorithm} pomyślnie."
+            });
+        }
     }
     // jeśli użytkownik anulował request (np. zamknął przeglądarkę)
     catch (OperationCanceledException)
@@ -180,6 +278,7 @@ app.MapGet("/api/optimizer/checkpoints", () =>
     return Results.Ok(activeSessions);
 });
 
+// TO-DO: uzunąć to później, jeśli nie będzie potrzebne??
 // ENDPOINT - porównanie algorytmów
 app.MapPost("/api/optimizer/compare", (GenerateComparisonRequest request) =>
 {
@@ -247,6 +346,7 @@ public class OptimizerRequest
     public double LowerBound { get; set; }
     public double UpperBound { get; set; }
     public string Function { get; set; }
+    public int Trials { get; set; } = 1; //liczba niezależnych prób
 }
 
 public static class BenchmarkFactory

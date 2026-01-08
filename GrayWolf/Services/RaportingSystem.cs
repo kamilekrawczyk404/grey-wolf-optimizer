@@ -64,6 +64,67 @@ namespace GrayWolf.Services
             SaveJson(jsonContent, algorithmName);
         }
 
+        public void GenerateMultiTrialReport(string algorithmName, IBenchmarkFunc function, StatisticalSummary stats,
+            int iterations, int populationSize, int dim, double lowerBound, double upperBound)
+        {
+            StringBuilder strBuilder = new StringBuilder();
+            strBuilder.Append($"\n\n=== RAPORT WIELOPRÓBOWY: {algorithmName} ===\n");
+            strBuilder.Append($"\nData: {DateTime.Now}\n");
+            strBuilder.Append($"\nUżyta funkcja: {function}\n\n");
+            strBuilder.Append($"Liczba prób: {stats.TotalTrials}\n");
+            strBuilder.Append($"Liczba wymiarów: {dim}\n");
+            strBuilder.Append($"Wielkość populacji: {populationSize}\n");
+            strBuilder.Append($"Liczba iteracji: {iterations}\n");
+            strBuilder.Append($"Zakres wartości: [{lowerBound}, {upperBound}]\n\n");
+            strBuilder.Append(new string('-', 90) + "\n");
+
+            strBuilder.Append(StatisticsService.FormatStats(stats, algorithmName, function.ToString()));
+
+            strBuilder.Append("\nSzczegóły wszystkich prób:\n");
+            for (int i = 0; i < stats.AllTrials.Count; i++)
+            {
+                var trial = stats.AllTrials[i];
+                strBuilder.Append($"\n--- Próba {trial.TrialNumber} ---\n");
+                strBuilder.Append($"Funkcja celu w najlepszym rozwiązaniu: {trial.BestFitness:F6}\n");
+                strBuilder.Append($"Najlepsze rozwiązanie: [");
+                strBuilder.Append(string.Join(", ", trial.BestSolution.Select(x => x.ToString("F5"))));
+                strBuilder.AppendLine("]");
+                strBuilder.AppendLine($"Najlepsza wartość funkcji celu: {trial.BestFitness:F6}");
+                strBuilder.AppendLine($"Liczba ewaluacji: {trial.EvaluationsCount}");
+            }
+
+            SaveData(strBuilder, algorithmName + "_MultiTrial");
+
+            // generujemy jsona do wizualizera z najlepszej próby
+            var bestTrial = stats.AllTrials.OrderBy(t => t.BestFitness).First();
+            var vizualizerData = new FinalVisualizerReport
+            {
+                Description = $"{algorithmName} Multi-Trial Test - {function} (Best of {stats.TotalTrials})",
+                Properies = new ReportProperies
+                {
+                    Dimensions = dim,
+                    PopulationSize = populationSize,
+                    Iterations = iterations,
+                    LowerBound = lowerBound,
+                    UpperBound = upperBound,
+                    BenchmarkFunction = function.ToString(),
+                    BestFitness = bestTrial.BestFitness,
+                    BestSolution = bestTrial.BestSolution,
+                    GlobalMinimumCoords = function.GlobalMinimum
+                },
+                History = bestTrial.HistoryLogs
+            };
+
+            string jsonContent = JsonSerializer.Serialize(vizualizerData, new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
+
+            SaveJson(jsonContent, algorithmName + "_MultiTrial_Best");
+        }
+
+        // TO-DO: uzunąć to później, jeśli nie będzie potrzebne??
         public void GenerateComparisonReport(string functionName, List<ComparisonResult> results)
         {
             StringBuilder strBuilder = new StringBuilder();
