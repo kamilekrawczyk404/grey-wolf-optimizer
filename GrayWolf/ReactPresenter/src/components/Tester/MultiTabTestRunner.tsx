@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { useTestStore } from "@/stores/test-store";
+import {useEffect, useMemo, useRef, useState} from "react";
+import {TestMode, useTestStore} from "@/stores/test-store";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -17,14 +17,19 @@ import {
     X,
     Loader2,
     CheckCircle2,
-    XCircle,
+    XCircle, BarChart3, Activity,
 } from "lucide-react";
 import { toast } from "sonner";
 import { TestConfigurationForm } from "./TestConfigurationForm";
 import { RunningTestView } from "./RunningTestView";
 import { TestResultsDialog } from "./TestResultsDialog";
+import {NavigationTab} from "@/App";
+import {MultiAlgorithmConfigurationForm} from "@/components/Tester/MultiAlgorithmConfigurationForm";
 
-export function MultiTabTestRunner() {
+interface MultiTabTestRunnerProps {
+    activeNavigationTab: NavigationTab
+}
+export function MultiTabTestRunner({ activeNavigationTab }: MultiTabTestRunnerProps) {
     const {
         sessions: testSessions,
         activeTab,
@@ -40,14 +45,25 @@ export function MultiTabTestRunner() {
     const editInputRef = useRef<HTMLInputElement>(null);
     const shownDialogsRef = useRef<Set<string>>(new Set());
 
+    const filteredSessions = useMemo(() => testSessions.filter(s => {
+            if (activeNavigationTab === NavigationTab.Test) return s.mode === 'single'
+            else if (activeNavigationTab === NavigationTab.Comparison) return s.mode === 'multi'
+        }
+
+    ), [activeNavigationTab, testSessions]);
+
     const activeSession = testSessions.find((s) => s.id === activeTab);
 
     // Initialize activeTab on mount
     useEffect(() => {
-        if (!activeTab && testSessions.length > 0) {
-            setActiveTab(testSessions[0].id);
+        const isCurrentTabVisible = filteredSessions.some(s => s.id === activeTab)
+
+        if (isCurrentTabVisible) return;
+
+        if (filteredSessions.length > 0) {
+            setActiveTab(filteredSessions[0].id);
         }
-    }, [activeTab, testSessions, setActiveTab]);
+    }, [activeNavigationTab, filteredSessions, activeTab, setActiveTab]);
 
     // Auto-scroll to active tab
     useEffect(() => {
@@ -101,8 +117,8 @@ export function MultiTabTestRunner() {
         toRemove.forEach((key) => shownDialogsRef.current.delete(key));
     }, [testSessions]);
 
-    const addNewTestSession = () => {
-        addSession();
+    const addNewTestSession = (mode: TestMode) => {
+        addSession(mode);
     };
 
     const removeTestSession = (id: string) => {
@@ -147,7 +163,6 @@ export function MultiTabTestRunner() {
         }
     };
 
-
     return (
         <TooltipProvider>
             <div className="container mx-auto p-8 max-w-2xl">
@@ -161,7 +176,7 @@ export function MultiTabTestRunner() {
                                 variant="outline"
                                 size="icon"
                                 onClick={() => navigateTab("prev")}
-                                disabled={testSessions.findIndex((s) => s.id === activeTab) === 0}
+                                disabled={filteredSessions.findIndex((s) => s.id === activeTab) === 0}
                                 className="bg-neutral-800 border-neutral-700 text-white hover:bg-neutral-700 flex-shrink-0"
                             >
                                 <ChevronLeft className="h-4 w-4" />
@@ -173,7 +188,7 @@ export function MultiTabTestRunner() {
                     {/* Scrollable Tab List */}
                     <ScrollArea className="flex-1 min-w-0">
                         <TabsList className="inline-flex w-auto bg-neutral-800 h-auto">
-                            {testSessions.map((session) => (
+                            {filteredSessions.map((session) => (
                                 <TabsTrigger
                                     key={session.id}
                                     value={session.id}
@@ -183,59 +198,67 @@ export function MultiTabTestRunner() {
                                         handleTabDoubleClick(session.id, session.name)
                                     }
                                 >
-                                    {editingTabId === session.id ? (
-                                        <input
-                                            ref={editInputRef}
-                                            type="text"
-                                            value={editingTabName}
-                                            onChange={(e) => setEditingTabName(e.target.value)}
-                                            onBlur={handleTabNameSubmit}
-                                            onKeyDown={handleTabNameKeyDown}
-                                            onClick={(e) => e.stopPropagation()}
-                                            className="bg-transparent border-b border-primary outline-none w-24 px-1 text-white"
-                                        />
-                                    ) : (
-                                        <>
+                                    <div className={'flex items-center gap-2'}>
+                                        {session.mode === 'multi' ? (
+                                            <BarChart3 className={'h-3 w-3 text-purple-400'}/>
+                                        ) : (
+                                            <Activity className={"h-3 w-3 text-blue-400"}/>
+                                        )}
+
+                                        {editingTabId === session.id ? (
+                                            <input
+                                                ref={editInputRef}
+                                                type="text"
+                                                value={editingTabName}
+                                                onChange={(e) => setEditingTabName(e.target.value)}
+                                                onBlur={handleTabNameSubmit}
+                                                onKeyDown={handleTabNameKeyDown}
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="bg-transparent border-b border-primary outline-none w-24 px-1 text-white"
+                                            />
+                                        ) : (
                                             <span className="text-white">{session.name}</span>
+                                        )}
+                                    </div>
 
-                                            {/* Running indicator */}
-                                            {session.status === "running" && (
-                                                    <Loader2 className="h-3 w-3 animate-spin text-blue-400" />
-                                            )}
+                                    <div className={'flex items-center'}>
+                                        {/* Running indicator */}
+                                        {session.status === "running" && (
+                                            <Loader2 className="h-3 w-3 animate-spin text-blue-400" />
+                                        )}
 
-                                            {/* Completion indicator */}
-                                            {(session.status === "completed" ||
+                                        {/* Completion indicator */}
+                                        {(session.status === "completed" ||
                                                 session.status === "error") &&
-                                                !session.resultsSeen && (
-                                                        session.status === "completed" ? (
-                                                            <CheckCircle2 className="h-3 w-3 text-green-400" />
-                                                        ) : (
-                                                            <XCircle className="h-3 w-3 text-red-400" />
-                                                        )
-                                                )}
-                                            {/* Close button */}
-                                            {testSessions.length > 1 && (
-                                                <span
-                                                    role="button"
-                                                    tabIndex={0}
-                                                    className="ml-2 h-5 w-5 md:opacity-0 md:group-hover:opacity-100 transition-opacity inline-flex items-center justify-center rounded-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                                                    onClick={(e) => {
+                                            !session.resultsSeen && (
+                                                session.status === "completed" ? (
+                                                    <CheckCircle2 className="h-3 w-3 text-green-400" />
+                                                ) : (
+                                                    <XCircle className="h-3 w-3 text-red-400" />
+                                                )
+                                            )}
+                                        {/* Close button */}
+                                        {testSessions.length > 1 && (
+                                            <span
+                                                role="button"
+                                                tabIndex={0}
+                                                className="ml-2 h-5 w-5 md:opacity-0 md:group-hover:opacity-100 transition-opacity inline-flex items-center justify-center rounded-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    removeTestSession(session.id);
+                                                }}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter" || e.key === " ") {
                                                         e.stopPropagation();
+                                                        e.preventDefault();
                                                         removeTestSession(session.id);
-                                                    }}
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === "Enter" || e.key === " ") {
-                                                            e.stopPropagation();
-                                                            e.preventDefault();
-                                                            removeTestSession(session.id);
-                                                        }
-                                                    }}
-                                                >
+                                                    }
+                                                }}
+                                            >
                                                     <X className="h-3 w-3" />
                                                 </span>
-                                            )}
-                                        </>
-                                    )}
+                                        )}
+                                    </div>
                                 </TabsTrigger>
                             ))}
                         </TabsList>
@@ -267,7 +290,7 @@ export function MultiTabTestRunner() {
                             <Button
                                 variant="outline"
                                 size="icon"
-                                onClick={addNewTestSession}
+                                onClick={() => addNewTestSession(activeNavigationTab === NavigationTab.Test ? 'single' : 'multi')}
                                 className="bg-neutral-800 border-neutral-700 text-white hover:bg-neutral-700 flex-shrink-0"
                             >
                                 <Plus className="h-4 w-4" />
@@ -278,13 +301,16 @@ export function MultiTabTestRunner() {
                 </div>
 
                 {/* Tab Content */}
-                {testSessions.map((session) => (
+
+                {filteredSessions.map((session) => (
                     <TabsContent key={session.id} value={session.id} className="mt-0">
                         {session.status === "running" ? (
                             <RunningTestView session={session} />
-                        ) : (
-                            <TestConfigurationForm session={session} />
-                        )}
+                        ) : (activeNavigationTab === NavigationTab.Test
+                                ? <TestConfigurationForm session={session} />
+                                : <MultiAlgorithmConfigurationForm session={session}/>
+                            )
+                        }
                     </TabsContent>
                 ))}
             </Tabs>

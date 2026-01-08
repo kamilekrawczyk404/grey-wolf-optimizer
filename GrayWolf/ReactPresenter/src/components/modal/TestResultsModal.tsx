@@ -6,7 +6,6 @@ const TestResultsModal = () => {
     const modalBody =
         <div>Testowy element</div>
 
-
     const modalFooter = (closeModal: () => void) => (
         <button
             className={`border-[1px] rounded-md px-2 h-10 place-content-center text-sm ${layoutColors.cyan.border.primary} ml-auto`}
