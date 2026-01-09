@@ -1,11 +1,7 @@
 import React, { ChangeEvent, useEffect, useRef, useState } from "react";
-import SecondaryHeader from "./headers/SecondaryHeader";
-import { layoutColors } from "../colors";
 import {isExperimentRecord, ExperimentRecord} from "../types/types";
 import useFileUploader from "../hooks/fileUploader";
 import {CardTitle} from "@/components/ui/card";
-import {InfoBanner} from "@/components/ui/info-banner";
-import {Separator} from "@/components/ui/separator";
 
 type TestFileUploaderProps = {
   onSingleFileLoaded: (tests: ExperimentRecord[], isLast: boolean) => any;
@@ -85,11 +81,9 @@ const TestFileUploader = ({ onSingleFileLoaded }: TestFileUploaderProps) => {
         </p>
       )}
       <div
-        className={`text-xs text-muted-foreground`}
+        className={`text-xs text-muted-foreground border rounded-md px-2 py-1 bg-blue-900/10 border-blue-900/30 mx-auto`}
       >
-        <InfoBanner className={'py-2 px-4 text-nowrap w-fit'} title={'Accepted format'}>
-          <span>application/json</span>
-        </InfoBanner>
+        Accepted format: <span className={'text-blue-400/70'}>application/json</span>
       </div>
 
       <input

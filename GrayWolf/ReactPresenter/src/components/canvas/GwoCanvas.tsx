@@ -1,24 +1,22 @@
-// import React, { useEffect, useMemo, useRef } from "react";
-// import {
-//   AgentState,
-//   OptimizationRun, IterationSnapshot,
-// } from "../../types/types";
-// import { addAlphaToRgb } from "../../utils/colorConverter";
-// import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-// import { faPause, faPlay } from "@fortawesome/free-solid-svg-icons";
-// import { AnimationStatus } from "../../App";
-// import { layoutColors } from "../../colors";
-// import RangeInput from "../form/RangeInput";
-//
+import React, { useEffect, useMemo, useRef } from "react";
+import { Play, Pause, SkipBack, SkipForward } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import {IterationSnapshot, OptimizationRun} from "@/types/types";
+import {Slider} from "@/components/ui/slider";
+
+type Point = {
+  x: number;
+  y: number;
+};
 
 export type CanvasConfig = {
   animationDuration: number;
   visibleIterations: number;
-  gridLines: number;
   solutionSize: number;
-  agentRadius: number; // Zmieniono z wolfRadius
+  agentRadius: number;
   colors: {
-    solution: { r: number, g: number, b: number }; // Global Best
+    solution: { r: number, g: number, b: number };
     agents: {
       leader: { r: number, g: number, b: number };
       follower: { r: number, g: number, b: number };
@@ -27,11 +25,10 @@ export type CanvasConfig = {
 };
 
 export const defaultConfig: CanvasConfig = {
-  animationDuration: 100,
-  visibleIterations: 20,
-  gridLines: 10,
-  solutionSize: 8,
-  agentRadius: 4,
+  animationDuration: 20,
+  visibleIterations: 10,
+  solutionSize: 15,
+  agentRadius: 5,
   colors: {
     solution: { r: 34, g: 197, b: 94 },
     agents: {
@@ -41,370 +38,329 @@ export const defaultConfig: CanvasConfig = {
   }
 };
 
-// export type Wolf = "alpha" | "beta" | "delta" | "gamma";
-//
-// export type CanvasColors = {
-//   wolfs: Record<Wolf, string>;
-//   grid: string;
-//   text: string;
-//   axis: string;
-//   solution: string;
-// };
-//
-// const DEFAULT_COLORS: CanvasColors = {
-//   wolfs: {
-//     alpha: "rgba(251, 191, 36, 1)",
-//     beta: "rgba(168, 162, 158, 1)",
-//     delta: "rgba(120, 113, 108, 1)",
-//     gamma: "rgba(64, 64, 64, 0.8)",
-//   },
-//   solution: "oklch(78.9% 0.154 211.53)",
-//   grid: "oklch(26.9% 0 0)",
-//   axis: "oklch(37.1% 0 0)",
-//   text: "#f1f1f1",
-// };
-//
-// type Point = {
-//   x: number;
-//   y: number;
-// };
-//
-// const flattenPointTo2D = (position: number[]): Point => {
-//   if (position.length < 2)
-//     throw new Error(
-//       "Cannot flatten array that has dimension lower than 2 dimensions",
-//     );
-//
-//   return { x: position[0], y: position[1] };
-// };
-//
-// const preparePointForCanvas = (
-//   position: number[],
-//   properties: { lowerBound: number; upperBound: number },
-//   canvasSize: number,
-// ): Point => {
-//   const flatPoint = flattenPointTo2D(position);
-//   const { lowerBound, upperBound } = properties;
-//
-//   const range = upperBound - lowerBound;
-//
-//   const canvasX = ((flatPoint.x - lowerBound) / range) * canvasSize;
-//   const canvasY = ((flatPoint.y - lowerBound) / range) * canvasSize;
-//
-//   return { x: canvasX, y: canvasY };
-// };
-//
-// const getSortingWolfRank = (wolf: AgentState): number => {
-//   // if (wolf.isAlpha) return 4;
-//   // if (wolf.isBeta) return 3;
-//   // if (wolf.isDelta) return 2;
-//   return 1;
-// };
-//
-// // export type CanvasConfig = {
-// //   colors: CanvasColors;
-// //   animationDuration: number;
-// //   size: number;
-// //   wolfRadius: number;
-// //   solutionSize: number;
-// //   gridLines: number;
-// //   visibleIterations: number;
-// // };
-//
-// export type CanvasConfig = {
-//   animationDuration: number;
-//   visibleIterations: number;
-//   gridLines: number;
-//   solutionSize: number;
-//   agentRadius: number; // Zmieniono z wolfRadius
-//   colors: {
-//     solution: { r: number, g: number, b: number }; // Global Best
-//     agents: {
-//       leader: { r: number, g: number, b: number };
-//       follower: { r: number, g: number, b: number };
-//     };
-//   };
-// };
-//
-// export const defaultConfig: CanvasConfig = {
-//   colors: DEFAULT_COLORS,
-//   size: 600,
-//   solutionSize: 20,
-//   wolfRadius: 10,
-//   gridLines: 15,
-//   visibleIterations: 3,
-//   animationDuration: 50,
-// };
-//
-// type GwoCanvasProps = {
-//   history: IterationSnapshot[];
-//   iteration: number;
-//   properties: OptimizationRun;
-//   options: CanvasConfig;
-//   animationStatus: AnimationStatus;
-//   onAnimationStart: () => any;
-//   onAnimationPause: () => any;
-//   onIterationChange: (nextIteration: number) => any;
-// };
-//
-// const GwoCanvas = ({
-//   onAnimationStart,
-//   onAnimationPause,
-//   onIterationChange,
-//   animationStatus,
-//   history,
-//   iteration,
-//   properties,
-//   options,
-// }: GwoCanvasProps) => {
-//   const bounds = useMemo(() => {
-//     let lower: number, upper: number;
-//     lower = upper = 0;
-//     // lower = upper = history[0].wolves[0].position[0];
-//
-//     // history[0].wolves.forEach((wolf) => {
-//     //   const lowerCandidate = Math.min(...wolf.position);
-//     //   const upperCandidate = Math.max(...wolf.position);
-//     //
-//     //   if (lowerCandidate < lower) {
-//     //     lower = lowerCandidate;
-//     //   }
-//     //   if (upperCandidate > upper) {
-//     //     upper = upperCandidate;
-//     //   }
-//     // });
-//
-//     return { upper, lower };
-//   }, [history]);
-//
-//   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-//
-//   // const { size, gridLines, wolfRadius, colors, visibleIterations } = options;
-//
-//   useEffect(() => {
-//     // if (
-//     //   size === undefined ||
-//     //   gridLines === undefined ||
-//     //   wolfRadius === undefined ||
-//     //   colors === undefined
-//     // )
-//     //   return;
-//
-//     const canvas = canvasRef?.current;
-//     const ctx = canvas?.getContext("2d");
-//
-//     if (!ctx) return;
-//
-//     ctx.clearRect(0, 0, size, size);
-//
-//     // drawing grid
-//     ctx.fillStyle = colors.text;
-//     ctx.font = "12px Monaco";
-//     ctx.lineWidth = 1;
-//
-//     const step = size / gridLines;
-//
-//     ctx.strokeStyle = colors.grid;
-//     for (let i = 0; i <= gridLines; i++) {
-//       const pos = i * step;
-//       ctx.beginPath();
-//       ctx.moveTo(pos, 0);
-//       ctx.lineTo(pos, size);
-//       ctx.stroke();
-//       ctx.beginPath();
-//       ctx.moveTo(0, pos);
-//       ctx.lineTo(size, pos);
-//       ctx.stroke();
-//     }
-//
-//     // drawing axis
-//     ctx.strokeStyle = colors.axis;
-//     ctx.beginPath();
-//     ctx.moveTo(0, size / 2);
-//     ctx.lineTo(size, size / 2);
-//     ctx.stroke();
-//
-//     ctx.beginPath();
-//     ctx.moveTo(size / 2, 0);
-//     ctx.lineTo(size / 2, size);
-//     ctx.stroke();
-//
-//     if (iteration < 0) {
-//       return;
-//     }
-//
-//     // drawing wolves
-//     if (history) {
-//       history
-//         .slice(
-//           iteration > visibleIterations ? iteration - visibleIterations : 0,
-//           iteration,
-//         )
-//         // assign to each wolf his iteration number
-//         // .map((h) => h.wolves.map((w) => ({ ...w, iteration: h.iteration })))
-//         // flat to achieve one array
-//         .flat()
-//         // sort them, to display them by the rank
-//         .sort((a, b) => {
-//           // const rankDifference = getSortingWolfRank(a) - getSortingWolfRank(b);
-//
-//           return (
-//               0
-//             // rankDifference + (!rankDifference ? a.iteration - b.iteration : 0)
-//           );
-//         })
-//         .forEach((wolf) => {
-//           // based on the previous iterations, make the points to be less visible, so user can follow wolves position easier
-//           const colorOpacity =
-//             1 -
-//             (wolf.iteration % (visibleIterations || 1)) /
-//               (visibleIterations || 1);
-//
-//           // if (wolf.position.length < 2) return;
-//
-//           // prepare point for canvas bounds
-//           // const { x, y } = preparePointForCanvas(
-//           //   wolf.position,
-//           //   properties,
-//           //   size,
-//           // );
-//
-//           // based on the wolf role, assign proper color for easier distinguishing
-//           const { alpha, beta, delta, gamma } = Object.fromEntries(
-//             Object.entries(colors.wolfs).map(([wolfType, rgbColor]) => [
-//               wolfType,
-//               addAlphaToRgb(rgbColor, colorOpacity),
-//             ]),
-//           );
-//
-//           let color = gamma;
-//           // if (wolf.isAlpha) color = alpha;
-//           // else if (wolf.isBeta) color = beta;
-//           // else if (wolf.isDelta) color = delta;
-//
-//           ctx.beginPath();
-//           // ctx.arc(x, y, wolfRadius, 0, 2 * Math.PI);
-//           ctx.arc(0,0, wolfRadius, 0, 2 * Math.PI);
-//           ctx.fillStyle = color;
-//           ctx.fill();
-//           ctx.strokeStyle = "#333";
-//           ctx.lineWidth = 1;
-//           ctx.stroke();
-//         });
-//     }
-//
-//     // adding bounds
-//     ctx.fillStyle = colors.text;
-//     ctx.fillText(properties.lowerBound.toString(), 2, size / 2 + 20);
-//     ctx.fillText(
-//       properties.lowerBound.toString(),
-//       size / 2 - properties.lowerBound.toString().length * 10,
-//       size - 6,
-//     );
-//
-//     ctx.fillText(
-//       properties.upperBound.toString(),
-//       size / 2 - properties.lowerBound.toString().length * 8,
-//       15,
-//     );
-//     ctx.fillText(
-//       properties.upperBound.toString(),
-//       size - properties.lowerBound.toString().length * 8,
-//       size / 2 + 20,
-//     );
-//
-//     // drawing solution
-//     // for now min value of the function is located at point [0,0]
-//     const solution = preparePointForCanvas(
-//       // properties.solution,
-//       [0, 0],
-//       properties,
-//       size,
-//     );
-//
-//     ctx.fillStyle = colors.solution;
-//     ctx.beginPath();
-//     ctx.rect(
-//       solution.x - options.solutionSize / 6,
-//       solution.y - options.solutionSize / 2,
-//       options.solutionSize / 3,
-//       options.solutionSize,
-//     );
-//     ctx.fill();
-//     ctx.beginPath();
-//     ctx.rect(
-//       solution.x - options.solutionSize / 2,
-//       solution.y - options.solutionSize / 6,
-//       options.solutionSize,
-//       options.solutionSize / 3,
-//     );
-//     ctx.fill();
-//   }, [history, properties, options, iteration, bounds]);
-//
-//   return (
-//     <div className={"flex flex-col gap-2"}>
-//       {size && (
-//         <canvas
-//           className={"bg-neutral-900 rounded-md"}
-//           ref={canvasRef}
-//           height={size}
-//           width={size}
-//         />
-//       )}
-//       <AnimationsControls
-//         length={history.length}
-//         iteration={iteration}
-//         animationStatus={animationStatus}
-//         onAnimationPause={onAnimationPause}
-//         onAnimationStart={onAnimationStart}
-//         onIterationChange={onIterationChange}
-//       />
-//     </div>
-//   );
-// };
-//
-// const AnimationsControls = ({
-//   iteration,
-//   length,
-//   animationStatus,
-//   onAnimationStart,
-//   onAnimationPause,
-//   onIterationChange,
-// }: {
-//   length: number;
-//   iteration: number;
-//   animationStatus: AnimationStatus;
-//   onAnimationPause: () => any;
-//   onAnimationStart: () => any;
-//   onIterationChange: (nextIteration: number) => any;
-// }) => {
-//   return (
-//     <div
-//       className={`flex items-center gap-2 !z-[10] h-10 w-full px-2 rounded-md ${layoutColors.neutral.background.light}`}
-//     >
-//       <button
-//         onClick={() =>
-//           animationStatus.isRunning ? onAnimationPause() : onAnimationStart()
-//         }
-//       >
-//         <FontAwesomeIcon icon={animationStatus.isRunning ? faPause : faPlay} />
-//       </button>
-//       <span
-//         style={{ width: `${(length.toString().length * 2 + 1) * 9}px` }}
-//         className={"font-mono text-xs"}
-//       >
-//         {iteration}/{length}
-//       </span>
-//       <RangeInput
-//         step={1}
-//         min={0}
-//         max={length}
-//         value={iteration}
-//         onMouseDown={() => onAnimationPause()}
-//         onChange={(e) => onIterationChange(parseInt(e.target.value))}
-//       />
-//     </div>
-//   );
-// };
-//
-// export default GwoCanvas;
+const getRgbaString = (color: { r: number; g: number; b: number }, alpha: number) => {
+  return `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha})`;
+};
+
+const flattenPointTo2D = (position: number[]): Point => {
+  if (!position || position.length < 2) return { x: 0, y: 0 };
+  return { x: position[0], y: position[1] };
+};
+
+const valToCanvas = (val: number, min: number, range: number, size: number, isY: boolean = false) => {
+  const ratio = (val - min) / range;
+  // y-axis grows in opposite direction than in standard cartesian plane, it needs to be rotated
+  if (isY) return size - (ratio * size);
+  return ratio * size;
+};
+
+const preparePointForCanvas = (
+    position: number[],
+    bounds: { min: number; max: number },
+    canvasSize: number
+): Point => {
+  if (!position || position.length < 2) return { x: 0, y: 0 };
+  const range = bounds.max - bounds.min;
+  if (range === 0) return { x: canvasSize / 2, y: canvasSize / 2 };
+
+  const canvasX = valToCanvas(position[0], bounds.min, range, canvasSize, false);
+  const canvasY = valToCanvas(position[1], bounds.min, range, canvasSize, true);
+
+  return { x: canvasX, y: canvasY };
+};
+
+type GwoCanvasProps = {
+  properties: OptimizationRun;
+  iteration: number;
+  animationStatus: { isRunning: boolean; isCompleted: boolean };
+  onAnimationStart: () => void;
+  onAnimationPause: () => void;
+  onIterationChange: (nextIteration: number) => void;
+  options?: CanvasConfig;
+  size?: number;
+};
+
+const GwoCanvas = ({
+                     onAnimationStart,
+                     onAnimationPause,
+                     onIterationChange,
+                     animationStatus,
+                     iteration,
+                     properties,
+                     options = defaultConfig,
+                     size = 600,
+                   }: GwoCanvasProps) => {
+
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  const bounds = useMemo(() => {
+    const min = properties.lowerBound ?? -100;
+    const max = properties.upperBound ?? 100;
+
+    return { min, max };
+  }, [properties]);
+
+
+  const optimizationHistory = properties.history;
+
+  useEffect(() => {
+    // Canvas elements
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+
+    // Clear canvas area
+    ctx.clearRect(0, 0, size, size);
+
+    // Canvas styling definition
+    const gridColor = "#333333";
+    const axisColor = "#525252";
+    const textColor = "#a3a3a3";
+
+    ctx.lineWidth = 1;
+    ctx.font = "10px monospace";
+    ctx.strokeStyle = gridColor;
+
+    const range = bounds.max - bounds.min;
+    const startX = Math.ceil(bounds.min);
+
+    // Other axis (distance 1 unit)
+    ctx.beginPath();
+    for (let x = startX; x <= bounds.max; x += 1) {
+      if (x === 0) continue;
+
+      const pixX = valToCanvas(x, bounds.min, range, size, false);
+      ctx.moveTo(pixX, 0);
+      ctx.lineTo(pixX, size);
+    }
+
+    const startY = Math.ceil(bounds.min);
+    for (let y = startY; y <= bounds.max; y += 1) {
+      if (y === 0) continue;
+
+      const pixY = valToCanvas(y, bounds.min, range, size, true);
+      ctx.moveTo(0, pixY);
+      ctx.lineTo(size, pixY);
+    }
+    ctx.stroke();
+
+    const originX = valToCanvas(0, bounds.min, range, size, false);
+    const originY = valToCanvas(0, bounds.min, range, size, true);
+
+    // Main axis
+    ctx.strokeStyle = axisColor;
+    ctx.lineWidth = 2; // Highlight the main axis
+    ctx.beginPath();
+
+    if (bounds.min <= 0 && bounds.max >= 0) {
+      ctx.moveTo(originX, 0);
+      ctx.lineTo(originX, size);
+    }
+
+    if (bounds.min <= 0 && bounds.max >= 0) {
+      ctx.moveTo(0, originY);
+      ctx.lineTo(size, originY);
+    }
+    ctx.stroke();
+
+    // If animation is not started or there is no history to display, we end up with only plain plane
+    if (!properties.history || iteration < 0) return;
+
+    // Getting the visible iterations
+    const startIndex = Math.max(0, iteration - options.visibleIterations);
+    const relevantHistory = optimizationHistory.slice(startIndex, iteration + 1);
+
+    // Casting those points to 2D, adding the snapshotIteration for easier calculation of opacity
+    const pointsToDraw = relevantHistory.flatMap((snapshot) => {
+      return snapshot.entities.map((agent) => ({
+        ...agent,
+        snapshotIteration: snapshot.iteration
+      }));
+    });
+
+    // Drawing the agents
+    pointsToDraw.forEach((agent) => {
+      // Calculating opacity
+      const age = agent.snapshotIteration - startIndex;
+      const windowSize = Math.max(1, iteration - startIndex);
+      const opacity = Math.max(0.1, age / windowSize); // Min 0.1, żeby nie zniknęły całkowicie
+
+      // Wybór koloru (Leader vs Follower)
+      const baseColor = agent.isLeader
+          ? options.colors.agents.leader
+          : options.colors.agents.follower;
+
+      const fillStyle = getRgbaString(baseColor, opacity);
+
+      const { x, y } = preparePointForCanvas(agent.position, bounds, size);
+
+      ctx.beginPath();
+
+      const radius = options.agentRadius;
+
+      ctx.arc(x, y, radius, 0, 2 * Math.PI);
+      ctx.fillStyle = fillStyle;
+      ctx.fill();
+
+      // Highlight the newest iteration
+      if (agent.snapshotIteration === iteration) {
+        ctx.strokeStyle = "rgba(255,255,255,0.8)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    });
+
+    // Drawing the global solutions
+    if (properties.solution) {
+      properties.solution.map(s => {
+        const solution = preparePointForCanvas(s, bounds, size);
+        const solSize = options.solutionSize;
+        const solColor = getRgbaString(options.colors.solution, 1);
+
+        ctx.fillStyle = solColor;
+
+        ctx.fillRect(solution.x - solSize / 2, solution.y - 1, solSize, 2);
+        ctx.fillRect(solution.x - 1, solution.y - solSize / 2, 2, solSize);
+
+        ctx.beginPath();
+        ctx.arc(solution.x, solution.y, solSize / 4, 0, 2 * Math.PI);
+        ctx.fill();
+      })
+    }
+
+    // Bounds
+    ctx.fillStyle = textColor;
+    ctx.textAlign = "start";
+    ctx.textBaseline = "bottom";
+
+    // Min (bottom left)
+    ctx.fillText(`(${bounds.min.toFixed(1)}, ${bounds.min.toFixed(1)})`, 5, size - 5);
+
+    // Max (top right)
+    ctx.textAlign = "end";
+    ctx.textBaseline = "top";
+    ctx.fillText(`(${bounds.max.toFixed(1)}, ${bounds.max.toFixed(1)})`, size - 5, 5);
+  }, [
+    iteration,
+    properties,
+    options,
+    size,
+    bounds
+  ]);
+
+  return (
+      <div className="flex flex-col gap-3 w-full max-w-[600px] mx-auto">
+        <div className="relative rounded-lg overflow-hidden border border-neutral-800 bg-neutral-950 shadow-2xl">
+          <canvas
+              ref={canvasRef}
+              width={size}
+              height={size}
+              className="block w-full h-auto"
+              style={{ aspectRatio: "1/1" }}
+          />
+
+          <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-sm px-2 py-1 rounded text-xs text-white font-mono border border-white/10">
+            Iteration: {iteration} / {optimizationHistory.length}
+          </div>
+        </div>
+
+        <AnimationsControls
+            length={optimizationHistory.length}
+            iteration={iteration}
+            animationStatus={animationStatus}
+            onAnimationPause={onAnimationPause}
+            onAnimationStart={onAnimationStart}
+            onIterationChange={onIterationChange}
+        />
+      </div>
+  );
+};
+
+const AnimationsControls = ({
+                              iteration,
+                              length,
+                              animationStatus,
+                              onAnimationStart,
+                              onAnimationPause,
+                              onIterationChange,
+                            }: {
+  length: number;
+  iteration: number;
+  animationStatus: { isRunning: boolean };
+  onAnimationPause: () => void;
+  onAnimationStart: () => void;
+  onIterationChange: (nextIteration: number) => void;
+}) => {
+  return (
+      <div className="flex flex-col gap-2 p-3 bg-neutral-900 border border-neutral-800 rounded-md">
+        <div className="w-full flex items-center gap-3">
+          <span className="text-xs text-neutral-500 font-mono min-w-[30px] text-right">0</span>
+
+
+          <Slider
+              min={0}
+              max={length}
+              step={1}
+              value={[iteration]}
+              onMouseDown={onAnimationPause}
+              onValueChange={(vals) => onIterationChange(vals[0])}
+              className="flex-1 h-2 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-blue-500 hover:accent-blue-400"
+          />
+
+          <span className="text-xs text-neutral-500 font-mono min-w-[30px]">{length}</span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="text-xs text-neutral-400 font-medium">
+            Status: <span className={animationStatus.isRunning ? "text-green-400" : "text-yellow-400"}>
+                        {animationStatus.isRunning ? "Playing" : "Paused"}
+                    </span>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-neutral-400 hover:text-white hover:bg-neutral-800"
+                onClick={() => onIterationChange(Math.max(0, iteration - 1))}
+            >
+              <SkipBack className="h-4 w-4" />
+            </Button>
+
+            <Button
+                variant={animationStatus.isRunning ? "secondary" : "default"}
+                size="sm"
+                className={cn(
+                    "h-8 px-4 gap-2 transition-all",
+                    animationStatus.isRunning
+                        ? "bg-neutral-800 text-white border border-neutral-700"
+                        : "bg-blue-600 hover:bg-blue-500 text-white"
+                )}
+                onClick={animationStatus.isRunning ? onAnimationPause : onAnimationStart}
+            >
+              {animationStatus.isRunning ? (
+                  <>
+                    <Pause className="h-4 w-4" /> Pause
+                  </>
+              ) : (
+                  <>
+                    <Play className="h-4 w-4" /> Play
+                  </>
+              )}
+            </Button>
+
+            <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-neutral-400 hover:text-white hover:bg-neutral-800"
+                onClick={() => onIterationChange(Math.min(length, iteration + 1))}
+            >
+              <SkipForward className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+  );
+};
+
+export default GwoCanvas;

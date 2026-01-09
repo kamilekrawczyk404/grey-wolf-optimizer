@@ -32,7 +32,7 @@ export type OptimizationRun = {
   upperBound: number;
   bestFitness: number;
   bestSolution: number[];
-  solution: number[]
+  solution: number[][]
   dimensions: number;
   history: IterationSnapshot[];
 };
@@ -45,7 +45,7 @@ export type ExperimentRecord = {
 export interface OptimizerDTO {
   bestSolution: number[],
   bestFitness: number,
-  solution: number[],
+  solution: number[][],
   historyJson: IterationSnapshot[],
   message?: string
 }

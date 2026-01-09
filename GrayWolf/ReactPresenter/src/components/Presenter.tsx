@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Container from "./Container";
 import TestsPreview from "./TestsPreview";
 import CanvasConfigConfigure from "./canvas/CanvasConfigConfigure";
-import {CanvasConfig, defaultConfig} from "./canvas/GwoCanvas";
+import GwoCanvas, {CanvasConfig, defaultConfig} from "./canvas/GwoCanvas";
 import {Algorithms, BenchmarkFunctions, ExperimentRecord} from "../types/types";
 import { AnimationStatus } from "../App";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
@@ -80,10 +80,16 @@ const Presenter = () => {
 
     const startAnimation = useCallback(() => {
         setAnimationStatus({ isCompleted: false, isRunning: true });
+
         if (currentTest) {
-            setCurrentIteration(0);
+
+            const totalIterations = currentTest.properties.history.length;
+
+            if (currentIteration >= totalIterations) {
+                setCurrentIteration(0);
+            }
         }
-    }, [currentTest]);
+    }, [currentTest, currentIteration]);
 
     const changeIteration = useCallback((nextIteration: number) => {
         setCurrentIteration(nextIteration);
@@ -133,39 +139,46 @@ const Presenter = () => {
 
     const handleSessionClick = (session: TestSession) => {
         if (session.status === 'completed' && session.result) {
-            let preparedRecord: ExperimentRecord | null = null;
+            try {
+                let preparedRecord: ExperimentRecord | null = null;
 
-            switch (session.mode) {
-                case 'single':
-                    const {solution, bestSolution, algorithm, bestFitness, benchmarkFunction, type, historyJson, duration} = session.result as SingleTestResult
-                    const {upperBound, lowerBound, populationSize, iterations, dimensions} = session.config
+                switch (session.mode) {
+                    case 'single':
+                        const {solution, bestSolution, algorithm, bestFitness, benchmarkFunction, type, historyJson, duration} = session.result as SingleTestResult
+                        const {upperBound, lowerBound, populationSize, iterations, dimensions} = session.config
 
-                    preparedRecord = preparePresenterExperimentRecord({
-                        title: session.name,
-                        optimizerData: {
-                            bestSolution: bestSolution!,
-                            solution: solution!,
-                            historyJson: historyJson!,
-                            bestFitness: bestFitness!,
-                        },
-                        configuration: {
-                            lowerBound,
-                            upperBound,
-                            dimensions,
-                            iterations,
-                            populationSize,
-                            algorithm: algorithm as Algorithms,
-                            benchmarkFunction: benchmarkFunction as BenchmarkFunctions
-                        }
-                    })
-                    break;
-                default:
-                    toast.error("Invalid session mode")
-            }
+                        console.log("LL", historyJson);
+                        preparedRecord = preparePresenterExperimentRecord({
+                            title: session.name,
+                            optimizerData: {
+                                bestSolution: bestSolution!,
+                                solution: solution!,
+                                historyJson: historyJson!,
+                                bestFitness: bestFitness!,
+                            },
+                            configuration: {
+                                lowerBound,
+                                upperBound,
+                                dimensions,
+                                iterations,
+                                populationSize,
+                                algorithm: algorithm as Algorithms,
+                                benchmarkFunction: benchmarkFunction as BenchmarkFunctions
+                            }
+                        })
+                        break;
+                    default:
+                        toast.error("Invalid session mode")
+                }
 
-            if (preparedRecord) {
-                setTests([preparedRecord])
-                setCurrentTest(preparedRecord);
+                if (preparedRecord) {
+                    setTests([preparedRecord])
+                    setCurrentTest(preparedRecord);
+                }
+            } catch (e) {
+                toast.error("Some problems occurs while opening the presenter", {
+                    description: () => "aaa"
+                })
             }
 
             toast.success(`Loaded results for ${session.name}`);
@@ -231,7 +244,7 @@ const Presenter = () => {
     }
 
     return (
-        <Card className={`bg-neutral-900 border-neutral-800 h-full overflow-hidden flex flex-col ${currentTest ? "" : "p-0"}`}>
+        <Card className={`bg-neutral-900 border-neutral-800 h-full overflow-hidden flex flex-col max-w-7xl ${currentTest ? "" : "p-0"}`}>
             {currentTest ? (
                 <div className="grid lg:grid-cols-2 grid-cols-1 h-full gap-2 p-2">
                     <Container className={"flex flex-col gap-2 p-2"}>
@@ -248,7 +261,15 @@ const Presenter = () => {
                         />
                     </Container>
                     <Container className={"content-center"}>
-                        {/* <GwoCanvas ... /> - Odkomentuj gdy będzie gotowe */}
+                         <GwoCanvas
+                             properties={currentTest.properties}
+                             iteration={currentIteration}
+                             onAnimationPause={pauseAnimation}
+                             onAnimationStart={startAnimation}
+                             onIterationChange={changeIteration}
+                             animationStatus={animationStatus}
+                             options={canvasConfig}
+                         />
                     </Container>
                 </div>
             ) : (

@@ -47,7 +47,7 @@ export interface SingleTestResult {
     duration: number;
     bestSolution?: number[];
     bestFitness?: number;
-    solution?: number[];
+    solution?: number[][];
     historyJson?: IterationSnapshot[];
     message?: string;
     error?: string;
@@ -59,7 +59,7 @@ export interface ComparisionRow {
     status: "success" | "failed";
     bestSolution?: number[];
     bestFitness?: number;
-    solution?: number[];
+    solution?: number[][];
     error?: string;
     historyJson?: IterationSnapshot[];
 }

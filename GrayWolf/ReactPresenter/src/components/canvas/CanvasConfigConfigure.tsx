@@ -3,7 +3,7 @@ import { hexToRgbConverter } from "../../utils/colorConverter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider"; // Zakładam, że masz ten komponent z Shadcn
+import { Slider } from "@/components/ui/slider";
 import {
     Settings2,
     MonitorPlay,
@@ -65,7 +65,7 @@ const CanvasConfigConfigure = ({
     };
 
     return (
-        <Card className="bg-neutral-900 border-neutral-800 h-full overflow-y-auto">
+        <Card className="bg-neutral-900 border-neutral-800 h-fit">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Settings2 size={'1.25rem'} />
@@ -98,32 +98,17 @@ const CanvasConfigConfigure = ({
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                                <Label className="text-xs text-neutral-400">Visible Iterations</Label>
-                                <Input
-                                    type="number"
-                                    disabled={isRunning}
-                                    min={1}
-                                    max={iterations}
-                                    value={config.visibleIterations}
-                                    onChange={(e) => updateConfig(prev => ({ ...prev, visibleIterations: parseInt(e.target.value) }))}
-                                    className="h-8 bg-neutral-950 border-neutral-800 text-xs"
-                                />
-                            </div>
-                            <div className="space-y-1">
-                                <Label className="text-xs text-neutral-400 flex items-center gap-1">
-                                    <Grid3X3 className="h-3 w-3" /> Grid Lines
-                                </Label>
-                                <Input
-                                    type="number"
-                                    disabled={isRunning}
-                                    min={0}
-                                    value={config.gridLines}
-                                    onChange={(e) => updateConfig(prev => ({ ...prev, gridLines: parseInt(e.target.value) }))}
-                                    className="h-8 bg-neutral-950 border-neutral-800 text-xs"
-                                />
-                            </div>
+                        <div className="space-y-1">
+                            <Label className="text-xs text-neutral-400">Visible Iterations</Label>
+                            <Input
+                                type="number"
+                                disabled={isRunning}
+                                min={1}
+                                max={iterations}
+                                value={config.visibleIterations}
+                                onChange={(e) => updateConfig(prev => ({ ...prev, visibleIterations: parseInt(e.target.value) }))}
+                                className="h-8 bg-neutral-950 border-neutral-800 text-xs"
+                            />
                         </div>
                     </div>
                 </div>
@@ -142,7 +127,7 @@ const CanvasConfigConfigure = ({
                                 Best Solution
                             </Label>
                             <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-neutral-500 uppercase">Radius</span>
+                                <span className="text-[10px] text-neutral-500 uppercase">Size</span>
                                 <Input
                                     type="number"
                                     disabled={isRunning}
@@ -166,7 +151,7 @@ const CanvasConfigConfigure = ({
                                 Leader Agents
                             </Label>
                             <p className="text-[10px] text-neutral-500">
-                                Agents with isLeader flag set to true
+                                Agents with isLeader: true
                             </p>
                         </div>
                         <ColorPicker
@@ -223,7 +208,6 @@ const ColorPicker = ({
                 )}
                 style={{ backgroundColor: color }}
             >
-                {/* Input jest niewidoczny, ale przykrywa div, więc działa kliknięcie */}
                 <input
                     type="color"
                     disabled={disabled}

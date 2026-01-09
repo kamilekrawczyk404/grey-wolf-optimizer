@@ -139,11 +139,14 @@ const ParameterItem = ({ property, value }: { property: string, value: any }) =>
 
             {isArray ? (
                 <code className="text-xs text-cyan-300 font-mono bg-neutral-900 p-2 rounded border border-neutral-800 break-all leading-relaxed">
-                    [ {(value as number[]).map(n => {
+                    [
+                    {property === 'bestSolution' && (value as number[]).map(n => {
                         const num = Number(n)
 
                         return !isNaN(num) ? num.toFixed(4) : String(n);
-                }).join(', ')} ]
+                }).join(', ')}
+                    {property === 'solution' && (value as number[][]).map(sol => `[ ${sol.map(point => point.toFixed()).join(', ')} ]`).join(', ') }
+                    ]
                 </code>
             ) : (
                 <span className={cn(
