@@ -29,6 +29,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Play } from "lucide-react";
 import { toast } from "sonner";
+import {OptimizerDTO} from "@/types/types";
 
 
 export interface TestConfigurationFormProps {
@@ -151,17 +152,20 @@ export function TestConfigurationForm({ session }: TestConfigurationFormProps) {
                 throw new Error(errorText);
             }
 
-            const data = await response.json();
+            const { bestFitness, bestSolution, historyJson, message, solution }: OptimizerDTO = await response.json();
+
             const duration = (Date.now() - startTime) / 1000;
 
             const result: SingleTestResult = {
                 type: "single",
                 algorithm: values.algorithm,
                 benchmarkFunction: values.benchmarkFunction,
-                bestSolution: data.bestSolution,
+                bestSolution,
+                bestFitness,
+                historyJson,
+                message,
                 duration,
-                historyJson: data.historyJson,
-                message: data.message,
+                solution
             };
 
             setTestResult(activeTab, result);

@@ -1,176 +1,239 @@
-import React, {
-  ComponentProps,
-  Dispatch,
-  ReactNode,
-  SetStateAction,
-  useRef,
-} from "react";
-import { CanvasConfig, Wolf } from "./GwoCanvas";
+import React, { Dispatch, SetStateAction } from "react";
 import { hexToRgbConverter } from "../../utils/colorConverter";
-import SectionContainer from "../SectionContainer";
-import { layoutColors } from "../../colors";
-import Slider from "../form/Slider";
-import NumberInput from "../form/NumberInput";
-import WolfColorSelector from "../form/WolfColorSelector";
-import SolutionColorInput from "../form/SolutionColorInput";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider"; // Zakładam, że masz ten komponent z Shadcn
+import {
+    Settings2,
+    MonitorPlay,
+    Grid3X3,
+    Palette,
+    Circle,
+    Crown,
+    Users
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import {CanvasConfig} from "@/components/canvas/GwoCanvas";
+import {Separator} from "@/components/ui/separator";
+
+const rgbToHex = (color: { r: number; g: number; b: number }) => {
+    const toHex = (c: number) => {
+        const hex = c.toString(16);
+        return hex.length === 1 ? "0" + hex : hex;
+    };
+
+    return "#" + toHex(color.r) + toHex(color.g) + toHex(color.b);
+};
 
 type CanvasConfigConfigureProps = {
-  config: CanvasConfig;
-  updateConfig: Dispatch<SetStateAction<CanvasConfig>>;
-  isRunning: boolean;
-  iterations: number;
-};
-const CanvasConfigConfigure = ({
-  iterations,
-  config,
-  updateConfig,
-  isRunning,
-}: CanvasConfigConfigureProps) => {
-  return (
-    <div>
-      <SectionContainer header={"Canvas configuration panel"}>
-        <div className={"grid lg:grid-cols-3 grid-cols-1 gap-2"}>
-          <Section title={"Animation"}>
-            <Slider
-              disabled={isRunning}
-              id={"animation-duration"}
-              title={"Duration"}
-              min={1}
-              max={1000}
-              step={1}
-              value={config.animationDuration}
-              onChange={(e) =>
-                updateConfig((prev) => ({
-                  ...prev,
-                  animationDuration: parseFloat(e.target.value),
-                }))
-              }
-            />
-            <NumberInput
-              disabled={isRunning}
-              id={"animation-visible-iterations"}
-              title={"Visible iterations"}
-              min={1}
-              max={iterations}
-              value={config.visibleIterations}
-              onChange={(e) =>
-                updateConfig((prev) => ({
-                  ...prev,
-                  visibleIterations: parseInt(e.target.value),
-                }))
-              }
-            />
-          </Section>
-          <Section title={"Grid"}>
-            <NumberInput
-              disabled={isRunning}
-              id={"grid-lines"}
-              title={"Lines"}
-              value={config.gridLines}
-              onChange={(e) =>
-                updateConfig((prev) => ({
-                  ...prev,
-                  gridLines: parseInt(e.target.value),
-                }))
-              }
-            />
-          </Section>
-          <Section title={"Solution"}>
-            <NumberInput
-              disabled={isRunning}
-              id={"solution-size"}
-              title={"Size"}
-              value={config.solutionSize}
-              onChange={(e) =>
-                updateConfig((prev) => ({
-                  ...prev,
-                  solutionSize: parseInt(e.target.value),
-                }))
-              }
-            />
-            <div className={"w-full flex flex-col gap-1"}>
-              <span
-                className={`text-xs uppercase font-[500] ${layoutColors.neutral.text.dark}`}
-              >
-                Color
-              </span>
-              <SolutionColorInput
-                disabled={isRunning}
-                colorValue={config.colors.solution}
-                onChange={(rgbColor) =>
-                  updateConfig((prev) => ({
-                    ...prev,
-                    colors: { ...prev.colors, solution: rgbColor },
-                  }))
-                }
-              />
-            </div>
-          </Section>
-        </div>
-        <Section title={"Wolfs"} className={"lg:!flex-row"}>
-          <div className={"basis-1/3 w-full items-start"}>
-            <NumberInput
-              disabled={isRunning}
-              id={"wolf-size"}
-              title={"Size"}
-              value={config.wolfRadius}
-              onChange={(e) =>
-                updateConfig((prev) => ({
-                  ...prev,
-                  wolfRadius: parseInt(e.target.value),
-                }))
-              }
-            />
-          </div>
-          <div className={"basis-2/3 flex flex-col w-full gap-1"}>
-            <span
-              className={`text-xs inline-block uppercase font-[500] ${layoutColors.neutral.text.dark}`}
-            >
-              Colors
-            </span>
-            <div className={"grid lg:grid-cols-4 grid-cols-2 gap-2"}>
-              {Object.keys(config.colors.wolfs).map((wolfType) => (
-                <WolfColorSelector
-                  disabled={isRunning}
-                  key={wolfType}
-                  wolfType={wolfType as Wolf}
-                  colorValue={config.colors.wolfs[wolfType as Wolf]}
-                  onColorChange={(rgbColor) =>
-                    updateConfig((prev) => ({
-                      ...prev,
-                      colors: {
-                        ...prev.colors,
-                        wolfs: { ...prev.colors.wolfs, [wolfType]: rgbColor },
-                      },
-                    }))
-                  }
-                />
-              ))}
-            </div>
-          </div>
-        </Section>
-      </SectionContainer>
-    </div>
-  );
+    config: CanvasConfig;
+    updateConfig: Dispatch<SetStateAction<CanvasConfig>>;
+    isRunning: boolean;
+    iterations: number;
 };
 
-const Section = ({
-  title,
-  children,
-  className = "",
-}: {
-  title: string;
-  children: ReactNode;
-  className?: string;
-}) => (
-  <div
-    className={`p-2 w-full space-y-1 rounded-md  ${layoutColors.neutral.background.light}`}
-  >
-    <p className={`mb-1 ${layoutColors.neutral.text.primary}`}>{title}</p>
-    <div className={`flex flex-col gap-2 items-center ${className}`}>
-      {children}
-    </div>
-  </div>
-);
+const CanvasConfigConfigure = ({
+                                   iterations,
+                                   config,
+                                   updateConfig,
+                                   isRunning,
+                               }: CanvasConfigConfigureProps) => {
+
+    const handleColorChange = (
+        category: 'solution' | 'leader' | 'follower',
+        hexColor: string
+    ) => {
+        const rgb = hexToRgbConverter(hexColor);
+
+        updateConfig((prev) => {
+            if (category === 'solution') {
+                return { ...prev, colors: { ...prev.colors, solution: rgb } };
+            }
+
+            return {
+                ...prev,
+                colors: {
+                    ...prev.colors,
+                    agents: {
+                        ...prev.colors.agents,
+                        [category]: rgb
+                    }
+                }
+            };
+        });
+    };
+
+    return (
+        <Card className="bg-neutral-900 border-neutral-800 h-full overflow-y-auto">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <Settings2 size={'1.25rem'} />
+                    Canvas Configuration
+                </CardTitle>
+            </CardHeader>
+
+            <CardContent className="flex sm:flex-row flex-col gap-4">
+                <div className="space-y-3 flex-1">
+                    <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+                        <MonitorPlay className="text-blue-400" size={'1rem'} /> Animation Settings
+                    </h4>
+
+                    <div className="grid gap-4">
+                        <div className="space-y-2">
+                            <div className="flex justify-between">
+                                <Label className="text-xs text-neutral-400">Duration (ms)</Label>
+                                <span className="text-xs text-neutral-300 font-mono">{config.animationDuration}ms</span>
+                            </div>
+                            <Slider
+                                disabled={isRunning}
+                                min={1}
+                                max={1000}
+                                step={10}
+                                value={[config.animationDuration]}
+                                onValueChange={(vals) =>
+                                    updateConfig((prev) => ({ ...prev, animationDuration: vals[0] }))
+                                }
+                                className="[&_.bg-primary]:bg-blue-500"
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                                <Label className="text-xs text-neutral-400">Visible Iterations</Label>
+                                <Input
+                                    type="number"
+                                    disabled={isRunning}
+                                    min={1}
+                                    max={iterations}
+                                    value={config.visibleIterations}
+                                    onChange={(e) => updateConfig(prev => ({ ...prev, visibleIterations: parseInt(e.target.value) }))}
+                                    className="h-8 bg-neutral-950 border-neutral-800 text-xs"
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <Label className="text-xs text-neutral-400 flex items-center gap-1">
+                                    <Grid3X3 className="h-3 w-3" /> Grid Lines
+                                </Label>
+                                <Input
+                                    type="number"
+                                    disabled={isRunning}
+                                    min={0}
+                                    value={config.gridLines}
+                                    onChange={(e) => updateConfig(prev => ({ ...prev, gridLines: parseInt(e.target.value) }))}
+                                    className="h-8 bg-neutral-950 border-neutral-800 text-xs"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <Separator orientation={'vertical'} />
+
+                <div className="space-y-3 flex-1">
+                    <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+                        <Palette className="text-purple-400" size={'1rem'} /> Visuals
+                    </h4>
+
+                    <div className="grid grid-cols-[1fr_auto] gap-4 items-center p-2 rounded-md border border-neutral-800 bg-neutral-950/30">
+                        <div className="space-y-1">
+                            <Label className="text-xs text-white flex items-center gap-2">
+                                <Circle className="h-3 w-3 text-green-400 fill-green-400" />
+                                Best Solution
+                            </Label>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-neutral-500 uppercase">Radius</span>
+                                <Input
+                                    type="number"
+                                    disabled={isRunning}
+                                    value={config.solutionSize}
+                                    onChange={(e) => updateConfig(prev => ({ ...prev, solutionSize: parseInt(e.target.value) }))}
+                                    className="h-6 w-16 bg-neutral-900 border-neutral-800 text-[10px] px-1"
+                                />
+                            </div>
+                        </div>
+                        <ColorPicker
+                            color={rgbToHex(config.colors.solution)}
+                            onChange={(hex) => handleColorChange('solution', hex)}
+                            disabled={isRunning}
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-[1fr_auto] gap-4 items-center p-2 rounded-md border border-neutral-800 bg-neutral-950/30">
+                        <div className="space-y-1">
+                            <Label className="text-xs text-white flex items-center gap-2">
+                                <Crown className="h-3 w-3 text-yellow-400 fill-yellow-400" />
+                                Leader Agents
+                            </Label>
+                            <p className="text-[10px] text-neutral-500">
+                                Agents with isLeader flag set to true
+                            </p>
+                        </div>
+                        <ColorPicker
+                            color={rgbToHex(config.colors.agents.leader)}
+                            onChange={(hex) => handleColorChange('leader', hex)}
+                            disabled={isRunning}
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-[1fr_auto] gap-4 items-center p-2 rounded-md border border-neutral-800 bg-neutral-950/30">
+                        <div className="space-y-1">
+                            <Label className="text-xs text-white flex items-center gap-2">
+                                <Users className="h-3 w-3 text-neutral-400" />
+                                Follower Agents
+                            </Label>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-neutral-500 uppercase">Radius</span>
+                                <Input
+                                    type="number"
+                                    disabled={isRunning}
+                                    value={config.agentRadius}
+                                    onChange={(e) => updateConfig(prev => ({ ...prev, agentRadius: parseInt(e.target.value) }))}
+                                    className="h-6 w-16 bg-neutral-900 border-neutral-800 text-[10px] px-1"
+                                />
+                            </div>
+                        </div>
+                        <ColorPicker
+                            color={rgbToHex(config.colors.agents.follower)}
+                            onChange={(hex) => handleColorChange('follower', hex)}
+                            disabled={isRunning}
+                        />
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+};
+
+const ColorPicker = ({
+                         color,
+                         onChange,
+                         disabled
+                     }: {
+    color: string,
+    onChange: (val: string) => void,
+    disabled: boolean
+}) => {
+    return (
+        <div className="relative group">
+            <div
+                className={cn(
+                    "w-8 h-8 rounded-full border border-neutral-700 shadow-sm cursor-pointer transition-transform hover:scale-105",
+                    disabled && "opacity-50 cursor-not-allowed hover:scale-100"
+                )}
+                style={{ backgroundColor: color }}
+            >
+                {/* Input jest niewidoczny, ale przykrywa div, więc działa kliknięcie */}
+                <input
+                    type="color"
+                    disabled={disabled}
+                    value={color}
+                    onChange={(e) => onChange(e.target.value)}
+                    className="opacity-0 w-full h-full cursor-pointer absolute inset-0"
+                />
+            </div>
+        </div>
+    );
+};
 
 export default CanvasConfigConfigure;

@@ -1,22 +1,32 @@
 import { HTMLAttributes } from "react";
+import {TestSession} from "@/stores/test-store";
 
-export type WolfHistory = {
-  isAlpha: boolean;
-  isBeta: boolean;
-  // isGamma: boolean;
-  isDelta: boolean;
-  // fitness: number[];
-  fitness: number;
-  position: number[];
-  iteration?: number;
-};
+export interface OptimizerConfiguration {
+  iterations: number,
+  dimensions: number,
+  lowerBound: number,
+  upperBound: number,
+  populationSize: number,
+  benchmarkFunction: BenchmarkFunctions,
+  algorithm: Algorithms
+}
 
-export type IterationHistory = {
-  wolves: WolfHistory[];
+export interface AgentState {
+  isLeader: boolean,
+  role: string,
+  fitness: number,
+  position: number[]
+}
+
+export interface IterationSnapshot {
   iteration: number;
-};
+  entities: AgentState[]
+}
 
-export type OptimizationProperties = {
+export type OptimizationRun = {
+  algorithm: Algorithms,
+  benchmarkFunction: BenchmarkFunctions;
+  populationSize: number,
   iterations: number;
   lowerBound: number;
   upperBound: number;
@@ -24,50 +34,50 @@ export type OptimizationProperties = {
   bestSolution: number[];
   solution: number[]
   dimensions: number;
-  benchmarkFunction: string;
-  history: IterationHistory[];
+  history: IterationSnapshot[];
 };
 
-export type OptimizationTest = {
+export type ExperimentRecord = {
   description: string;
-  properties: OptimizationProperties;
+  properties: OptimizationRun;
 };
+
+export interface OptimizerDTO {
+  bestSolution: number[],
+  bestFitness: number,
+  solution: number[],
+  historyJson: IterationSnapshot[],
+  message?: string
+}
 
 function isNumberArray(arr: any): arr is number[] {
   return Array.isArray(arr) && arr.every((item) => typeof item === "number");
 }
 
-export function isWolfHistory(obj: any): obj is WolfHistory {
-  if (!obj || typeof obj !== "object") {
-    return false;
-  }
+const isAgentState = (obj: any) => {
+  if (!obj || typeof obj !== 'object') return false
 
-  return (
-    typeof obj.isAlpha === "boolean" &&
-    typeof obj.isBeta === "boolean" &&
-    typeof obj.isDelta === "boolean" &&
-    // isNumberArray(obj.fitness) &&
-    typeof obj.fitness === 'number' &&
-    isNumberArray(obj.position) &&
-    (!("iteration" in obj) || typeof obj.iteration === "number") // Check optional property
-  );
+  return isNumberArray(obj.position) &&
+      typeof obj.fitness === 'number' &&
+      typeof obj.role === 'string' &&
+      typeof obj.isLeader === 'boolean'
 }
 
-export function isIterationHistory(obj: any): obj is IterationHistory {
+export function isIterationSnapshot(obj: any): obj is IterationSnapshot {
   if (!obj || typeof obj !== "object") {
     return false;
   }
 
   return (
     typeof obj.iteration === "number" &&
-    Array.isArray(obj.wolves) &&
-    obj.wolves.every(isWolfHistory) // Validate every wolf in the array
+    Array.isArray(obj.iterations) &&
+    obj.iterations.every(isAgentState) // Validate each entity
   );
 }
 
-export function isOptimizationProperties(
+export function isOptimizationRun(
   obj: any,
-): obj is OptimizationProperties {
+): obj is OptimizationRun {
   if (!obj || typeof obj !== "object") {
     return false;
   }
@@ -78,30 +88,33 @@ export function isOptimizationProperties(
     typeof obj.upperBound === "number" &&
     typeof obj.dimensions === "number" &&
     typeof obj.bestFitness === "number" &&
+    typeof obj.benchmarkFunction === "string" &&
+    isNumberArray(obj.globalMinimumCoords) &&
     isNumberArray(obj.bestSolution) &&
     Array.isArray(obj.history) &&
-    obj.history.every(isIterationHistory) // Validate every item in history
+    obj.entities.every(isIterationSnapshot) // Validate every item in history
   );
 }
 
-export function isOptimizationTest(obj: any): obj is OptimizationTest {
+export function isProcessedReportWithDescription(obj: any): obj is ExperimentRecord {
   if (!obj || typeof obj !== "object") {
     return false;
   }
 
   return (
     typeof obj.description === "string" &&
-    isOptimizationProperties(obj.properties) // Validate the nested properties object
+    isOptimizationRun(obj.properties) // Validate the nested properties object
   );
 }
 
-export function isOptimizationTestArray(obj: any): obj is OptimizationTest[] {
-  return Array.isArray(obj) && obj.every(isOptimizationTest);
+export function isExperimentRecord(obj: any): obj is ExperimentRecord[] {
+  return Array.isArray(obj) && obj.every(isProcessedReportWithDescription);
 }
 
 export type HeaderProps = HTMLAttributes<HTMLHeadingElement> & {
   accent?: boolean;
 };
+
 export enum Algorithms {
     GWO = "GWO",
     Aquila = "Aquila",

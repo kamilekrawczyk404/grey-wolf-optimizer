@@ -1,9 +1,9 @@
-export const hexToRgbConverter = (hexValue: string): string => {
+export const hexToRgbConverter = (hexValue: string): {r: number, g: number, b: number} => {
   const r = parseInt(hexValue.slice(1, 3), 16),
     g = parseInt(hexValue.slice(3, 5), 16),
     b = parseInt(hexValue.slice(5, 7), 16);
 
-  return "rgb(" + r + ", " + g + ", " + b + ")";
+  return { r, g, b }
 };
 
 export const addAlphaToRgb = (rgbValue: string, alpha = 1) => {

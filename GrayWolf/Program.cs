@@ -96,29 +96,31 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
 
             Console.WriteLine("Test (API) zakończony sukcesem.");
 
-            var reportingSystem = new RaportingSystem();
+            // var reportingSystem = new RaportingSystem();
 
             List<IterationLog> historyLogs = new List<IterationLog>();
             if (optimizer is GWOptimizer gwo) historyLogs = gwo.FullHistory;
             else if (optimizer is AquilaOptimizer aquila) historyLogs = aquila.FullHistory;
 
-            reportingSystem.GenerateReport(
-                optimizer.Name,
-                function,
-                optimizer.XBest,
-                optimizer.FBest,
-                historyLogs,
-                optimizerRequest.Iterations,
-                optimizerRequest.PopulationSize,
-                optimizerRequest.Dimensions,
-                optimizerRequest.LowerBound,
-                optimizerRequest.UpperBound
-            );
+            // reportingSystem.GenerateReport(
+            //     optimizer.Name,
+            //     function,
+            //     optimizer.XBest,
+            //     optimizer.FBest,
+            //     historyLogs,
+            //     optimizerRequest.Iterations,
+            //     optimizerRequest.PopulationSize,
+            //     optimizerRequest.Dimensions,
+            //     optimizerRequest.LowerBound,
+            //     optimizerRequest.UpperBound
+            // );
 
             return Results.Ok(new
             {
                 RunId = runId,
                 BestSolution = optimizer.XBest,
+                BestFitness = optimizer.FBest,
+                Solution = function.GlobalMinimum,
                 HistoryJson = historyLogs,
                 Message = $"Test algorytmu {optimizer.Name} przeprowadzono pomyślnie."
             });
@@ -191,17 +193,17 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
 
             var stats = StatisticsService.CalculateStats(trials);
 
-            var reportingSystem = new RaportingSystem();
-            reportingSystem.GenerateMultiTrialReport(
-                optimizerRequest.Algorithm,
-                function,
-                stats,
-                optimizerRequest.Iterations,
-                optimizerRequest.PopulationSize,
-                optimizerRequest.Dimensions,
-                optimizerRequest.LowerBound,
-                optimizerRequest.UpperBound
-            );
+            // var reportingSystem = new RaportingSystem();
+            // reportingSystem.GenerateMultiTrialReport(
+            //     optimizerRequest.Algorithm,
+            //     function,
+            //     stats,
+            //     optimizerRequest.Iterations,
+            //     optimizerRequest.PopulationSize,
+            //     optimizerRequest.Dimensions,
+            //     optimizerRequest.LowerBound,
+            //     optimizerRequest.UpperBound
+            // );
 
             return Results.Ok(new
             {

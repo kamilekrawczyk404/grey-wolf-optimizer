@@ -1,8 +1,8 @@
 import React from "react";
-import { OptimizationTest } from "../types/types";
+import { ExperimentRecord } from "../types/types";
 
 type OptimizationProps = {
-  tests: OptimizationTest[];
+  tests: ExperimentRecord[];
 };
 const Optimization = ({ tests }: OptimizationProps) => {
   return <div>Optimization</div>;

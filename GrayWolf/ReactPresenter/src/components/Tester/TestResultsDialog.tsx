@@ -101,8 +101,6 @@ export function TestResultsDialog({
     if (session.result.type === 'multi') {
         const result = session.result as MultiTestResult;
 
-        console.log(result.results)
-
         return (
             <Dialog open={open} onOpenChange={(val) => !val && handleClose()}>
                 <DialogContent className="max-w-5xl bg-neutral-900 border-neutral-800">
@@ -140,14 +138,14 @@ export function TestResultsDialog({
                                         <TableCell className="font-mono text-blue-300">
                                             <ScrollArea className="h-[120px] min-h-0 rounded-md border border-neutral-700 p-3 bg-neutral-950">
                                                 <div className="text-sm text-white font-mono leading-relaxed space-y-1">
-                                                    {row.bestSolution.map((value, index) => (
+                                                    {row.status === 'success' ? row.bestSolution!.map((value, index) => (
                                                         <div key={index} className="flex justify-between py-1 border-b border-neutral-800 last:border-0">
                                                             <span className="text-neutral-500">x[{index}]</span>
                                                             <span className="text-green-400">
                                                         {typeof value === 'number' ? value.toExponential(6) : value}
                                                     </span>
                                                         </div>
-                                                    ))}
+                                                    )) : <p className={'text-red-400'}>Data unavailable</p>}
                                                 </div>
                                             </ScrollArea>
                                         </TableCell>
@@ -159,7 +157,23 @@ export function TestResultsDialog({
 
                     <DialogFooter>
                         <Button onClick={handleClose} variant="outline" className="border-neutral-700 text-white">Close</Button>
+
+                        {result.results.some(r => r.historyJson && r.historyJson.length > 0) && (
+                            <Button
+                                variant="default"
+                                onClick={() => {
+                                    // TODO: Przekierowanie do wizualizatora z historyJson
+                                    // console.log("HistoryJson:", result?.historyJson);
+                                    handleClose();
+                                }}
+                                className="bg-blue-600 hover:bg-blue-500 text-white"
+                            >
+                                View Visualization
+                            </Button>
+                        )}
                     </DialogFooter>
+
+
                 </DialogContent>
             </Dialog>
         )

@@ -17,6 +17,8 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/c
 import {Checkbox} from "@/components/ui/checkbox";
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
+import {preparePresenterExperimentRecord, usePresenter} from "@/context/PresenterContext";
+import {OptimizerDTO} from "@/types/types";
 
 export interface MultiAlgorithmsConfigurationFromProps {
     session: TestSession
@@ -24,6 +26,8 @@ export interface MultiAlgorithmsConfigurationFromProps {
 
 export const MultiAlgorithmConfigurationForm = ({session}: MultiAlgorithmsConfigurationFromProps) => {
     const {activeTab, setSessionStatus, setTestResult} = useTestStore();
+
+    const { setRecords } = usePresenter();
 
     const defaultValues: MultiTestFormValues = {
         benchmarkFunction: BenchmarkFunctions.Rastrigin,
@@ -96,14 +100,16 @@ export const MultiAlgorithmConfigurationForm = ({session}: MultiAlgorithmsConfig
 
                 if (!response.ok) throw new Error(`API error for ${algo}`);
 
-                const data = await response.json();
+                const { historyJson, bestFitness, bestSolution, solution} = await response.json() as OptimizerDTO;
 
                 comparisionResults.push({
-                    algorithm: algo,
-                    bestSolution: data.bestSolution,
+                    status: "success",
                     duration: (Date.now() - startTime) / 1000,
-                    status: "success"
-                    // fitness: data.
+                    algorithm: algo,
+                    historyJson,
+                    bestSolution,
+                    bestFitness,
+                    solution
                 });
 
             } catch(e) {
@@ -114,36 +120,26 @@ export const MultiAlgorithmConfigurationForm = ({session}: MultiAlgorithmsConfig
                     status: "failed",
                     error: "Connection failed",
                     duration: (Date.now() - startTime) / 1000,
-                    bestSolution: []
                 });
             }
         }
-
-        console.log(comparisionResults)
 
         const algorithmsNames = values.selectedAlgorithms.length > 1 ? values.selectedAlgorithms.join(", ") : values.selectedAlgorithms[0]
 
         setTestResult(activeTab, {
             type: "multi",
             benchmarkFunction: values.benchmarkFunction,
-            // results: comparisionResults.map(r => ({
-            //     algorithm: r.algorithm,
-            //     duration: r.duration,
-            //     bestSolution: r.
-            // }))
             results: comparisionResults,
             message: `Comparision of ${algorithmsNames} completed`
         })
 
-        setSessionStatus(session.id, "completed", {
-            endTime: Date.now()
-        })
+        setSessionStatus(activeTab, hasError ? "error" : "completed", { endTime: Date.now() });
 
-        const totalDuration = comparisionResults.reduce((total, cr) => total += cr.duration, 0)
-
-        toast.success("Comparision completed successfully", {
-            description: `${values.selectedAlgorithms.length} algorithm${values.selectedAlgorithms.length > 1 ? 's' : ''} finished in ${totalDuration.toFixed(2)}s`
-        })
+        if (!hasError) {
+            toast.success(`Comparison completed for ${values.selectedAlgorithms.length} algorithms.`);
+        } else {
+            toast.warning("Benchmark completed with some errors.");
+        }
     }
 
     if (session.id !== activeTab) return null;

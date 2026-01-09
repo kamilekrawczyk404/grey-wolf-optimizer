@@ -2,13 +2,12 @@
 import { persist, createJSONStorage } from "zustand/middleware";
 import { z } from "zod";
 import { BENCHMARK_CONFIGS, ALGORITHM_CONFIGS } from "./benchmark-configs";
-import { Algorithms, BenchmarkFunctions } from "../types/types";
+import {Algorithms, BenchmarkFunctions, ExperimentRecord, IterationSnapshot} from "../types/types";
 
 export type SessionStatus = "idle" | "running" | "completed" | "error" | "cancelled";
 export { Algorithms, BenchmarkFunctions };
 
 // Schema Zod
-
 export const singleTestFormSchema = z.object({
     algorithm: z.nativeEnum(Algorithms),
     populationSize: z.number().min(10).max(1000),
@@ -45,9 +44,11 @@ export interface SingleTestResult {
     type: "single"
     algorithm: string;
     benchmarkFunction: string;
-    bestSolution: number[];
     duration: number;
-    historyJson?: string;
+    bestSolution?: number[];
+    bestFitness?: number;
+    solution?: number[];
+    historyJson?: IterationSnapshot[];
     message?: string;
     error?: string;
 }
@@ -55,16 +56,19 @@ export interface SingleTestResult {
 export interface ComparisionRow {
     algorithm: string;
     duration: number;
-    bestSolution: number[],
-    status: "success" | "failed",
-    error?: string
+    status: "success" | "failed";
+    bestSolution?: number[];
+    bestFitness?: number;
+    solution?: number[];
+    error?: string;
+    historyJson?: IterationSnapshot[];
 }
 
 export interface MultiTestResult {
-    type: "multi",
+    type: "multi";
     benchmarkFunction: string;
-    results: ComparisionRow[],
-    message?: string
+    results: ComparisionRow[];
+    message?: string;
 }
 
 export type TestFormValues = SingleTestFormValues | MultiTestFormValues
@@ -73,9 +77,9 @@ export type TestResult = SingleTestResult | MultiTestResult
 
 export interface TestSession {
     id: string;
-    mode: TestMode,
+    mode: TestMode;
     name: string;
-    config: TestFormValues
+    config: TestFormValues;
     status: SessionStatus;
     result: TestResult | null;
     startTime?: number;
