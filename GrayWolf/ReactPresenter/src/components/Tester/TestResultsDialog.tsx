@@ -1,4 +1,11 @@
-import { TestSession, useTestStore } from "@/stores/test-store";
+import {
+  MultiTestFormValues,
+  MultiTestResult,
+  SingleTestFormValues,
+  SingleTestResult,
+  TestSession,
+  useTestStore,
+} from "@/stores/test-store";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +25,16 @@ import {
   Clock,
   Activity,
   Users,
+  BarChart3,
 } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface TestResultsDialogProps {
   open: boolean;
@@ -33,7 +49,7 @@ export function TestResultsDialog({
 }: TestResultsDialogProps) {
   const { markResultsSeen } = useTestStore();
 
-  if (!session) return null;
+  if (!session || !session.result) return null;
 
   const handleClose = () => {
     markResultsSeen(session.id);
@@ -76,9 +92,14 @@ export function TestResultsDialog({
   };
 
   const getStatusDescription = () => {
+    const processedObject =
+      result.type === "single"
+        ? (session.config as SingleTestFormValues).algorithm
+        : (session.config as MultiTestFormValues).benchmarkFunction;
+
     switch (session.status) {
       case "completed":
-        return `${session.config.algorithm} optimization completed for ${session.name}`;
+        return `${processedObject} optimization completed for ${session.name}`;
       case "cancelled":
         return `Test execution was cancelled for ${session.name}`;
       case "error":
@@ -87,6 +108,105 @@ export function TestResultsDialog({
         return "";
     }
   };
+
+  if (session.result.type === "multi") {
+    const result = session.result as MultiTestResult;
+
+    console.log(result.results);
+
+    return (
+      <Dialog open={open} onOpenChange={(val) => !val && handleClose()}>
+        <DialogContent className="max-w-5xl bg-neutral-900 border-neutral-800">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <BarChart3 className="text-blue-500" />
+              Algorithm Comparison Results
+            </DialogTitle>
+            <DialogDescription>
+              Benchmark: {result.benchmarkFunction} | Iterations:{" "}
+              {session.config.iterations}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="border border-neutral-700 rounded-md overflow-hidden">
+            <Table>
+              <TableHeader className="bg-neutral-800">
+                <TableRow className="border-neutral-700 hover:bg-neutral-800">
+                  <TableHead className="text-neutral-300">Algorithm</TableHead>
+                  <TableHead className="text-neutral-300">Status</TableHead>
+                  <TableHead className="text-neutral-300">
+                    Duration (s)
+                  </TableHead>
+                  <TableHead className="text-neutral-300">
+                    Result (Fitness)
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {result.results.map((row, idx) => (
+                  <TableRow
+                    key={idx}
+                    className="border-neutral-800 hover:bg-neutral-800/50"
+                  >
+                    <TableCell className="font-medium text-white">
+                      {row.algorithm}
+                    </TableCell>
+                    <TableCell>
+                      {row.status === "success" ? (
+                        <Badge className="bg-green-900 text-green-300 hover:bg-green-900">
+                          Success
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-red-900 text-red-300 hover:bg-red-900">
+                          Failed
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-neutral-300">
+                      {row.duration.toFixed(3)}s
+                    </TableCell>
+                    <TableCell className="font-mono text-blue-300">
+                      <ScrollArea className="h-[120px] min-h-0 rounded-md border border-neutral-700 p-3 bg-neutral-950">
+                        <div className="text-sm text-white font-mono leading-relaxed space-y-1">
+                          {row.bestSolution.map((value, index) => (
+                            <div
+                              key={index}
+                              className="flex justify-between py-1 border-b border-neutral-800 last:border-0"
+                            >
+                              <span className="text-neutral-500">
+                                x[{index}]
+                              </span>
+                              <span className="text-green-400">
+                                {typeof value === "number"
+                                  ? value.toExponential(6)
+                                  : value}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          <DialogFooter>
+            <Button
+              onClick={handleClose}
+              variant="outline"
+              className="border-neutral-700 text-white"
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  const result = session.result as SingleTestResult;
 
   return (
     <Dialog
@@ -120,8 +240,8 @@ export function TestResultsDialog({
                   <div className="text-center">
                     <Clock className="h-5 w-5 mx-auto mb-2 text-blue-400" />
                     <div className="text-2xl font-bold text-white">
-                      {session.result?.duration
-                        ? formatDuration(session.result.duration)
+                      {result.duration
+                        ? formatDuration(result.duration)
                         : "N/A"}
                     </div>
                     <div className="text-sm text-neutral-400">
@@ -171,7 +291,7 @@ export function TestResultsDialog({
                       variant="secondary"
                       className="bg-blue-600/20 text-blue-400 border-blue-600"
                     >
-                      {session.config.algorithm}
+                      {result.algorithm}
                     </Badge>
                   </div>
                   <div className="flex justify-between items-center p-2 rounded bg-neutral-900/50">
@@ -180,7 +300,7 @@ export function TestResultsDialog({
                       variant="secondary"
                       className="bg-purple-600/20 text-purple-400 border-purple-600"
                     >
-                      {session.config.benchmarkFunction}
+                      {result.benchmarkFunction}
                     </Badge>
                   </div>
                   <div className="flex justify-between items-center p-2 rounded bg-neutral-900/50">
@@ -200,10 +320,10 @@ export function TestResultsDialog({
             </Card>
 
             {/* Best Solution */}
-            {session.result &&
-              !session.result.error &&
-              session.result.bestSolution &&
-              session.result.bestSolution.length > 0 && (
+            {result &&
+              !result.error &&
+              result.bestSolution &&
+              result.bestSolution.length > 0 && (
                 <Card className="bg-neutral-800 border-neutral-700">
                   <CardContent className="pt-4">
                     <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
@@ -211,12 +331,12 @@ export function TestResultsDialog({
                         Best Solution
                       </Badge>
                       <span className="text-xs text-neutral-400">
-                        ({session.result.bestSolution.length} dimensions)
+                        ({result.bestSolution.length} dimensions)
                       </span>
                     </h4>
                     <ScrollArea className="h-[120px] min-h-0 rounded-md border border-neutral-700 p-3 bg-neutral-950">
                       <div className="text-sm text-white font-mono leading-relaxed space-y-1">
-                        {session.result.bestSolution.map((value, index) => (
+                        {result.bestSolution.map((value, index) => (
                           <div
                             key={index}
                             className="flex justify-between py-1 border-b border-neutral-800 last:border-0"
@@ -236,7 +356,7 @@ export function TestResultsDialog({
               )}
 
             {/* Error Message */}
-            {session.result?.error && (
+            {result?.error && (
               <Card className="bg-red-900/20 border-red-800">
                 <CardContent className="pt-4">
                   <div className="flex items-start gap-2">
@@ -246,7 +366,7 @@ export function TestResultsDialog({
                         Error Details
                       </h4>
                       <p className="text-sm text-red-300 font-mono bg-red-950/50 p-2 rounded break-all">
-                        {session.result.error}
+                        {result.error}
                       </p>
                     </div>
                   </div>
@@ -255,7 +375,7 @@ export function TestResultsDialog({
             )}
 
             {/* Additional Info */}
-            {session.result?.message && (
+            {result?.message && (
               <Card className="bg-blue-900/20 border-blue-800">
                 <CardContent className="pt-4">
                   <div className="flex items-start gap-2">
@@ -264,9 +384,7 @@ export function TestResultsDialog({
                       <h4 className="text-sm font-medium text-blue-400 mb-1">
                         Status
                       </h4>
-                      <p className="text-sm text-blue-300">
-                        {session.result.message}
-                      </p>
+                      <p className="text-sm text-blue-300">{result.message}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -290,7 +408,7 @@ export function TestResultsDialog({
                 variant="default"
                 onClick={() => {
                   // TODO: Przekierowanie do wizualizatora z historyJson
-                  console.log("HistoryJson:", session.result?.historyJson);
+                  console.log("HistoryJson:", result?.historyJson);
                   handleClose();
                 }}
                 className="bg-blue-600 hover:bg-blue-500 text-white"

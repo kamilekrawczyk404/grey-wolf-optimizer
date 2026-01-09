@@ -1,15 +1,14 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { useEffect, useRef } from "react";
 import {
   type TestSession,
-  type TestFormValues,
-  type TestResult,
   useTestStore,
-  testFormSchema,
   Algorithms,
   BenchmarkFunctions,
+  SingleTestFormValues,
+  SingleTestResult,
+  singleTestFormSchema,
 } from "@/stores/test-store";
 import {
   BENCHMARK_CONFIGS,
@@ -51,8 +50,8 @@ export function TestConfigurationForm({ session }: TestConfigurationFormProps) {
   } = useTestStore();
   const previousTabRef = useRef<string>(activeTab);
 
-  const form = useForm<TestFormValues>({
-    resolver: zodResolver(testFormSchema),
+  const form = useForm<SingleTestFormValues>({
+    resolver: zodResolver(singleTestFormSchema),
     defaultValues: session.config,
   });
 
@@ -127,7 +126,7 @@ export function TestConfigurationForm({ session }: TestConfigurationFormProps) {
 
   const hasCheckpoint = !!(session.runId && session.status === "idle");
 
-  const onSubmit = async (values: TestFormValues, isResume = false) => {
+  const onSubmit = async (values: SingleTestFormValues, isResume = false) => {
     const startTime = Date.now();
 
     try {
@@ -202,7 +201,8 @@ export function TestConfigurationForm({ session }: TestConfigurationFormProps) {
 
       const duration = (Date.now() - startTime) / 1000;
 
-      const result: TestResult = {
+      const result: SingleTestResult = {
+        type: "single",
         algorithm: values.algorithm,
         benchmarkFunction: values.benchmarkFunction,
         bestSolution: data.bestSolution || [],

@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { TestSession, useTestStore } from "@/stores/test-store";
+import {
+  MultiTestFormValues,
+  SingleTestFormValues,
+  TestSession,
+  useTestStore,
+} from "@/stores/test-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -14,6 +19,10 @@ interface RunningTestViewProps {
 export function RunningTestView({ session }: RunningTestViewProps) {
   const { cancelSession } = useTestStore();
   const [, setTick] = useState(0);
+
+  const isMultiTest =
+    session.config?.selectedAlgorithms &&
+    session.config.selectedAlgorithms.length > 0;
 
   // Force re-render every second to update elapsed time
   useEffect(() => {
@@ -41,7 +50,7 @@ export function RunningTestView({ session }: RunningTestViewProps) {
         <CardTitle className="flex items-center justify-between text-white">
           <div className="flex items-center gap-2">
             <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
-            Running Test
+            {isMultiTest ? "Running Comparision" : "Running Test"}
           </div>
           <Button
             variant="destructive"
@@ -58,10 +67,28 @@ export function RunningTestView({ session }: RunningTestViewProps) {
       <CardContent className="space-y-4">
         {/* Algorithm Info */}
         <div className="flex items-center justify-between text-sm">
-          <span className="text-neutral-400">Algorithm:</span>
-          <Badge variant="secondary" className="bg-neutral-800">
-            {session.config.algorithm}
-          </Badge>
+          <span className="text-neutral-400">
+            {isMultiTest ? "Algorithms:" : "Algorithm:"}
+          </span>
+          {isMultiTest ? (
+            <div className={"flex flex-wrap gap-1 justify-end max-w-[70%]"}>
+              {session.config.selectedAlgorithms?.map((algo) => (
+                <Badge
+                  key={"algo"}
+                  variant={"outline"}
+                  className={
+                    "bg-neutral-800 border-neutral-700 text-neutral-300"
+                  }
+                >
+                  {algo}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <Badge variant="secondary" className="bg-neutral-800">
+              {session.config.algorithm}
+            </Badge>
+          )}
         </div>
 
         <div className="flex items-center justify-between text-sm">
@@ -74,7 +101,11 @@ export function RunningTestView({ session }: RunningTestViewProps) {
         {/* Progress Indicator */}
         <div className="space-y-2">
           <div className="flex justify-between text-sm text-neutral-400">
-            <span>Running optimization...</span>
+            <span>
+              {isMultiTest
+                ? `Processing ${session.config.selectedAlgorithms?.length} algorithms seqeqntially...`
+                : "Running optimization..."}
+            </span>
           </div>
           <Progress value={undefined} className="h-2" />
         </div>

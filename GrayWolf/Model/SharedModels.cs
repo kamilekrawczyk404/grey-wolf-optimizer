@@ -56,6 +56,7 @@ namespace GrayWolf.Model
         public double[][] GlobalMinimumCoords { get; set; }
     }
 
+    // TO-DO: uzunąć to później, jeśli nie będzie potrzebne??
     public class ComparisonResult
     {
         public string AlgorithmName { get; set; }
@@ -64,6 +65,7 @@ namespace GrayWolf.Model
         public int Iterations { get; set; }
     }
 
+    // TO-DO: uzunąć to później, jeśli nie będzie potrzebne??
     public class GenerateComparisonRequest
     {
         public string FunctionName { get; set; }
