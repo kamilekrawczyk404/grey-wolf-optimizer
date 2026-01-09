@@ -3,7 +3,6 @@ import { TestMode, useTestStore } from "@/stores/test-store";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
@@ -20,6 +19,7 @@ import {
   XCircle,
   BarChart3,
   Activity,
+  CirclePause,
 } from "lucide-react";
 import { toast } from "sonner";
 import { TestConfigurationForm } from "./TestConfigurationForm";
@@ -286,6 +286,12 @@ export function MultiTabTestRunner({
                         ) : (
                           <XCircle className="h-3 w-3 text-red-400" />
                         ))}
+
+                      {/* Resume available */}
+                      {session.status === "idle" && session.runId && (
+                        <CirclePause className="h-3 w-3 text-orange-200" />
+                      )}
+
                       {/* Close button */}
                       {testSessions.length > 1 && (
                         <span
@@ -360,8 +366,10 @@ export function MultiTabTestRunner({
             <TabsContent key={session.id} value={session.id} className="mt-0">
               {session.status === "running" ? (
                 <RunningTestView session={session} />
-              ) : (
+              ) : activeNavigationTab === NavigationTab.Test ? (
                 <TestConfigurationForm session={session} />
+              ) : (
+                <MultiAlgorithmConfigurationForm session={session} />
               )}
             </TabsContent>
           ))}
