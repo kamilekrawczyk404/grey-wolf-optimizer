@@ -4,7 +4,6 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import {ModalProvider} from "./context/ModalContext";
-import {PresenterProvider} from "@/context/PresenterContext";
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -12,9 +11,7 @@ const root = ReactDOM.createRoot(
 root.render(
   <React.StrictMode>
       <ModalProvider>
-          <PresenterProvider>
-              <App />
-          </PresenterProvider>
+          <App />
       </ModalProvider>
   </React.StrictMode>
 );

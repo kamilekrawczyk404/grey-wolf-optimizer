@@ -17,7 +17,6 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/c
 import {Checkbox} from "@/components/ui/checkbox";
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
-import {preparePresenterExperimentRecord, usePresenter} from "@/context/PresenterContext";
 import {OptimizerDTO} from "@/types/types";
 
 export interface MultiAlgorithmsConfigurationFromProps {
@@ -26,8 +25,6 @@ export interface MultiAlgorithmsConfigurationFromProps {
 
 export const MultiAlgorithmConfigurationForm = ({session}: MultiAlgorithmsConfigurationFromProps) => {
     const {activeTab, setSessionStatus, setTestResult} = useTestStore();
-
-    const { setRecords } = usePresenter();
 
     const defaultValues: MultiTestFormValues = {
         benchmarkFunction: BenchmarkFunctions.Rastrigin,

@@ -107,7 +107,7 @@ interface TestStore {
     hydrate: () => void;
 }
 
-function getDefaultConfig(): TestFormValues {
+function getDefaultConfig(mode: 'single' | 'multi'): TestFormValues {
     // Domyślna konfiguracja dla GWO + Rastrigin
     const defaultAlgorithm = Algorithms.GWO;
     const defaultBenchmark = BenchmarkFunctions.Rastrigin;
@@ -115,15 +115,29 @@ function getDefaultConfig(): TestFormValues {
     const algorithmConfig = ALGORITHM_CONFIGS[defaultAlgorithm];
     const benchmarkConfig = BENCHMARK_CONFIGS[defaultBenchmark];
 
-    return {
-        algorithm: defaultAlgorithm,
-        populationSize: algorithmConfig.populationSize,
-        dimensions: benchmarkConfig.dimensions,
-        iterations: algorithmConfig.iterations,
-        lowerBound: benchmarkConfig.lowerBound,
-        upperBound: benchmarkConfig.upperBound,
-        benchmarkFunction: defaultBenchmark,
-    };
+    switch (mode) {
+        case 'single':
+            return {
+                algorithm: defaultAlgorithm,
+                populationSize: algorithmConfig.populationSize,
+                dimensions: benchmarkConfig.dimensions,
+                iterations: algorithmConfig.iterations,
+                lowerBound: benchmarkConfig.lowerBound,
+                upperBound: benchmarkConfig.upperBound,
+                benchmarkFunction: defaultBenchmark,
+            };
+
+        case 'multi':
+            return {
+                selectedAlgorithms: [defaultAlgorithm],
+                populationSize: algorithmConfig.populationSize,
+                dimensions: benchmarkConfig.dimensions,
+                iterations: algorithmConfig.iterations,
+                benchmarkFunction: defaultBenchmark,
+                lowerBound: benchmarkConfig.lowerBound,
+                upperBound: benchmarkConfig.upperBound,
+            }
+    }
 }
 
 // Funkcja pomocnicza do aktualizacji konfiguracji przy zmianie funkcji/algorytmu
@@ -155,7 +169,16 @@ export const useTestStore = create<TestStore>()(
                     id: crypto.randomUUID(),
                     mode: 'single',
                     name: "Single Test 1",
-                    config: getDefaultConfig(),
+                    config: getDefaultConfig('single'),
+                    status: "idle",
+                    result: null,
+                    resultsSeen: true,
+                },
+                {
+                    id: crypto.randomUUID(),
+                    mode: 'multi',
+                    name: "Comparison 1",
+                    config: getDefaultConfig('multi'),
                     status: "idle",
                     result: null,
                     resultsSeen: true,
@@ -178,7 +201,7 @@ export const useTestStore = create<TestStore>()(
                     name: mode === 'single'
                         ? `Single Test ${get().sessions.filter(s => s.mode === 'single').length + 1}`
                         : `Comparision ${get().sessions.filter(s => s.mode === 'multi').length + 1}`,
-                    config: getDefaultConfig(),
+                    config: getDefaultConfig(mode),
                     status: "idle",
                     result: null,
                     resultsSeen: true,

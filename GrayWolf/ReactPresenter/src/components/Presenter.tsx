@@ -3,7 +3,7 @@ import Container from "./Container";
 import TestsPreview from "./TestsPreview";
 import CanvasConfigConfigure from "./canvas/CanvasConfigConfigure";
 import GwoCanvas, {CanvasConfig, defaultConfig} from "./canvas/GwoCanvas";
-import {Algorithms, BenchmarkFunctions, ExperimentRecord} from "../types/types";
+import {ExperimentRecord} from "../types/types";
 import { AnimationStatus } from "../App";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +25,7 @@ import {useTestStore, TestSession, SessionStatus, MultiTestResult, SingleTestRes
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {InfoBanner} from "@/components/ui/info-banner";
-import {preparePresenterExperimentRecord} from "@/context/PresenterContext";
+import {preparePresenterExperimentRecord} from "@/utils/presenter";
 
 const SessionStatusBadge = ({ status }: { status: SessionStatus }) => {
     switch (status) {
@@ -127,8 +127,8 @@ const Presenter = () => {
         setAnimationStatus({ isRunning: false, isCompleted: false });
     }, [currentTest]);
 
-    const singleTests = useMemo(() => sessions.filter(s => s.mode === 'single'), [sessions]);
-    const multiTests = useMemo(() => sessions.filter(s => s.mode === 'multi'), [sessions]);
+    const singleTests = useMemo(() => sessions.filter(s => s.mode === 'single' && (s.result as SingleTestResult)?.historyJson), [sessions]);
+    const multiTests = useMemo(() => sessions.filter(s => s.mode === 'multi' && (s.result as MultiTestResult)?.results.filter(r => r.historyJson)), [sessions]);
 
     const navigateToSessionConfig = (sessionId: string) => {
         console.log(`Redirecting to configuration for session: ${sessionId}`);
@@ -139,47 +139,15 @@ const Presenter = () => {
 
     const handleSessionClick = (session: TestSession) => {
         if (session.status === 'completed' && session.result) {
-            try {
-                let preparedRecord: ExperimentRecord | null = null;
+            const preparedRecord = preparePresenterExperimentRecord(session)
 
-                switch (session.mode) {
-                    case 'single':
-                        const {solution, bestSolution, algorithm, bestFitness, benchmarkFunction, type, historyJson, duration} = session.result as SingleTestResult
-                        const {upperBound, lowerBound, populationSize, iterations, dimensions} = session.config
-
-                        console.log("LL", historyJson);
-                        preparedRecord = preparePresenterExperimentRecord({
-                            title: session.name,
-                            optimizerData: {
-                                bestSolution: bestSolution!,
-                                solution: solution!,
-                                historyJson: historyJson!,
-                                bestFitness: bestFitness!,
-                            },
-                            configuration: {
-                                lowerBound,
-                                upperBound,
-                                dimensions,
-                                iterations,
-                                populationSize,
-                                algorithm: algorithm as Algorithms,
-                                benchmarkFunction: benchmarkFunction as BenchmarkFunctions
-                            }
-                        })
-                        break;
-                    default:
-                        toast.error("Invalid session mode")
-                }
-
-                if (preparedRecord) {
-                    setTests([preparedRecord])
-                    setCurrentTest(preparedRecord);
-                }
-            } catch (e) {
-                toast.error("Some problems occurs while opening the presenter", {
-                    description: () => "aaa"
-                })
+            if (!preparedRecord) {
+                toast.error("Data for the Presenter cannot be prepared properly")
+                return
             }
+
+            setTests([preparedRecord])
+            setCurrentTest(preparedRecord);
 
             toast.success(`Loaded results for ${session.name}`);
         } else if (session.status === 'running') {
@@ -334,8 +302,8 @@ const Presenter = () => {
                             <TestFileUploader onSingleFileLoaded={handleSingleFileLoaded} />
                         </div>
 
-                        <InfoBanner className="mt-6" title="Tip">
-                            Completed sessions are automatically saved locally. Use the uploader only for imported data.
+                        <InfoBanner className="mt-6" title="Information">
+                            Completed sessions are automatically saved in your browser's storage. Use the uploader only for imported data.
                         </InfoBanner>
                     </div>
                 </div>
