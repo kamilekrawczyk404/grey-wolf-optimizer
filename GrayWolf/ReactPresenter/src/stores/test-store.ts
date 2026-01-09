@@ -333,6 +333,7 @@ export const useTestStore = create<TestStore>()(
 
               if (
                 session.status === "running" ||
+                session.status === "error" ||
                 session.status === "cancelled"
               ) {
                 console.log(
