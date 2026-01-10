@@ -42,8 +42,8 @@ export type TestMode = "single" | "multi";
 
 export interface SingleTestResult {
     type: "single"
-    algorithm: string;
-    benchmarkFunction: string;
+    algorithm: Algorithms;
+    benchmarkFunction: BenchmarkFunctions;
     duration: number;
     bestSolution?: number[];
     bestFitness?: number;
@@ -54,7 +54,7 @@ export interface SingleTestResult {
 }
 
 export interface ComparisionRow {
-    algorithm: string;
+    algorithm: Algorithms;
     duration: number;
     status: "success" | "failed";
     bestSolution?: number[];
@@ -66,7 +66,7 @@ export interface ComparisionRow {
 
 export interface MultiTestResult {
     type: "multi";
-    benchmarkFunction: string;
+    benchmarkFunction: BenchmarkFunctions;
     results: ComparisionRow[];
     message?: string;
 }
@@ -82,15 +82,18 @@ export interface TestSession {
     config: TestFormValues;
     status: SessionStatus;
     result: TestResult | null;
+    presenterData: ExperimentRecord[];
     startTime?: number;
     endTime?: number;
     resultsSeen: boolean;
     abortController?: AbortController;
 }
 
-interface TestStore {
+export interface TestStore {
     sessions: TestSession[];
     activeTab: string;
+    getActiveSession: () => TestSession | null;
+    getPresenterData: (id: string) => ExperimentRecord[] | null
     addSession: (mode: TestMode) => void;
     removeSession: (id: string) => void;
     updateSession: (id: string, updates: Partial<TestSession>) => void;
@@ -173,6 +176,7 @@ export const useTestStore = create<TestStore>()(
                     status: "idle",
                     result: null,
                     resultsSeen: true,
+                    presenterData: []
                 },
                 {
                     id: crypto.randomUUID(),
@@ -182,8 +186,28 @@ export const useTestStore = create<TestStore>()(
                     status: "idle",
                     result: null,
                     resultsSeen: true,
+                    presenterData: []
                 },
             ],
+
+            getActiveSession: () => {
+                const {sessions, activeTab} = get();
+
+                const foundSession = sessions.find(s => s.id === activeTab);
+
+                if (!foundSession) return null
+
+                return foundSession
+            },
+
+            getPresenterData: (id: string) => {
+                const session = get().sessions.find(s => s.id === id);
+
+                if (!session) return null;
+
+                return session.presenterData
+            },
+
             activeTab: "",
 
             hydrate: () => {
@@ -205,6 +229,7 @@ export const useTestStore = create<TestStore>()(
                     status: "idle",
                     result: null,
                     resultsSeen: true,
+                    presenterData: []
                 };
 
                 set((state) => ({
@@ -286,11 +311,104 @@ export const useTestStore = create<TestStore>()(
             },
 
             setTestResult: (id: string, result: TestResult) => {
+                const session = get().sessions.find(s => s.id === id);
+                if (!session) return;
+
                 set((state) => ({
-                    sessions: state.sessions.map((s) =>
-                        s.id === id ? { ...s, result } : s
-                    ),
-                }));
+                    sessions: state.sessions.map(s => {
+                        if (s.id !== id) return s;
+
+                        const { dimensions, lowerBound, upperBound, populationSize, iterations } = s.config;
+
+                        switch (s.mode) {
+                            case 'single': {
+                                if (result.type !== 'single') return s;
+
+                                const {solution, bestSolution, algorithm, bestFitness, benchmarkFunction, historyJson} = result;
+
+                                if (solution === undefined || bestSolution === undefined || bestFitness === undefined || historyJson === undefined) {
+                                    return { ...s, status: 'error' };
+                                }
+
+                                const preparedData = {
+                                    description: s.name,
+                                    properties: {
+                                        algorithm,
+                                        benchmarkFunction,
+                                        iterations,
+                                        bestSolution,
+                                        bestFitness,
+                                        dimensions,
+                                        populationSize,
+                                        lowerBound,
+                                        upperBound,
+                                        history: historyJson,
+                                        solution,
+                                    }
+                                };
+
+                                return {
+                                    ...s,
+                                    status: 'completed',
+                                    result: { ...result, historyJson: undefined },
+                                    presenterData: [preparedData]
+                                };
+                            }
+
+                            case 'multi': {
+                                if (result.type !== 'multi') return s;
+
+                                const presenterRecords: ExperimentRecord[] = [];
+
+                                const benchmarkFunction = result.benchmarkFunction;
+
+                                const processedResults = result.results.map(row => {
+                                    if (row.status === 'success' && row.historyJson && row.bestFitness !== undefined && row.bestSolution && row.solution) {
+
+                                        presenterRecords.push({
+                                            description: `${row.algorithm}`,
+                                            properties: {
+                                                algorithm: row.algorithm,
+                                                benchmarkFunction,
+                                                iterations,
+                                                bestSolution: row.bestSolution,
+                                                bestFitness: row.bestFitness,
+                                                dimensions,
+                                                populationSize,
+                                                lowerBound,
+                                                upperBound,
+                                                history: row.historyJson,
+                                                solution: row.solution,
+                                            }
+                                        });
+                                    }
+
+                                    return {
+                                        ...row,
+                                        historyJson: undefined
+                                    };
+                                });
+
+                                return {
+                                    ...s,
+                                    status: 'completed',
+                                    result: {
+                                        ...result,
+                                        results: processedResults
+                                    },
+                                    presenterData: presenterRecords
+                                };
+                            }
+
+                            default:
+                                return {
+                                    ...s,
+                                    status: 'completed',
+                                    result
+                                };
+                        }
+                    })
+                }))
             },
 
             markResultsSeen: (id: string) => {
@@ -305,15 +423,29 @@ export const useTestStore = create<TestStore>()(
             name: "optimizer-test-sessions",
             storage: createJSONStorage(() => localStorage),
             partialize: (state) => ({
-                sessions: state.sessions.map((s) => ({
-                    ...s,
-                    status: s.status === "running" ? "cancelled" : s.status,
-                    abortController: undefined,
-                    result: s.result ? {
-                        ...s.result,
-                        historyJson: undefined,
-                    } : null,
-                })),
+                sessions: state.sessions.map((s) => {
+                    let formattedResult;
+
+                    if (s.mode === 'single') {
+                        formattedResult = s.result as SingleTestResult ? {
+                            ...s.result,
+                            historyJson: undefined,
+                        } : null
+                    } else if (s.mode === 'multi') {
+                        formattedResult = s.result as MultiTestResult ? {
+                            ...s.result,
+                            results: (s.result as MultiTestResult).results.map(r => ({...r, historyJson: undefined}))
+                        }      : null
+                    }
+
+                    return {
+                        ...s,
+                        status: s.status === "running" ? "cancelled" : s.status,
+                        abortController: undefined,
+                        result: formattedResult,
+                        presenterData: [],
+                    }
+                }),
                 activeTab: state.activeTab,
             }),
             onRehydrateStorage: () => (state) => {

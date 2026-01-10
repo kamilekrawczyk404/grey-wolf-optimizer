@@ -43,6 +43,7 @@ const TestsPreview = ({ tests, onTestChange, isRunning }: TestsPreviewProps) => 
     const [selectedTestIndex, setSelectedTestIndex] = useState<number>(0);
 
     const selectedTest = tests[selectedTestIndex];
+
     const { history, ...restProperties } = selectedTest.properties;
 
     useEffect(() => {
@@ -83,7 +84,8 @@ const TestsPreview = ({ tests, onTestChange, isRunning }: TestsPreviewProps) => 
                                     )}
                                 >
                                     <span className="mr-2 text-xs opacity-70">#{index + 1}</span>
-                                    {test.description || `Test ${index + 1}`}
+                                    {/*{test.description || `Test ${index + 1}`}*/}
+                                    {`Test ${index + 1}`}
                                 </Button>
                             );
                         })}

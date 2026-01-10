@@ -165,7 +165,7 @@ export function TestConfigurationForm({ session }: TestConfigurationFormProps) {
                 historyJson,
                 message,
                 duration,
-                solution
+                solution,
             };
 
             setTestResult(activeTab, result);

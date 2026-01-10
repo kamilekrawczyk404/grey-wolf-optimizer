@@ -1,9 +1,8 @@
-import {useEffect, useMemo, useRef, useState} from "react";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import {TestMode, useTestStore} from "@/stores/test-store";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import {
     Tooltip,
     TooltipContent,
@@ -23,13 +22,10 @@ import { toast } from "sonner";
 import { TestConfigurationForm } from "./TestConfigurationForm";
 import { RunningTestView } from "./RunningTestView";
 import { TestResultsDialog } from "./TestResultsDialog";
-import {NavigationTab} from "@/App";
 import {MultiAlgorithmConfigurationForm} from "@/components/Tester/MultiAlgorithmConfigurationForm";
+import {NavigationTab, useNavigationStore} from "@/stores/navigation-store";
 
-interface MultiTabTestRunnerProps {
-    activeNavigationTab: NavigationTab
-}
-export function MultiTabTestRunner({ activeNavigationTab }: MultiTabTestRunnerProps) {
+export function MultiTabTestRunner() {
     const {
         sessions: testSessions,
         activeTab,
@@ -37,6 +33,8 @@ export function MultiTabTestRunner({ activeNavigationTab }: MultiTabTestRunnerPr
         addSession,
         removeSession,
     } = useTestStore();
+
+    const { activeNavigationTab } = useNavigationStore()
 
     const [editingTabId, setEditingTabId] = useState<string | null>(null);
     const [editingTabName, setEditingTabName] = useState("");

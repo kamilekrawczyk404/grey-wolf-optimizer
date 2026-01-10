@@ -132,8 +132,13 @@ export const MultiAlgorithmConfigurationForm = ({session}: MultiAlgorithmsConfig
 
         setSessionStatus(activeTab, hasError ? "error" : "completed", { endTime: Date.now() });
 
+        const isPlural = values.selectedAlgorithms.length > 1;
+        const totalDuration = comparisionResults.reduce((sum, val) => sum += val.duration, 0);
+
         if (!hasError) {
-            toast.success(`Comparison completed for ${values.selectedAlgorithms.length} algorithms.`);
+            toast.success(`Comparison completed successfully` , {
+                description: `${values.selectedAlgorithms.length} algorithm${isPlural ? 's' : ''} finished in ${totalDuration.toFixed(2)}s`
+            });
         } else {
             toast.warning("Benchmark completed with some errors.");
         }

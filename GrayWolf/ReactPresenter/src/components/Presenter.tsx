@@ -25,7 +25,6 @@ import {useTestStore, TestSession, SessionStatus, MultiTestResult, SingleTestRes
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {InfoBanner} from "@/components/ui/info-banner";
-import {preparePresenterExperimentRecord} from "@/utils/presenter";
 
 const SessionStatusBadge = ({ status }: { status: SessionStatus }) => {
     switch (status) {
@@ -67,12 +66,17 @@ const Presenter = () => {
         isCompleted: false,
         isRunning: false,
     });
-    const [tests, setTests] = useState<ExperimentRecord[]>([]);
     const [currentTest, setCurrentTest] = useState<ExperimentRecord | null>(null);
     const [currentIteration, setCurrentIteration] = useState<number>(-1);
     const [canvasConfig, setCanvasConfig] = useState<CanvasConfig>(defaultConfig);
 
-    const { sessions, setActiveTab } = useTestStore();
+    const { sessions, setActiveTab, activeTab} = useTestStore();
+
+    const tests = useMemo(() => {
+        return sessions
+            .filter(s => s.status === 'completed' && s.presenterData.length > 0)
+            .flatMap(s => s.presenterData);
+    }, [sessions]);
 
     const pauseAnimation = useCallback(() => {
         setAnimationStatus((prev) => ({ ...prev, isRunning: false }));
@@ -97,13 +101,15 @@ const Presenter = () => {
 
     const handleSingleFileLoaded = useCallback(
         (userTests: ExperimentRecord[], isLast: boolean) => {
-            const newTests = [...tests, ...userTests];
-            setTests(newTests);
-            if (isLast) {
-                setCurrentTest(newTests[0]);
-            }
+            // const newTests = [...tests, ...userTests];
+            //
+            // userTests.forEach(t => addPresenterTest(t))
+            //
+            // if (isLast) {
+            //     setCurrentTest(newTests[0]);
+            // }
         },
-        [tests],
+        [],
     );
 
     useEffect(() => {
@@ -127,40 +133,24 @@ const Presenter = () => {
         setAnimationStatus({ isRunning: false, isCompleted: false });
     }, [currentTest]);
 
-    const singleTests = useMemo(() => sessions.filter(s => s.mode === 'single' && (s.result as SingleTestResult)?.historyJson), [sessions]);
-    const multiTests = useMemo(() => sessions.filter(s => s.mode === 'multi' && (s.result as MultiTestResult)?.results.filter(r => r.historyJson)), [sessions]);
+    const singleTests = useMemo(() => sessions.filter(s => s.mode === 'single' && s.presenterData.length > 0), [sessions]);
+    const multiTests = useMemo(() => sessions.filter(s => s.mode === 'multi' && s.presenterData.length > 0), [sessions]);
 
-    const navigateToSessionConfig = (sessionId: string) => {
-        console.log(`Redirecting to configuration for session: ${sessionId}`);
-        setActiveTab(sessionId);
-
-        toast.info("Redirecting to configuration...");
-    };
-
-    const handleSessionClick = (session: TestSession) => {
-        if (session.status === 'completed' && session.result) {
-            const preparedRecord = preparePresenterExperimentRecord(session)
-
-            if (!preparedRecord) {
-                toast.error("Data for the Presenter cannot be prepared properly")
-                return
-            }
-
-            setTests([preparedRecord])
-            setCurrentTest(preparedRecord);
-
-            toast.success(`Loaded results for ${session.name}`);
-        } else if (session.status === 'running') {
-            toast.warning("This test is currently running. Please wait.");
-        } else {
-            navigateToSessionConfig(session.id);
+    const runPresenter = (session: TestSession) => {
+        if (!session.presenterData) {
+            toast.warning("This session doesn't have any data to present yet")
+            return;
         }
-    };
+
+        setCurrentTest(session.presenterData[0])
+
+        toast.success(`Loaded results for ${session.name}`);
+    }
 
     const SessionRow = ({ session }: { session: TestSession }) => {
         return (
             <div
-                onClick={() => handleSessionClick(session)}
+                onClick={() => runPresenter(session)}
                 className={cn(
                     "group flex items-center justify-between p-3 rounded-md border border-neutral-800 bg-neutral-900/50 hover:bg-neutral-800 hover:border-neutral-700 transition-all cursor-pointer mb-2",
                     session.status === 'completed' && "hover:border-green-800/50"
@@ -181,12 +171,12 @@ const Presenter = () => {
                                         <div
                                             className={'inline-flex items-center gap-1'}>
                                             {(session.result as MultiTestResult).results.sort((a, b) => a.algorithm.localeCompare(b.algorithm)).map((r, index) => (
-                                                <>
+                                                <div key={`${r.algorithm}-${index}`}>
                                                     {r.algorithm}
                                                     {index < (session.result as MultiTestResult).results.length - 1 && (
                                                         <span>•</span>
                                                     )}
-                                                </>
+                                                </div>
                                             ))}
                                         </div>
                                     </div>
@@ -200,7 +190,6 @@ const Presenter = () => {
                                 </>
                             )}
                         </div>
-
                     )}
                 </div>
 
@@ -216,9 +205,11 @@ const Presenter = () => {
             {currentTest ? (
                 <div className="grid lg:grid-cols-2 grid-cols-1 h-full gap-2 p-2">
                     <Container className={"flex flex-col gap-2 p-2"}>
+                        {/*<button>Back</button>*/}
+
                         <TestsPreview
                             isRunning={animationStatus.isRunning}
-                            tests={tests}
+                            tests={sessions.filter(s => s.id === activeTab && s.presenterData.length > 0).flatMap(s => s.presenterData)}
                             onTestChange={setCurrentTest}
                         />
                         <CanvasConfigConfigure
@@ -228,7 +219,7 @@ const Presenter = () => {
                             iterations={currentTest.properties.iterations}
                         />
                     </Container>
-                    <Container className={"content-center"}>
+                    <Container>
                          <GwoCanvas
                              properties={currentTest.properties}
                              iteration={currentIteration}

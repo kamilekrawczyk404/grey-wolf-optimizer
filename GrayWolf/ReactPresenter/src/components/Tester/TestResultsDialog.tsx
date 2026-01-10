@@ -14,19 +14,13 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-    CheckCircle2,
-    XCircle,
-    AlertCircle,
-    Clock,
-    Activity,
-    Users, BarChart3,
-} from "lucide-react";
+import {Button} from "@/components/ui/button";
+import {Card, CardContent} from "@/components/ui/card";
+import {Badge} from "@/components/ui/badge";
+import {ScrollArea} from "@/components/ui/scroll-area";
+import {Activity, AlertCircle, BarChart3, CheckCircle2, Clock, Users, XCircle,} from "lucide-react";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
+import {NavigationTab, useNavigationStore} from "@/stores/navigation-store";
 
 interface TestResultsDialogProps {
     open: boolean;
@@ -40,6 +34,7 @@ export function TestResultsDialog({
     session,
 }: TestResultsDialogProps) {
     const { markResultsSeen } = useTestStore();
+    const { setNavigationTab } = useNavigationStore()
 
     if (!session || !session.result) return null;
 
@@ -97,6 +92,11 @@ export function TestResultsDialog({
                 return "";
         }
     };
+
+    const openTestPresenter = () => {
+        setNavigationTab(NavigationTab.Presenter)
+        handleClose();
+    }
 
     if (session.result.type === 'multi') {
         const result = session.result as MultiTestResult;
@@ -158,14 +158,10 @@ export function TestResultsDialog({
                     <DialogFooter>
                         <Button onClick={handleClose} variant="outline" className="border-neutral-700 text-white">Close</Button>
 
-                        {result.results.some(r => r.historyJson && r.historyJson.length > 0) && (
+                        {result.results.some(r => r.status === 'success') && (
                             <Button
                                 variant="default"
-                                onClick={() => {
-                                    // TODO: Przekierowanie do wizualizatora z historyJson
-                                    // console.log("HistoryJson:", result?.historyJson);
-                                    handleClose();
-                                }}
+                                onClick={() => openTestPresenter()}
                                 className="bg-blue-600 hover:bg-blue-500 text-white"
                             >
                                 View Visualization
@@ -358,14 +354,10 @@ export function TestResultsDialog({
                         >
                             Close
                         </Button>
-                        {result?.historyJson && (
+                        {session.status === 'completed' && (
                             <Button
                                 variant="default"
-                                onClick={() => {
-                                    // TODO: Przekierowanie do wizualizatora z historyJson
-                                    console.log("HistoryJson:", result?.historyJson);
-                                    handleClose();
-                                }}
+                                onClick={() => openTestPresenter()}
                                 className="bg-blue-600 hover:bg-blue-500 text-white"
                             >
                                 View Visualization

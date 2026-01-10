@@ -1,5 +1,4 @@
 import { HTMLAttributes } from "react";
-import {TestSession} from "@/stores/test-store";
 
 export interface OptimizerConfiguration {
   iterations: number,
