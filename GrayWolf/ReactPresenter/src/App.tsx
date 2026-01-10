@@ -1,18 +1,12 @@
-import {ReactNode, useState} from "react";
 import "./App.css";
-//import Parameters from "./components/Tester/Parameters";
 import { Toaster } from "sonner";
 import Presenter from "./components/Presenter";
-import {MultiAlgorithmConfigurationForm} from "@/components/Tester/MultiAlgorithmConfigurationForm";
 import {MultiTabTestRunner} from "@/components/Tester/MultiTabTestRunner";
+import {NavigationTab, useNavigationStore} from "@/stores/navigation-store";
+import {cn} from "@/lib/utils";
+import {useTestStore} from "@/stores/test-store";
 
 export type AnimationStatus = { isCompleted: boolean; isRunning: boolean };
-
-export enum NavigationTab {
-  Test = "test",
-  Presenter = "presenter",
-  Comparison = "comparison"
-}
 
 export const TAB_LABELS: Record<NavigationTab, {displayName: string}> = {
   [NavigationTab.Test]: {
@@ -28,7 +22,8 @@ export const TAB_LABELS: Record<NavigationTab, {displayName: string}> = {
 
 function App() {
   //stan zak�adek
-  const [activeTab, setActiveTab] = useState<NavigationTab>(NavigationTab.Test);
+  const { activeTab } = useTestStore()
+  const  { activeNavigationTab, setNavigationTab } = useNavigationStore()
 
   return (
     <div
@@ -41,12 +36,12 @@ function App() {
         {Object.entries(TAB_LABELS).map(([tab, values]) => (
             <button
                 key={tab}
-                className={`px-4 py-2 rounded ${
-                    activeTab === tab
-                        ? "bg-cyan-600 text-white"
+                className={cn(
+                    'px-4 py-2 rounded',
+                    activeNavigationTab === tab  ? "bg-cyan-600 text-white"
                         : "bg-neutral-700 text-neutral-300"
-                }`}
-                onClick={() => setActiveTab(tab as NavigationTab)}
+                )}
+                onClick={() => setNavigationTab(tab as NavigationTab)}
             >
               {values.displayName}
             </button>
@@ -54,11 +49,11 @@ function App() {
       </div>
 
       {Object.entries(TAB_LABELS).map(([tab, values]) => {
-        if (tab === activeTab)
+        if (tab === activeNavigationTab)
           switch (tab) {
             case NavigationTab.Test:
             case NavigationTab.Comparison:
-              return <MultiTabTestRunner key={tab} activeNavigationTab={activeTab}/>
+              return <MultiTabTestRunner key={tab}/>
 
             case NavigationTab.Presenter:
               return <Presenter key={tab} />

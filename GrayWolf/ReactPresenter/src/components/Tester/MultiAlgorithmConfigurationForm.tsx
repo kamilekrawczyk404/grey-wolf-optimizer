@@ -11,12 +11,13 @@ import React, {useEffect} from "react";
 import {BENCHMARK_CONFIGS} from "@/stores/benchmark-configs";
 import {toast} from "sonner";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import {Activity, Play} from "lucide-react";
+import {Activity, BarChart3, Play} from "lucide-react";
 import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage} from "@/components/ui/form";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import {Checkbox} from "@/components/ui/checkbox";
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
+import {OptimizerDTO} from "@/types/types";
 
 export interface MultiAlgorithmsConfigurationFromProps {
     session: TestSession
@@ -96,14 +97,16 @@ export const MultiAlgorithmConfigurationForm = ({session}: MultiAlgorithmsConfig
 
                 if (!response.ok) throw new Error(`API error for ${algo}`);
 
-                const data = await response.json();
+                const { historyJson, bestFitness, bestSolution, solution} = await response.json() as OptimizerDTO;
 
                 comparisionResults.push({
-                    algorithm: algo,
-                    bestSolution: data.bestSolution,
+                    status: "success",
                     duration: (Date.now() - startTime) / 1000,
-                    status: "success"
-                    // fitness: data.
+                    algorithm: algo,
+                    historyJson,
+                    bestSolution,
+                    bestFitness,
+                    solution
                 });
 
             } catch(e) {
@@ -114,36 +117,31 @@ export const MultiAlgorithmConfigurationForm = ({session}: MultiAlgorithmsConfig
                     status: "failed",
                     error: "Connection failed",
                     duration: (Date.now() - startTime) / 1000,
-                    bestSolution: []
                 });
             }
         }
-
-        console.log(comparisionResults)
 
         const algorithmsNames = values.selectedAlgorithms.length > 1 ? values.selectedAlgorithms.join(", ") : values.selectedAlgorithms[0]
 
         setTestResult(activeTab, {
             type: "multi",
             benchmarkFunction: values.benchmarkFunction,
-            // results: comparisionResults.map(r => ({
-            //     algorithm: r.algorithm,
-            //     duration: r.duration,
-            //     bestSolution: r.
-            // }))
             results: comparisionResults,
             message: `Comparision of ${algorithmsNames} completed`
         })
 
-        setSessionStatus(session.id, "completed", {
-            endTime: Date.now()
-        })
+        setSessionStatus(activeTab, hasError ? "error" : "completed", { endTime: Date.now() });
 
-        const totalDuration = comparisionResults.reduce((total, cr) => total += cr.duration, 0)
+        const isPlural = values.selectedAlgorithms.length > 1;
+        const totalDuration = comparisionResults.reduce((sum, val) => sum += val.duration, 0);
 
-        toast.success("Comparision completed successfully", {
-            description: `${values.selectedAlgorithms.length} algorithm${values.selectedAlgorithms.length > 1 ? 's' : ''} finished in ${totalDuration.toFixed(2)}s`
-        })
+        if (!hasError) {
+            toast.success(`Comparison completed successfully` , {
+                description: `${values.selectedAlgorithms.length} algorithm${isPlural ? 's' : ''} finished in ${totalDuration.toFixed(2)}s`
+            });
+        } else {
+            toast.warning("Benchmark completed with some errors.");
+        }
     }
 
     if (session.id !== activeTab) return null;
@@ -152,7 +150,7 @@ export const MultiAlgorithmConfigurationForm = ({session}: MultiAlgorithmsConfig
         <Card className="bg-neutral-900 border-neutral-800">
             <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
-                    <Activity className="text-blue-500" />
+                    <BarChart3 className="text-purple-400" />
                     Multi-Algorithm Comparison
                 </CardTitle>
                 <CardDescription>

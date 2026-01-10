@@ -1,116 +1,135 @@
 import { HTMLAttributes } from "react";
 
-export type WolfHistory = {
-  isAlpha: boolean;
-  isBeta: boolean;
-  // isGamma: boolean;
-  isDelta: boolean;
-  // fitness: number[];
-  fitness: number;
-  position: number[];
-  iteration?: number;
-};
+export interface OptimizerConfiguration {
+  iterations: number,
+  dimensions: number,
+  lowerBound: number,
+  upperBound: number,
+  populationSize: number,
+  benchmarkFunction: BenchmarkFunctions,
+  algorithm: Algorithms
+}
 
-export type IterationHistory = {
-  wolves: WolfHistory[];
+export interface AgentState {
+  isLeader: boolean,
+  role: string,
+  fitness: number,
+  position: number[]
+}
+
+export interface IterationSnapshot {
   iteration: number;
-};
+  entities: AgentState[]
+}
 
-export type OptimizationProperties = {
+export type OptimizationRun = {
+  algorithm: Algorithms,
+  benchmarkFunction: BenchmarkFunctions;
+  populationSize: number,
   iterations: number;
   lowerBound: number;
   upperBound: number;
   bestFitness: number;
   bestSolution: number[];
-  solution: number[];
+  solution: number[][]
   dimensions: number;
-  benchmarkFunction: string;
-  history: IterationHistory[];
+  history: IterationSnapshot[];
 };
 
-export type OptimizationTest = {
+type UserLocalFileProperties = Omit<OptimizationRun, 'history'>
+
+export type UserLocalFile = {
   description: string;
-  properties: OptimizationProperties;
+  properties: UserLocalFileProperties;
+  history: IterationSnapshot[]
+}
+
+export type ExperimentRecord = {
+  description: string;
+  properties: OptimizationRun;
 };
+
+export interface OptimizerDTO {
+  bestSolution: number[],
+  bestFitness: number,
+  solution: number[][],
+  historyJson: IterationSnapshot[],
+  message?: string
+}
 
 function isNumberArray(arr: any): arr is number[] {
   return Array.isArray(arr) && arr.every((item) => typeof item === "number");
 }
 
-export function isWolfHistory(obj: any): obj is WolfHistory {
-  if (!obj || typeof obj !== "object") {
-    return false;
-  }
+const isAgentState = (obj: any) => {
+  if (!obj || typeof obj !== 'object') return false
 
-  return (
-    typeof obj.isAlpha === "boolean" &&
-    typeof obj.isBeta === "boolean" &&
-    typeof obj.isDelta === "boolean" &&
-    // isNumberArray(obj.fitness) &&
-    typeof obj.fitness === "number" &&
-    isNumberArray(obj.position) &&
-    (!("iteration" in obj) || typeof obj.iteration === "number") // Check optional property
-  );
+  return isNumberArray(obj.position) &&
+      typeof obj.fitness === 'number' &&
+      typeof obj.role === 'string' &&
+      typeof obj.isLeader === 'boolean'
 }
 
-export function isIterationHistory(obj: any): obj is IterationHistory {
+export function isIterationSnapshot(obj: any): obj is IterationSnapshot {
   if (!obj || typeof obj !== "object") {
     return false;
   }
 
   return (
     typeof obj.iteration === "number" &&
-    Array.isArray(obj.wolves) &&
-    obj.wolves.every(isWolfHistory) // Validate every wolf in the array
+    Array.isArray(obj.entities) &&
+    obj.entities.every(isAgentState) // Validate each entity
   );
 }
 
-export function isOptimizationProperties(
-  obj: any
-): obj is OptimizationProperties {
+export function isOptimizationRunProperties(
+  obj: any,
+): obj is OptimizationRun {
   if (!obj || typeof obj !== "object") {
     return false;
   }
 
   return (
+    typeof obj.algorithm === "string" &&
+    typeof obj.benchmarkFunction === "string" &&
     typeof obj.iterations === "number" &&
+    isNumberArray(obj.bestSolution) &&
+    typeof obj.bestFitness === "number" &&
+    typeof obj.dimensions === "number" &&
+    typeof obj.populationSize === "number" &&
     typeof obj.lowerBound === "number" &&
     typeof obj.upperBound === "number" &&
-    typeof obj.dimensions === "number" &&
-    typeof obj.bestFitness === "number" &&
-    isNumberArray(obj.bestSolution) &&
-    Array.isArray(obj.history) &&
-    obj.history.every(isIterationHistory) // Validate every item in history
+    Array.isArray(obj.solution) &&
+    obj.solution.every(isNumberArray)
   );
 }
 
-export function isOptimizationTest(obj: any): obj is OptimizationTest {
+export function isExperimentRecord(obj: any): obj is UserLocalFile {
   if (!obj || typeof obj !== "object") {
     return false;
   }
 
   return (
-    typeof obj.description === "string" &&
-    isOptimizationProperties(obj.properties) // Validate the nested properties object
+      typeof obj.description === "string" &&
+      isOptimizationRunProperties(obj.properties) && // Validate the nested properties object
+      Array.isArray(obj.history) &&
+      obj.history.every(isIterationSnapshot) // Validate every item in history
   );
-}
-
-export function isOptimizationTestArray(obj: any): obj is OptimizationTest[] {
-  return Array.isArray(obj) && obj.every(isOptimizationTest);
 }
 
 export type HeaderProps = HTMLAttributes<HTMLHeadingElement> & {
   accent?: boolean;
 };
+
 export enum Algorithms {
-  GWO = "GWO",
-  Aquila = "Aquila",
+    GWO = "GWO",
+    Aquila = "Aquila",
 }
 
 export enum BenchmarkFunctions {
-  Rastrigin = "Rastrigin",
-  Sphere = "Sphere",
-  Beale = "Beale",
-  RosenBrock = "RosenBrock",
-  BukinN6 = "BukinN6",
+    Rastrigin = "Rastrigin",
+    Sphere = "Sphere",
+    Beale = "Beale",
+    RosenBrock = "RosenBrock",
+    BukinN6 = "BukinN6"
 }

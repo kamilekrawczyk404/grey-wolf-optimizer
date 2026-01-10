@@ -11,8 +11,6 @@ const ModalContext = createContext<ModalContextValues | null>(null)
 export const ModalProvider = ({children}: {children: ReactNode}) => {
     const [activeModalId, setActiveModalId] = useState<string | null>(null)
 
-    console.log(activeModalId)
-    
     return <ModalContext.Provider
         value={{
             activeModalId,

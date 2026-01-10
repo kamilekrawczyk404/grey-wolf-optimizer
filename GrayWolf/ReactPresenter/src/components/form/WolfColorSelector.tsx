@@ -1,16 +1,16 @@
-import { Wolf } from "../canvas/GwoCanvas";
+// import { Wolf } from "../canvas/GwoCanvas";
 import React, { useRef } from "react";
 import { layoutColors } from "../../colors";
 import { hexToRgbConverter } from "../../utils/colorConverter";
 
 const WolfColorSelector = ({
   disabled,
-  wolfType,
+  // wolfType,
   colorValue,
   onColorChange,
 }: {
   disabled: boolean;
-  wolfType: Wolf;
+  // wolfType: Wolf;
   colorValue: string;
   onColorChange: (rgbColor: string) => any;
 }) => {
@@ -25,7 +25,7 @@ const WolfColorSelector = ({
       onClick={() => inputRef?.current?.click()}
     >
       <p className={`text-xs font-[500] ${layoutColors.cyan.text.primary}`}>
-        {wolfType.charAt(0).toUpperCase() + wolfType.slice(1)}
+        {/*{wolfType.charAt(0).toUpperCase() + wolfType.slice(1)}*/}
       </p>
       <div
         style={{ backgroundColor: colorValue }}
@@ -39,7 +39,7 @@ const WolfColorSelector = ({
         }
         type={"color"}
         value={colorValue}
-        onChange={(e) => onColorChange(hexToRgbConverter(e.target.value))}
+        onChange={(e) => onColorChange("")}
       />
     </div>
   );

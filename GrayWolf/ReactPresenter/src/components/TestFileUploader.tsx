@@ -1,14 +1,13 @@
 import React, { ChangeEvent, useEffect, useRef, useState } from "react";
-import SecondaryHeader from "./headers/SecondaryHeader";
-import { layoutColors } from "../colors";
-import { isOptimizationTestArray, OptimizationTest } from "../types/types";
+import {isExperimentRecord, ExperimentRecord, UserLocalFile} from "../types/types";
 import useFileUploader from "../hooks/fileUploader";
+import {CardTitle} from "@/components/ui/card";
 
-type TestsNotFoundProps = {
-  onSingleFileLoaded: (tests: OptimizationTest[], isLast: boolean) => any;
+type TestFileUploaderProps = {
+  onSingleFileLoaded: (tests: UserLocalFile, isLast: boolean) => any;
 };
 
-const TestsNotFound = ({ onSingleFileLoaded }: TestsNotFoundProps) => {
+const TestFileUploader = ({ onSingleFileLoaded }: TestFileUploaderProps) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const { files, uploadFile, clearList } = useFileUploader();
@@ -41,10 +40,12 @@ const TestsNotFound = ({ onSingleFileLoaded }: TestsNotFoundProps) => {
             const text = await file.text();
             const parsedFile = JSON.parse(text);
 
-            if (!isOptimizationTestArray(parsedFile)) {
+            if (!isExperimentRecord(parsedFile)) {
               setIsInvalidType(true);
               break;
             }
+
+            // Extract algorithm name
 
             onSingleFileLoaded(parsedFile, ++i === files.length);
           }
@@ -60,38 +61,32 @@ const TestsNotFound = ({ onSingleFileLoaded }: TestsNotFoundProps) => {
 
   return (
     <div
-      className={"relative w-full h-full content-center text-center min-h-64"}
+      className={"relative w-full h-full min-h-64 flex flex-col gap-4 justify-center"}
     >
-      <SecondaryHeader accent>Tests not found!</SecondaryHeader>
-      <p>
+      <CardTitle>
         Open your desired file by{" "}
         <button
           onClick={openFileSelector}
-          className={`hover:underline ${layoutColors.cyan.text.light}`}
+          className={`hover:underline text-blue-400`}
         >
           clicking here
         </button>
         .
-      </p>
+      </CardTitle>
       {isInvalidType && (
         <p
           className={
-            "text-red-700 px-2 bg-red-500/15 w-fit mx-auto rounded-md mt-2"
+            "text-red-700 px-2 py-1 bg-red-700/10 border border-red-700/30 w-fit mx-auto rounded-md text-xs"
           }
         >
           Cannot parse selected file to test format.
         </p>
       )}
-      <span
-        className={`absolute bottom-1 left-1/2 -translate-x-1/2 text-xs ${layoutColors.neutral.text.dark}`}
+      <div
+        className={`text-xs text-muted-foreground border rounded-md px-2 py-1 bg-blue-900/10 border-blue-900/30 mx-auto`}
       >
-        Accepted format:{" "}
-        <span
-          className={`inline-block border-[1px] px-1 h-5 rounded-md ${layoutColors.neutral.text.primary} ${layoutColors.cyan.border.dark}`}
-        >
-          application/json
-        </span>
-      </span>
+        Accepted format: <span className={'text-blue-400/70'}>application/json</span>
+      </div>
 
       <input
         ref={fileInputRef}
@@ -105,4 +100,4 @@ const TestsNotFound = ({ onSingleFileLoaded }: TestsNotFoundProps) => {
   );
 };
 
-export default TestsNotFound;
+export default TestFileUploader;

@@ -44,7 +44,7 @@ const SolutionColorInput = ({
         ref={inputRef}
         type={"color"}
         value={colorValue}
-        onChange={(e) => onChange(hexToRgbConverter(e.target.value))}
+        onChange={(e) => onChange("")}
         className={"invisible h-0 w-0"}
       />
     </div>
