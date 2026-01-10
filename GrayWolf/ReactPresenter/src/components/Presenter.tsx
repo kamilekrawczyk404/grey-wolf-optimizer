@@ -3,7 +3,7 @@ import Container from "./Container";
 import TestsPreview from "./TestsPreview";
 import CanvasConfigConfigure from "./canvas/CanvasConfigConfigure";
 import GwoCanvas, {CanvasConfig, defaultConfig} from "./canvas/GwoCanvas";
-import {ExperimentRecord} from "../types/types";
+import {ExperimentRecord, UserLocalFile} from "../types/types";
 import { AnimationStatus } from "../App";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -69,14 +69,10 @@ const Presenter = () => {
     const [currentTest, setCurrentTest] = useState<ExperimentRecord | null>(null);
     const [currentIteration, setCurrentIteration] = useState<number>(-1);
     const [canvasConfig, setCanvasConfig] = useState<CanvasConfig>(defaultConfig);
+    const [userExternalFiles, setUserExternalFiles] = useState<UserLocalFile[]>([])
+    const [isExternalData, setIsExternalData] = useState<boolean>(false);
 
     const { sessions, setActiveTab, activeTab} = useTestStore();
-
-    const tests = useMemo(() => {
-        return sessions
-            .filter(s => s.status === 'completed' && s.presenterData.length > 0)
-            .flatMap(s => s.presenterData);
-    }, [sessions]);
 
     const pauseAnimation = useCallback(() => {
         setAnimationStatus((prev) => ({ ...prev, isRunning: false }));
@@ -100,14 +96,22 @@ const Presenter = () => {
     }, []);
 
     const handleSingleFileLoaded = useCallback(
-        (userTests: ExperimentRecord[], isLast: boolean) => {
-            // const newTests = [...tests, ...userTests];
-            //
-            // userTests.forEach(t => addPresenterTest(t))
-            //
-            // if (isLast) {
-            //     setCurrentTest(newTests[0]);
-            // }
+        (localTestFile: UserLocalFile, isLast: boolean) => {
+            setIsExternalData(true);
+            setUserExternalFiles(prev => [...prev, localTestFile])
+            setCurrentIteration(0);
+
+            if (isLast) {
+                setCurrentTest({
+                    description: localTestFile.description,
+                    properties: {
+                        history: localTestFile.history,
+                        ...localTestFile.properties
+                    }
+                });
+            }
+
+            toast.success("External data loaded successfully");
         },
         [],
     );
@@ -133,8 +137,6 @@ const Presenter = () => {
         setAnimationStatus({ isRunning: false, isCompleted: false });
     }, [currentTest]);
 
-    const singleTests = useMemo(() => sessions.filter(s => s.mode === 'single' && s.presenterData.length > 0), [sessions]);
-    const multiTests = useMemo(() => sessions.filter(s => s.mode === 'multi' && s.presenterData.length > 0), [sessions]);
 
     const runPresenter = (session: TestSession) => {
         if (!session.presenterData) {
@@ -142,10 +144,33 @@ const Presenter = () => {
             return;
         }
 
+        setIsExternalData(false);
+        setUserExternalFiles([]);
+
         setCurrentTest(session.presenterData[0])
 
         toast.success(`Loaded results for ${session.name}`);
     }
+
+    const singleTests = useMemo(() => sessions.filter(s => s.mode === 'single' && s.presenterData.length > 0), [sessions]);
+    const multiTests = useMemo(() => sessions.filter(s => s.mode === 'multi' && s.presenterData.length > 0), [sessions]);
+
+    const displayedTests = useMemo<ExperimentRecord[]>(() => {
+        if (isExternalData) {
+
+            return userExternalFiles.map(file => ({
+                description: file.description,
+                properties: {
+                    history: file.history,
+                    ...file.properties
+                }
+            } as ExperimentRecord));
+        }
+
+        return sessions
+            .filter(s => s.id === activeTab && s.presenterData.length > 0)
+            .flatMap(s => s.presenterData);
+    }, [isExternalData, userExternalFiles, sessions, activeTab]);
 
     const SessionRow = ({ session }: { session: TestSession }) => {
         return (
@@ -201,7 +226,7 @@ const Presenter = () => {
     }
 
     return (
-        <Card className={`bg-neutral-900 border-neutral-800 h-full overflow-hidden flex flex-col max-w-7xl ${currentTest ? "" : "p-0"}`}>
+        <Card className={`bg-neutral-900 border-neutral-800 h-full overflow-hidden flex flex-col sm:max-w-7xl ${currentTest ? "" : "p-0"}`}>
             {currentTest ? (
                 <div className="grid lg:grid-cols-2 grid-cols-1 h-full gap-2 p-2">
                     <Container className={"flex flex-col gap-2 p-2"}>
@@ -209,7 +234,7 @@ const Presenter = () => {
 
                         <TestsPreview
                             isRunning={animationStatus.isRunning}
-                            tests={sessions.filter(s => s.id === activeTab && s.presenterData.length > 0).flatMap(s => s.presenterData)}
+                            tests={displayedTests}
                             onTestChange={setCurrentTest}
                         />
                         <CanvasConfigConfigure
@@ -221,6 +246,7 @@ const Presenter = () => {
                     </Container>
                     <Container>
                          <GwoCanvas
+                             key={currentTest.description + (isExternalData ? '-ext' : '-int')}
                              properties={currentTest.properties}
                              iteration={currentIteration}
                              onAnimationPause={pauseAnimation}
@@ -278,7 +304,7 @@ const Presenter = () => {
                         </ScrollArea>
                     </div>
 
-                    <div className="w-[350px] bg-neutral-900/50 p-6 flex flex-col border-b border-neutral-800 h-fit">
+                    <div className="sm:w-[350px] bg-neutral-900/50 p-6 flex flex-col border-b border-neutral-800 h-fit sm:items-start items-center w-full">
                         <div className="mb-6 space-y-1">
                             <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                                 <FileJson className="h-5 w-5 text-neutral-400" />

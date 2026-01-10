@@ -76,7 +76,7 @@ const CanvasConfigConfigure = ({
             <CardContent className="flex sm:flex-row flex-col gap-4">
                 <div className="space-y-3 flex-1">
                     <h4 className="text-sm font-semibold text-white flex items-center gap-2">
-                        <MonitorPlay className="text-blue-400" size={'1rem'} /> Animation Settings
+                        <MonitorPlay className="text-blue-400" size={'1rem'}/> Animation Settings
                     </h4>
 
                     <div className="grid gap-4">
@@ -92,7 +92,7 @@ const CanvasConfigConfigure = ({
                                 step={10}
                                 value={[config.animationDuration]}
                                 onValueChange={(vals) =>
-                                    updateConfig((prev) => ({ ...prev, animationDuration: vals[0] }))
+                                    updateConfig((prev) => ({...prev, animationDuration: vals[0]}))
                                 }
                                 className="[&_.bg-primary]:bg-blue-500"
                             />
@@ -106,24 +106,34 @@ const CanvasConfigConfigure = ({
                                 min={1}
                                 max={iterations}
                                 value={config.visibleIterations}
-                                onChange={(e) => updateConfig(prev => ({ ...prev, visibleIterations: parseInt(e.target.value) }))}
+                                onChange={(e) => updateConfig(prev => ({
+                                    ...prev,
+                                    visibleIterations: parseInt(e.target.value)
+                                }))}
                                 className="h-8 bg-neutral-950 border-neutral-800 text-xs"
                             />
                         </div>
                     </div>
                 </div>
 
-                <Separator orientation={'vertical'} />
+                <div className={'sm:block hidden'}>
+                    <Separator orientation={'vertical'}/>
+                </div>
+
+                <div className={'sm:hidden block'}>
+                    <Separator orientation={'horizontal'}/>
+                </div>
 
                 <div className="space-y-3 flex-1">
                     <h4 className="text-sm font-semibold text-white flex items-center gap-2">
-                        <Palette className="text-purple-400" size={'1rem'} /> Visuals
+                        <Palette className="text-purple-400" size={'1rem'}/> Visuals
                     </h4>
 
-                    <div className="grid grid-cols-[1fr_auto] gap-4 items-center p-2 rounded-md border border-neutral-800 bg-neutral-950/30">
+                    <div
+                        className="grid grid-cols-[1fr_auto] gap-4 items-center p-2 rounded-md border border-neutral-800 bg-neutral-950/30">
                         <div className="space-y-1">
                             <Label className="text-xs text-white flex items-center gap-2">
-                                <Circle className="h-3 w-3 text-green-400 fill-green-400" />
+                                <Circle className="h-3 w-3 text-green-400 fill-green-400"/>
                                 Best Solution
                             </Label>
                             <div className="flex items-center gap-2">
@@ -132,7 +142,10 @@ const CanvasConfigConfigure = ({
                                     type="number"
                                     disabled={isRunning}
                                     value={config.solutionSize}
-                                    onChange={(e) => updateConfig(prev => ({ ...prev, solutionSize: parseInt(e.target.value) }))}
+                                    onChange={(e) => updateConfig(prev => ({
+                                        ...prev,
+                                        solutionSize: parseInt(e.target.value)
+                                    }))}
                                     className="h-6 w-16 bg-neutral-900 border-neutral-800 text-[10px] px-1"
                                 />
                             </div>
@@ -144,10 +157,11 @@ const CanvasConfigConfigure = ({
                         />
                     </div>
 
-                    <div className="grid grid-cols-[1fr_auto] gap-4 items-center p-2 rounded-md border border-neutral-800 bg-neutral-950/30">
+                    <div
+                        className="grid grid-cols-[1fr_auto] gap-4 items-center p-2 rounded-md border border-neutral-800 bg-neutral-950/30">
                         <div className="space-y-1">
                             <Label className="text-xs text-white flex items-center gap-2">
-                                <Crown className="h-3 w-3 text-yellow-400 fill-yellow-400" />
+                                <Crown className="h-3 w-3 text-yellow-400 fill-yellow-400"/>
                                 Leader Agents
                             </Label>
                             <p className="text-[10px] text-neutral-500">
@@ -161,10 +175,11 @@ const CanvasConfigConfigure = ({
                         />
                     </div>
 
-                    <div className="grid grid-cols-[1fr_auto] gap-4 items-center p-2 rounded-md border border-neutral-800 bg-neutral-950/30">
+                    <div
+                        className="grid grid-cols-[1fr_auto] gap-4 items-center p-2 rounded-md border border-neutral-800 bg-neutral-950/30">
                         <div className="space-y-1">
                             <Label className="text-xs text-white flex items-center gap-2">
-                                <Users className="h-3 w-3 text-neutral-400" />
+                                <Users className="h-3 w-3 text-neutral-400"/>
                                 Follower Agents
                             </Label>
                             <div className="flex items-center gap-2">
@@ -173,7 +188,10 @@ const CanvasConfigConfigure = ({
                                     type="number"
                                     disabled={isRunning}
                                     value={config.agentRadius}
-                                    onChange={(e) => updateConfig(prev => ({ ...prev, agentRadius: parseInt(e.target.value) }))}
+                                    onChange={(e) => updateConfig(prev => ({
+                                        ...prev,
+                                        agentRadius: parseInt(e.target.value)
+                                    }))}
                                     className="h-6 w-16 bg-neutral-900 border-neutral-800 text-[10px] px-1"
                                 />
                             </div>

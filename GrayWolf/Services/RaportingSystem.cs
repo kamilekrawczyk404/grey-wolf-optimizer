@@ -40,8 +40,9 @@ namespace GrayWolf.Services
             var vizualizerData = new FinalVisualizerReport
             {
                 Description = $"{algorithmName} Test - {function}",
-                Properies = new ReportProperies
+                Properties = new ReportProperties
                 {
+                    Algorithm = algorithmName,
                     Dimensions = dim,
                     PopulationSize = populationSize,
                     Iterations = iterations,
@@ -50,7 +51,7 @@ namespace GrayWolf.Services
                     BenchmarkFunction = function.ToString(),
                     BestFitness = bestFitness,
                     BestSolution = bestSolution,
-                    GlobalMinimumCoords = function.GlobalMinimum
+                    Solution = function.GlobalMinimum
                 },
                 History = historyLogs
             };
@@ -100,8 +101,9 @@ namespace GrayWolf.Services
             var vizualizerData = new FinalVisualizerReport
             {
                 Description = $"{algorithmName} Multi-Trial Test - {function} (Best of {stats.TotalTrials})",
-                Properies = new ReportProperies
+                Properties = new ReportProperties
                 {
+                    Algorithm = algorithmName,
                     Dimensions = dim,
                     PopulationSize = populationSize,
                     Iterations = iterations,
@@ -110,7 +112,7 @@ namespace GrayWolf.Services
                     BenchmarkFunction = function.ToString(),
                     BestFitness = bestTrial.BestFitness,
                     BestSolution = bestTrial.BestSolution,
-                    GlobalMinimumCoords = function.GlobalMinimum
+                    Solution = function.GlobalMinimum
                 },
                 History = bestTrial.HistoryLogs
             };

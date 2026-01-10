@@ -11,7 +11,7 @@ import React, {useEffect} from "react";
 import {BENCHMARK_CONFIGS} from "@/stores/benchmark-configs";
 import {toast} from "sonner";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import {Activity, Play} from "lucide-react";
+import {Activity, BarChart3, Play} from "lucide-react";
 import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage} from "@/components/ui/form";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import {Checkbox} from "@/components/ui/checkbox";
@@ -150,7 +150,7 @@ export const MultiAlgorithmConfigurationForm = ({session}: MultiAlgorithmsConfig
         <Card className="bg-neutral-900 border-neutral-800">
             <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
-                    <Activity className="text-blue-500" />
+                    <BarChart3 className="text-purple-400" />
                     Multi-Algorithm Comparison
                 </CardTitle>
                 <CardDescription>

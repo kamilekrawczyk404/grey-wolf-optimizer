@@ -1,10 +1,10 @@
 import React, { ChangeEvent, useEffect, useRef, useState } from "react";
-import {isExperimentRecord, ExperimentRecord} from "../types/types";
+import {isExperimentRecord, ExperimentRecord, UserLocalFile} from "../types/types";
 import useFileUploader from "../hooks/fileUploader";
 import {CardTitle} from "@/components/ui/card";
 
 type TestFileUploaderProps = {
-  onSingleFileLoaded: (tests: ExperimentRecord[], isLast: boolean) => any;
+  onSingleFileLoaded: (tests: UserLocalFile, isLast: boolean) => any;
 };
 
 const TestFileUploader = ({ onSingleFileLoaded }: TestFileUploaderProps) => {
@@ -45,6 +45,8 @@ const TestFileUploader = ({ onSingleFileLoaded }: TestFileUploaderProps) => {
               break;
             }
 
+            // Extract algorithm name
+
             onSingleFileLoaded(parsedFile, ++i === files.length);
           }
         }
@@ -74,7 +76,7 @@ const TestFileUploader = ({ onSingleFileLoaded }: TestFileUploaderProps) => {
       {isInvalidType && (
         <p
           className={
-            "text-red-700 px-2 bg-red-500/15 w-fit mx-auto rounded-md mt-2"
+            "text-red-700 px-2 py-1 bg-red-700/10 border border-red-700/30 w-fit mx-auto rounded-md text-xs"
           }
         >
           Cannot parse selected file to test format.

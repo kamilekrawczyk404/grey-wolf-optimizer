@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, {useEffect, useMemo, useState} from "react";
 import { ExperimentRecord } from "../types/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -14,6 +14,7 @@ import {
     Brackets
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {useTestStore} from "@/stores/test-store";
 
 type TestsPreviewProps = {
     tests: ExperimentRecord[];
@@ -40,6 +41,10 @@ const formatTitle = (text: string) => {
 };
 
 const TestsPreview = ({ tests, onTestChange, isRunning }: TestsPreviewProps) => {
+    const { getActiveSession } = useTestStore();
+
+    const activeSession = useMemo(() => getActiveSession(), [tests])
+
     const [selectedTestIndex, setSelectedTestIndex] = useState<number>(0);
 
     const selectedTest = tests[selectedTestIndex];
@@ -63,12 +68,13 @@ const TestsPreview = ({ tests, onTestChange, isRunning }: TestsPreviewProps) => 
     }
 
     return (
-        <Card className="bg-neutral-900 border-neutral-800 h-full flex flex-col overflow-hidden">
+        <Card className="bg-neutral-900 border-neutral-800 h-full flex flex-col overflow-y-scroll max-h-[400px]">
             <div className="border-b border-neutral-800 bg-neutral-900/50">
                 <ScrollArea className="w-full whitespace-nowrap">
                     <div className="flex w-max space-x-2 px-4 pb-4">
                         {tests.map((test, index) => {
                             const isSelected = index === selectedTestIndex;
+
                             return (
                                 <Button
                                     key={index}
@@ -84,8 +90,7 @@ const TestsPreview = ({ tests, onTestChange, isRunning }: TestsPreviewProps) => 
                                     )}
                                 >
                                     <span className="mr-2 text-xs opacity-70">#{index + 1}</span>
-                                    {/*{test.description || `Test ${index + 1}`}*/}
-                                    {`Test ${index + 1}`}
+                                    {activeSession!.mode === 'single' ? `Test ${index + 1}` : `${test.properties.algorithm}`}
                                 </Button>
                             );
                         })}

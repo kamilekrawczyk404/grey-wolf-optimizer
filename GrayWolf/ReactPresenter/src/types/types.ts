@@ -36,6 +36,14 @@ export type OptimizationRun = {
   history: IterationSnapshot[];
 };
 
+type UserLocalFileProperties = Omit<OptimizationRun, 'history'>
+
+export type UserLocalFile = {
+  description: string;
+  properties: UserLocalFileProperties;
+  history: IterationSnapshot[]
+}
+
 export type ExperimentRecord = {
   description: string;
   properties: OptimizationRun;
@@ -69,12 +77,12 @@ export function isIterationSnapshot(obj: any): obj is IterationSnapshot {
 
   return (
     typeof obj.iteration === "number" &&
-    Array.isArray(obj.iterations) &&
-    obj.iterations.every(isAgentState) // Validate each entity
+    Array.isArray(obj.entities) &&
+    obj.entities.every(isAgentState) // Validate each entity
   );
 }
 
-export function isOptimizationRun(
+export function isOptimizationRunProperties(
   obj: any,
 ): obj is OptimizationRun {
   if (!obj || typeof obj !== "object") {
@@ -82,32 +90,31 @@ export function isOptimizationRun(
   }
 
   return (
+    typeof obj.algorithm === "string" &&
+    typeof obj.benchmarkFunction === "string" &&
     typeof obj.iterations === "number" &&
+    isNumberArray(obj.bestSolution) &&
+    typeof obj.bestFitness === "number" &&
+    typeof obj.dimensions === "number" &&
+    typeof obj.populationSize === "number" &&
     typeof obj.lowerBound === "number" &&
     typeof obj.upperBound === "number" &&
-    typeof obj.dimensions === "number" &&
-    typeof obj.bestFitness === "number" &&
-    typeof obj.benchmarkFunction === "string" &&
-    isNumberArray(obj.globalMinimumCoords) &&
-    isNumberArray(obj.bestSolution) &&
-    Array.isArray(obj.history) &&
-    obj.entities.every(isIterationSnapshot) // Validate every item in history
+    Array.isArray(obj.solution) &&
+    obj.solution.every(isNumberArray)
   );
 }
 
-export function isProcessedReportWithDescription(obj: any): obj is ExperimentRecord {
+export function isExperimentRecord(obj: any): obj is UserLocalFile {
   if (!obj || typeof obj !== "object") {
     return false;
   }
 
   return (
-    typeof obj.description === "string" &&
-    isOptimizationRun(obj.properties) // Validate the nested properties object
+      typeof obj.description === "string" &&
+      isOptimizationRunProperties(obj.properties) && // Validate the nested properties object
+      Array.isArray(obj.history) &&
+      obj.history.every(isIterationSnapshot) // Validate every item in history
   );
-}
-
-export function isExperimentRecord(obj: any): obj is ExperimentRecord[] {
-  return Array.isArray(obj) && obj.every(isProcessedReportWithDescription);
 }
 
 export type HeaderProps = HTMLAttributes<HTMLHeadingElement> & {
@@ -124,4 +131,5 @@ export enum BenchmarkFunctions {
     Sphere = "Sphere",
     Beale = "Beale",
     RosenBrock = "RosenBrock",
+    BukinN6 = "BukinN6"
 }

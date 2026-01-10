@@ -42,11 +42,6 @@ const getRgbaString = (color: { r: number; g: number; b: number }, alpha: number
   return `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha})`;
 };
 
-const flattenPointTo2D = (position: number[]): Point => {
-  if (!position || position.length < 2) return { x: 0, y: 0 };
-  return { x: position[0], y: position[1] };
-};
-
 const valToCanvas = (val: number, min: number, range: number, size: number, isY: boolean = false) => {
   const ratio = (val - min) / range;
   // y-axis grows in opposite direction than in standard cartesian plane, it needs to be rotated

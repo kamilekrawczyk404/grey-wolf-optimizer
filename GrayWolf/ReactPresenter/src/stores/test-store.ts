@@ -87,6 +87,7 @@ export interface TestSession {
     endTime?: number;
     resultsSeen: boolean;
     abortController?: AbortController;
+    runId?: string;
 }
 
 export interface TestStore {
@@ -108,6 +109,7 @@ export interface TestStore {
     setTestResult: (id: string, result: TestResult) => void;
     markResultsSeen: (id: string) => void;
     hydrate: () => void;
+    syncCheckpoints: () => Promise<void>;
 }
 
 function getDefaultConfig(mode: 'single' | 'multi'): TestFormValues {
@@ -418,7 +420,72 @@ export const useTestStore = create<TestStore>()(
                     ),
                 }));
             },
+
+            syncCheckpoints: async () => {
+                try {
+                    console.log("Syncing checkpoints with backend...");
+
+                    const response = await fetch(
+                        "http://localhost:5000/api/optimizer/checkpoints"
+                    );
+
+                    if (!response.ok) {
+                        console.error("Failed to fetch checkpoints from backend");
+                        return;
+                    }
+
+                    const checkpoints = await response.json();
+                    console.log("Available checkpoints from backend:", checkpoints);
+
+                    set((state) => ({
+                        sessions: state.sessions.map((session) => {
+                            // Jeśli sesja nie ma runId, pomiń
+                            if (!session.runId) return session;
+
+                            // Sprawdź czy checkpoint nadal istnieje w backendzie
+                            const checkpointExists = checkpoints.some(
+                                (cp: any) => cp.runId === session.runId
+                            );
+
+                            if (!checkpointExists) {
+                                // Checkpoint został usunięty - wyczyść runId
+                                console.log(
+                                    `Checkpoint ${session.runId} no longer exists - clearing from session ${session.id}`
+                                );
+                                return {
+                                    ...session,
+                                    runId: undefined,
+                                    status: "idle" as SessionStatus,
+                                };
+                            }
+
+                            if (
+                                session.status === "running" ||
+                                session.status === "error" ||
+                                session.status === "cancelled"
+                            ) {
+                                console.log(
+                                    `Session ${session.id} was ${session.status} but checkpoint exists - setting to idle with runId ${session.runId}`
+                                );
+                                return {
+                                    ...session,
+                                    status: "idle" as SessionStatus,
+                                    abortController: undefined,
+                                    // runId zostaje!
+                                };
+                            }
+
+                            return session;
+                        }),
+                    }));
+
+                    console.log("Checkpoints synced successfully");
+                } catch (error) {
+                    console.error("Failed to sync checkpoints:", error);
+                }
+            },
         }),
+
         {
             name: "optimizer-test-sessions",
             storage: createJSONStorage(() => localStorage),
@@ -442,6 +509,7 @@ export const useTestStore = create<TestStore>()(
                         ...s,
                         status: s.status === "running" ? "cancelled" : s.status,
                         abortController: undefined,
+                        runId: s.runId,
                         result: formattedResult,
                         presenterData: [],
                     }

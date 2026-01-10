@@ -39,12 +39,13 @@ namespace GrayWolf.Model
     public class FinalVisualizerReport
     {
         public string Description { get; set; }
-        public ReportProperies Properies { get; set; }
+        public ReportProperties Properties { get; set; }
         public List<IterationLog> History { get; set; }
     }
 
-    public class ReportProperies
+    public class ReportProperties
     {
+        public string Algorithm { get; set; }
         public int Iterations { get; set; }
         public double LowerBound { get; set; }
         public double UpperBound { get; set; }
@@ -53,7 +54,7 @@ namespace GrayWolf.Model
         public int PopulationSize { get; set; }
         public double[] BestSolution { get; set; }
         public double BestFitness { get; set; }
-        public double[][] GlobalMinimumCoords { get; set; }
+        public double[][] Solution { get; set; }
     }
 
     // TO-DO: uzunąć to później, jeśli nie będzie potrzebne??
