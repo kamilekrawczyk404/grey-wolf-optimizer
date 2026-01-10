@@ -124,243 +124,158 @@ namespace GrayWolf.Algorithms
         }
     }
 
-    internal class AquilaOptimizer : IOptimizationAlgorithm// credits to Krzysztof Chrobok
+    internal class AquilaOptimizer : BaseOptimizer// credits to Krzysztof Chrobok
     {
-        public string Name { get; set; } = "Aquila Optimizer";
-        public double[] XBest { get; set; }
-        public double FBest { get; set; }
-        public int NumberOfEvaluationFitnessFunction { get; set; }
-
-        int n;
-        int Dim;
-        int IterNum;
-        IBenchmarkFunc funkcja;
-        double min_range;
-        double max_range;
-
-        private readonly double _alpha = 0.1;
-        private readonly double _delta = 0.1;
-
-        private readonly string _stateFilePath;
-        public List<IterationLog> FullHistory { get; set; } = new List<IterationLog>();
-
-        private AquilaMath _math;
+        public override string Name { get; set; } = "Aquila Optimizer";
+        private AquilaMath _aquilaMath;
 
         public AquilaOptimizer(int n, int D, int IterNum, IBenchmarkFunc funkcja, double min_range, double max_range, string stateFilePath)
+            : base(n, D, IterNum, funkcja, min_range, max_range, stateFilePath)
         {
-            this.n = n;
-            this.Dim = D;
-            this.IterNum = IterNum;
-            this.funkcja = funkcja;
-            this.min_range = min_range;
-            this.max_range = max_range;
-
-            _stateFilePath = stateFilePath;
-
-            _math = new AquilaMath(D, alpha: _alpha, delta: _delta);
+            _aquilaMath = new AquilaMath(D);
         }
 
-        public double Solve(CancellationToken cancellationToken)
+        protected override void InitializeLeaders(double[][] pop, double[] fit)
         {
-            Random random = new Random();
-
-            double[][] population;
-            double[] y_values;
-            int startIter = 0;
-
-            var checkpoint = CheckpointService.LoadCheckpoint(_stateFilePath);
-
-            if (checkpoint != null && checkpoint.AlgorithmName == Name && checkpoint.FunctionName == funkcja.ToString())
-            {
-                startIter = checkpoint.CurrentIteration;
-                population = checkpoint.Population;
-                y_values = checkpoint.FitnessValues;
-                FullHistory = checkpoint.HistoryLogs ?? new List<IterationLog>();
-                NumberOfEvaluationFitnessFunction = checkpoint.EvaluationsCount;
-
-                // Universal Global Best
-                XBest = checkpoint.GlobalBestPosition;
-                FBest = checkpoint.GlobalBestFitness;
-
-                // Algorithm-specific data
-                if (!string.IsNullOrEmpty(checkpoint.AlgorithmSpecificDataJson))
-                {
-                    try
-                    {
-                        var specificData = JsonSerializer.Deserialize<AquilaSpecificData>(checkpoint.AlgorithmSpecificDataJson);
-                        // if Aquila had specific data, load it here
-                    }
-                    catch
-                    {
-                        // Handle deserialization errors if necessary
-                    }
-                }
-            }
-            else
-            {
-                // No valid checkpoint found, start fresh
-                population = GeneratePopulation();
-                y_values = Calculate(population);
-                UpdateBest(population, y_values);
-                NumberOfEvaluationFitnessFunction = n;
-            }
-
-            if (XBest == null)
-            {
-                XBest = new double[Dim];
-                FBest = double.MaxValue;
-                UpdateBest(population, y_values);
-            }
-
-            List<double> upperBounds = Enumerable.Repeat(max_range, Dim).ToList();
-            List<double> lowerBounds = Enumerable.Repeat(min_range, Dim).ToList();
-
-            for (int t = startIter; t < IterNum; t++)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                LogHistory(t, population, y_values);
-
-                List<double> xMean = CalculateMeanPopulation(population);
-                List<double> xBestList = XBest.ToList();
-
-                for (int i = 0; i < n; i++)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    List<double> xCurrent = population[i].ToList();
-                    double currentFitness = y_values[i];
-
-                    double rand = random.NextDouble();
-                    List<double> candidate = null;
-                    int T = IterNum;
-                    int currentT = t + 1;
-
-                    if (currentT <= (2.0 / 3.0) * T)
-                    {
-                        if (rand <= 0.5)
-                        {
-                            candidate = _math.ExpandedExploration(xBestList, xMean, currentT, T);
-                        }
-                        else
-                        {
-                            int randIdx = random.Next(n);
-                            candidate = _math.NarrowedExploration(xBestList, population[randIdx].ToList());
-                        }
-                    }
-                    else
-                    {
-                        if (rand <= 0.5)
-                        {
-                            candidate = _math.ExpandedExploitation(xBestList, xMean, upperBounds, lowerBounds);
-                        }
-                        else
-                        {
-                            candidate = _math.NarrowedExploitation(xBestList, xCurrent, currentT, T);
-                        }
-                    }
-
-                    if (candidate != null)
-                    {
-                        CheckBounds(candidate);
-
-                        double[] candidateArray = candidate.ToArray();
-                        double candidateFitness = funkcja.Calculate_Value(candidateArray);
-                        NumberOfEvaluationFitnessFunction++;
-
-                        if (candidateFitness < currentFitness)
-                        {
-                            population[i] = candidateArray;
-                            y_values[i] = candidateFitness;
-
-                            if (candidateFitness < FBest)
-                            {
-                                FBest = candidateFitness;
-                                XBest = (double[])candidateArray.Clone();
-                                xBestList = XBest.ToList();
-                            }
-                        }
-                    }
-                }
-
-                if ((t + 1) % 10 == 0 || t == IterNum - 1)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    var aquilaSpecificData = new AquilaSpecificData
-                    {
-                        // Populate with any Aquila-specific data if needed
-                        BestPosition = XBest,
-                        BestScore = FBest
-                    };
-
-                    var checkpointAutoSave = new CheckpointData
-                    {
-                        AlgorithmName = Name,
-                        FunctionName = funkcja.ToString(),
-                        CurrentIteration = t + 1,
-                        Population = population,
-                        FitnessValues = y_values,
-                        GlobalBestPosition = XBest,
-                        GlobalBestFitness = FBest,
-                        EvaluationsCount = NumberOfEvaluationFitnessFunction,
-                        PopulationSize = n,
-                        Dimensions = Dim,
-                        HistoryLogs = FullHistory,
-                        AlgorithmSpecificDataJson = JsonSerializer.Serialize(aquilaSpecificData)
-                    };
-
-                    CheckpointService.SaveCheckpoint(_stateFilePath, checkpointAutoSave);
-                }
-            }
-            // clean up checkpoint after completion
-            // we can also potentially keep it for future runs
-            CheckpointService.ClearCheckpoint(_stateFilePath);
-
-            return FBest;
-        }
-
-        private double[][] GeneratePopulation()
-        {
-            Random random = new Random();
-            double[][] population = new double[n][];
-            NumberOfEvaluationFitnessFunction = 0;
-
-            for (int i = 0; i < n; i++)
-            {
-                population[i] = new double[Dim];
-                for (int j = 0; j < Dim; j++)
-                {
-                    population[i][j] = min_range + (max_range - min_range) * random.NextDouble();
-                }
-            }
-            return population;
-        }
-
-        private double[] Calculate(double[][] population)
-        {
-            double[] values = new double[n];
-            for (int i = 0; i < n; i++)
-            {
-                values[i] = funkcja.Calculate_Value(population[i]);
-                NumberOfEvaluationFitnessFunction++;
-            }
-            return values;
-        }
-
-        private void UpdateBest(double[][] population, double[] fitness)
-        {
-            double minFit = fitness[0];
+            double minFit = fit[0];
             int minIdx = 0;
-
-            for (int i = 1; i < n; i++)
+            for (int i = 1; i < N; i++)
             {
-                if (fitness[i] < minFit)
+                if (fit[i] < minFit)
                 {
-                    minFit = fitness[i];
+                    minFit = fit[i];
                     minIdx = i;
                 }
             }
-
             FBest = minFit;
-            XBest = (double[])population[minIdx].Clone();
+            XBest = (double[])pop[minIdx].Clone();
+        }
+
+        protected override void RunIteration(int iteration, CancellationToken ct)
+        {
+            List<double> xMean = CalculateMeanPopulation(Population);
+            List<double> xBestList = XBest.ToList();
+            List<double> upperBounds = Enumerable.Repeat(MaxRange, Dim).ToList();
+            List<double> lowerBounds = Enumerable.Repeat(MinRange, Dim).ToList();
+
+            for (int i = 0; i < N; i++)
+            {
+                ct.ThrowIfCancellationRequested();
+                List<double> xCurrent = Population[i].ToList();
+                double currentFitness = FitnessValues[i];
+
+                double rand = RandomGenerator.NextDouble();
+                List<double> candidate = null;
+                int T = IterNum;
+                int currentT = iteration + 1;
+
+                if (currentT <= (2.0 / 3.0) * T)
+                {
+                    if (rand <= 0.5)
+                    {
+                        candidate = _aquilaMath.ExpandedExploration(xBestList, xMean, currentT, T);
+                    }
+                    else
+                    {
+                        int randIdx = RandomGenerator.Next(N);
+                        candidate = _aquilaMath.NarrowedExploration(xBestList, Population[randIdx].ToList());
+                    }
+                }
+                else
+                {
+                    if (rand <= 0.5)
+                    {
+                        candidate = _aquilaMath.ExpandedExploitation(xBestList, xMean, upperBounds, lowerBounds);
+                    }
+                    else
+                    {
+                        candidate = _aquilaMath.NarrowedExploitation(xBestList, xCurrent, currentT, T);
+                    }
+                }
+
+                if (candidate != null)
+                {
+                    double[] candidateArray = candidate.ToArray();
+                    CheckBounds(candidateArray);
+                    double candidateFitness = Function.Calculate_Value(candidateArray);
+                    NumberOfEvaluationFitnessFunction++;
+
+                    if (candidateFitness < currentFitness)
+                    {
+                        Population[i] = candidateArray;
+                        FitnessValues[i] = candidateFitness;
+
+                        if (candidateFitness < FBest)
+                        {
+                            FBest = candidateFitness;
+                            XBest = (double[])candidateArray.Clone();
+                            xBestList = XBest.ToList();
+                        }
+                    }
+                }
+            }
+        }
+
+        protected override string GetSpecificStateJson()
+        {
+            var aquilaSpecificData = new AquilaSpecificData
+            {
+                // Populate with any Aquila-specific data if needed
+                BestPosition = XBest,
+                BestScore = FBest
+            };
+            return JsonSerializer.Serialize(aquilaSpecificData);
+        }
+
+        protected override void LoadSpecificState(string json)
+        {
+            if (!string.IsNullOrEmpty(json))
+            {
+                try
+                {
+                    var specificData = JsonSerializer.Deserialize<AquilaSpecificData>(json);
+                    // if Aquila had specific data, load it here
+                    XBest = specificData.BestPosition;
+                    FBest = specificData.BestScore;
+                }
+                catch
+                {
+                    // Handle deserialization errors if necessary
+                }
+            }
+        }
+
+        protected override void LogHistory(int iteration)
+        {
+            var aquilaLog = new List<EntityLog>();
+            int bestIndex = -1;
+            double bestVal = double.MaxValue;
+
+            for (int k = 0; k < N; k++)
+            {
+                if (FitnessValues[k] < bestVal)
+                {
+                    bestVal = FitnessValues[k];
+                    bestIndex = k;
+                }
+            }
+
+            for (int k = 0; k < Population.Length; k++)
+            {
+                double[] posCopy = (double[])Population[k].Clone();
+                aquilaLog.Add(new EntityLog
+                {
+                    Position = posCopy,
+                    Fitness = FitnessValues[k],
+                    Role = (k == bestIndex) ? "Best" : "Hawk", // Mark the best solution
+                    IsLeader = (k == bestIndex) // Only the best is leader
+                });
+            }
+            FullHistory.Add(new IterationLog
+            {
+                Iteration = iteration,
+                Entities = aquilaLog
+            });
         }
 
         private List<double> CalculateMeanPopulation(double[][] population)
@@ -369,92 +284,17 @@ namespace GrayWolf.Algorithms
             for (int d = 0; d < Dim; d++)
             {
                 double sum = 0.0;
-                for (int r = 0; r < n; r++)
+                for (int r = 0; r < N; r++)
                 {
                     sum += population[r][d];
                 }
-                mean.Add(sum / n);
+                mean.Add(sum / N);
             }
             return mean;
         }
 
-        private void CheckBounds(List<double> candidate)
-        {
-            for (int i = 0; i < candidate.Count; i++)
-            {
-                if (candidate[i] > max_range) candidate[i] = max_range;
-                else if (candidate[i] < min_range) candidate[i] = min_range;
-            }
-        }
-
-        private void LogHistory(int iteration, double[][] population, double[] fitness)
-        {
-            var aquilaLog = new List<EntityLog>();
-
-            double currentMin = double.MaxValue;
-            int bestIndex = -1;
-
-            for (int k = 0; k < n; k++)
-            {
-                if (fitness[k] < currentMin)
-                {
-                    currentMin = fitness[k];
-                    bestIndex = k;
-                }
-            }
-
-            for (int k = 0; k < population.Length; k++)
-            {
-                double[] posCopy = (double[])population[k].Clone();
-
-                aquilaLog.Add(new EntityLog
-                {
-                    Position = posCopy,
-                    Fitness = fitness[k],
-                    Role = (k == bestIndex) ? "Best" : "Hawk", // Mark the best solution
-                    IsLeader = (k == bestIndex) // Only the best is leader
-                });
-            }
-
-            FullHistory.Add(new IterationLog
-            {
-                Iteration = iteration,
-                Entities = aquilaLog
-            });
-        }
 
 
-        // TO-DO: Delete this method later if not needed
-
-        //private void GenerateReactJson()
-        //{
-        //    var report = new ReactReport
-        //    {
-        //        Description = $"Aquila Test - {funkcja}",
-        //        Properties = new ReportProperties
-        //        {
-        //            Dimensions = Dim,
-        //            Iterations = IterNum,
-        //            LowerBound = min_range,
-        //            UpperBound = max_range,
-        //            BenchmarkFunction = funkcja.ToString(),
-        //            PopulationSize = n,
-        //            BestFitness = FBest,
-        //            BestSolution = XBest,
-        //            History = FullHistory
-        //        }
-        //    };
-
-        //    var outputList = new List<ReactReport> { report };
-
-        //    var options = new JsonSerializerOptions
-        //    {
-        //        WriteIndented = true,
-        //        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        //    };
-
-        //    string json = JsonSerializer.Serialize(outputList, options);
-        //    File.WriteAllText(StateFile, json);
-        //}
+        
     }
 }

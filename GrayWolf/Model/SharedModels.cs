@@ -56,7 +56,7 @@ namespace GrayWolf.Model
         public double[][] GlobalMinimumCoords { get; set; }
     }
 
-    // TO-DO: uzunąć to później, jeśli nie będzie potrzebne??
+    // potrzebne do porównania algorytmów
     public class ComparisonResult
     {
         public string AlgorithmName { get; set; }
@@ -65,10 +65,33 @@ namespace GrayWolf.Model
         public int Iterations { get; set; }
     }
 
-    // TO-DO: uzunąć to później, jeśli nie będzie potrzebne??
+    // potrzebne do porównania algorytmów
     public class GenerateComparisonRequest
     {
         public string FunctionName { get; set; }
         public List<ComparisonResult> Results { get; set; }
+    }
+
+    // potrzebne do porównania wielu prób danego algorytmu
+    public class MultiTrialComparisonResult
+    {
+        public string AlgorithmName { get; set; }
+        public double BestFitness { get; set; }
+        public double WorstFitness { get; set; }
+        public double MeanFitness { get; set; }
+        public double MedianFitness { get; set; }
+        public double StdDevFitness { get; set; }
+        public double CoeffOfVariationFitness { get; set; }
+
+        public double[] BestSolution { get; set; }
+        public int TrialsCount { get; set; }
+        public int IterationsCount { get; set; }
+    }
+
+    // potrzebne do porównania wielu prób danego algorytmu
+    public class GenerateMultiTrialComparisonRequest
+    {
+        public string FunctionName { get; set; }
+        public List<MultiTrialComparisonResult> Results { get; set; }
     }
 }

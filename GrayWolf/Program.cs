@@ -279,7 +279,7 @@ app.MapGet("/api/optimizer/checkpoints", () =>
 });
 
 // TO-DO: uzunąć to później, jeśli nie będzie potrzebne??
-// ENDPOINT - porównanie algorytmów
+// ENDPOINT - dla generowania raportu porównawczego (wielu algorytmów na tej samej funkcji)
 app.MapPost("/api/optimizer/compare", (GenerateComparisonRequest request) =>
 {
     try
@@ -291,12 +291,45 @@ app.MapPost("/api/optimizer/compare", (GenerateComparisonRequest request) =>
         Console.WriteLine("Raport porównawczy wygenerowany pomyślnie.");
         return Results.Ok(new
         {
-            Message = "Raport porównawczy wygenerowany pomyślnie."
+            Message = "Raport porównawczy wygenerowany pomyślnie.",
+            ReportType = "Regular Comparison"
         });
     }
     catch (Exception ex)
     {
         Console.WriteLine($"Wystąpił błąd krytyczny podczas generowania raportu porównawczego: {ex.Message}");
+        return Results.Json(new
+        {
+            Error = ex.Message
+        }, statusCode: 500);
+    }
+});
+
+// ENDPOINT - porównanie wielu prób danego algorytmu
+app.MapPost("/api/optimizer/compare-multitrial", (GenerateMultiTrialComparisonRequest request) =>
+{
+    try
+    {
+        Console.WriteLine("Otrzymano request do /api/optimizer/multi-trial-report");
+
+        if (request.Results == null || request.Results.Count == 0)
+        {
+            return Results.BadRequest("Brak wyników prób do porównania.");
+        }
+
+        var reportingSystem = new RaportingSystem();
+        reportingSystem.GenerateMultiTrialComparisonReport(request.FunctionName, request.Results);
+        Console.WriteLine("Raport z wielu prób wygenerowany pomyślnie.");
+        return Results.Ok(new
+        {
+            Message = $"Raport porównawczy dla {request.Results.Count} algorytmów wygenerowany pomyślnie.",
+            AlgorithmsCompared = request.Results.Select(r => r.AlgorithmName).ToList(),
+            ReportType = "Multi-Trial Comparison"
+        });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Wystąpił błąd krytyczny podczas generowania raportu z wielu prób: {ex.Message}");
         return Results.Json(new
         {
             Error = ex.Message
