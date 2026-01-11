@@ -17,6 +17,8 @@ export type SessionStatus =
   | "cancelled";
 export { Algorithms, BenchmarkFunctions };
 
+export type MultiTestMode = "algorithms" | "functions";
+
 // Schema Zod
 export const singleTestFormSchema = z
   .object({
@@ -49,8 +51,25 @@ export const multiTestFormSchema = z.object({
   upperBound: z.number(),
 });
 
+export const functionComparisonSchema = z.object({
+  algorithm: z.nativeEnum(Algorithms),
+  selectedBenchmarkFunctions: z
+    .array(z.nativeEnum(BenchmarkFunctions))
+    .refine((value) => value.length > 1, {
+      message: "You must select at least two benchmark functions to compare",
+    }),
+  populationSize: z.number().min(10).max(1000),
+  dimensions: z.number().min(2).max(100),
+  iterations: z.number().min(10).max(10000),
+  lowerBound: z.number(),
+  upperBound: z.number(),
+});
+
 export type SingleTestFormValues = z.infer<typeof singleTestFormSchema>;
 export type MultiTestFormValues = z.infer<typeof multiTestFormSchema>;
+export type FunctionComparisonFormValues = z.infer<
+  typeof functionComparisonSchema
+>;
 
 export type TestMode = "single" | "multi";
 
@@ -78,6 +97,17 @@ export interface ComparisionRow {
   historyJson?: IterationSnapshot[];
 }
 
+export interface FunctionComparisonRow {
+  benchmarkFunction: BenchmarkFunctions;
+  duration: number;
+  status: "success" | "failed";
+  bestSolution?: number[];
+  bestFitness?: number;
+  solution?: number[][];
+  error?: string;
+  historyJson?: IterationSnapshot[];
+}
+
 export interface MultiTestResult {
   type: "multi";
   benchmarkFunction: BenchmarkFunctions;
@@ -85,13 +115,27 @@ export interface MultiTestResult {
   message?: string;
 }
 
-export type TestFormValues = SingleTestFormValues | MultiTestFormValues;
+export interface FunctionComparisonResult {
+  type: "function-comparison";
+  algorithm: Algorithms;
+  results: FunctionComparisonRow[];
+  message?: string;
+}
 
-export type TestResult = SingleTestResult | MultiTestResult;
+export type TestFormValues =
+  | SingleTestFormValues
+  | MultiTestFormValues
+  | FunctionComparisonFormValues;
+
+export type TestResult =
+  | SingleTestResult
+  | MultiTestResult
+  | FunctionComparisonResult;
 
 export interface TestSession {
   id: string;
   mode: TestMode;
+  multiTestMode?: MultiTestMode;
   name: string;
   config: TestFormValues;
   status: SessionStatus;
@@ -103,11 +147,19 @@ export interface TestSession {
   abortController?: AbortController;
   runId?: string;
 
-  multiTestProgress?: {
-    completedAlgorithms: Algorithms[]; // Lista już wykonanych algorytmów
-    currentAlgorithm?: Algorithms; // Aktualnie wykonywany algorytm
-    partialResults: ComparisionRow[]; // Częściowe wyniki
-  };
+  multiTestProgress?:
+    | {
+        mode: "algorithms";
+        completedAlgorithms: Algorithms[];
+        currentAlgorithm?: Algorithms;
+        partialResults: ComparisionRow[];
+      }
+    | {
+        mode: "functions";
+        completedFunctions: BenchmarkFunctions[];
+        currentFunction?: BenchmarkFunctions;
+        partialResults: FunctionComparisonRow[];
+      };
 }
 
 export interface TestStore {
@@ -126,17 +178,64 @@ export interface TestStore {
     updates?: Partial<TestSession>
   ) => void;
   cancelSession: (id: string) => void;
+  setMultiTestMode: (sessionId: string, mode: MultiTestMode) => void;
   setTestResult: (id: string, result: TestResult) => void;
   markResultsSeen: (id: string) => void;
   hydrate: () => void;
   syncCheckpoints: () => Promise<void>;
 }
 
-function getDefaultConfig(mode: "single" | "multi"): TestFormValues {
+export function isAlgorithmComparison(
+  config: TestFormValues
+): config is MultiTestFormValues {
+  return (
+    "selectedAlgorithms" in config && config.selectedAlgorithms !== undefined
+  );
+}
+
+export function isFunctionComparison(
+  config: TestFormValues
+): config is FunctionComparisonFormValues {
+  return (
+    "selectedBenchmarkFunctions" in config &&
+    config.selectedBenchmarkFunctions !== undefined
+  );
+}
+
+export function hasAlgorithmProgress(
+  progress: TestSession["multiTestProgress"]
+): progress is {
+  mode: "algorithms";
+  completedAlgorithms: Algorithms[];
+  currentAlgorithm?: Algorithms;
+  partialResults: ComparisionRow[];
+} {
+  return progress?.mode === "algorithms";
+}
+
+export function hasFunctionProgress(
+  progress: TestSession["multiTestProgress"]
+): progress is {
+  mode: "functions";
+  completedFunctions: BenchmarkFunctions[];
+  currentFunction?: BenchmarkFunctions;
+  partialResults: FunctionComparisonRow[];
+} {
+  return progress?.mode === "functions";
+}
+
+function getDefaultConfig(
+  mode: "single" | "multi",
+  multiTestMode: MultiTestMode = "algorithms"
+): TestFormValues {
   // Domyślna konfiguracja dla GWO + Rastrigin
   const defaultAlgorithm = Algorithms.GWO;
   const defaultBenchmark = BenchmarkFunctions.Rastrigin;
   const defaultCompare = [Algorithms.GWO, Algorithms.Aquila];
+  const defaultFunctions = [
+    BenchmarkFunctions.Rastrigin,
+    BenchmarkFunctions.Sphere,
+  ];
 
   const algorithmConfig = ALGORITHM_CONFIGS[defaultAlgorithm];
   const benchmarkConfig = BENCHMARK_CONFIGS[defaultBenchmark];
@@ -154,12 +253,25 @@ function getDefaultConfig(mode: "single" | "multi"): TestFormValues {
       };
 
     case "multi":
+      if (multiTestMode === "functions") {
+        return {
+          algorithm: defaultAlgorithm,
+          selectedBenchmarkFunctions: defaultFunctions,
+          populationSize: algorithmConfig.populationSize,
+          dimensions: benchmarkConfig.dimensions,
+          iterations: algorithmConfig.iterations,
+          lowerBound: benchmarkConfig.lowerBound,
+          upperBound: benchmarkConfig.upperBound,
+        };
+      }
+
+      // Domyślnie algorithms
       return {
         selectedAlgorithms: defaultCompare,
+        benchmarkFunction: defaultBenchmark,
         populationSize: algorithmConfig.populationSize,
         dimensions: benchmarkConfig.dimensions,
         iterations: algorithmConfig.iterations,
-        benchmarkFunction: defaultBenchmark,
         lowerBound: benchmarkConfig.lowerBound,
         upperBound: benchmarkConfig.upperBound,
       };
@@ -204,8 +316,9 @@ export const useTestStore = create<TestStore>()(
         {
           id: crypto.randomUUID(),
           mode: "multi",
+          multiTestMode: "algorithms",
           name: "Comparison 1",
-          config: getDefaultConfig("multi"),
+          config: getDefaultConfig("multi", "algorithms"),
           status: "idle",
           result: null,
           resultsSeen: true,
@@ -245,6 +358,7 @@ export const useTestStore = create<TestStore>()(
         const newSession: TestSession = {
           id: crypto.randomUUID(),
           mode,
+          multiTestMode: mode === "multi" ? "algorithms" : undefined,
           name:
             mode === "single"
               ? `Single Test ${
@@ -253,7 +367,10 @@ export const useTestStore = create<TestStore>()(
               : `Comparision ${
                   get().sessions.filter((s) => s.mode === "multi").length + 1
                 }`,
-          config: getDefaultConfig(mode),
+          config: getDefaultConfig(
+            mode,
+            mode === "multi" ? "algorithms" : undefined
+          ),
           status: "idle",
           result: null,
           resultsSeen: true,
@@ -338,6 +455,25 @@ export const useTestStore = create<TestStore>()(
         }));
       },
 
+      setMultiTestMode: (sessionId: string, mode: MultiTestMode) =>
+        set((state) => ({
+          sessions: state.sessions.map((s) => {
+            if (s.id !== sessionId) return s;
+
+            const newConfig = getDefaultConfig("multi", mode);
+
+            return {
+              ...s,
+              multiTestMode: mode,
+              config: newConfig,
+              // Resetuj progress jeśli zmieniamy tryb
+              multiTestProgress: undefined,
+              runId: undefined,
+              status: "idle" as SessionStatus,
+            };
+          }),
+        })),
+
       setTestResult: (id: string, result: TestResult) => {
         const session = get().sessions.find((s) => s.id === id);
         if (!session) return;
@@ -402,6 +538,54 @@ export const useTestStore = create<TestStore>()(
               }
 
               case "multi": {
+                if (result.type === "function-comparison") {
+                  const presenterRecords: ExperimentRecord[] = [];
+
+                  const algorithm = result.algorithm;
+
+                  const processedResults = result.results.map((row) => {
+                    if (
+                      row.status === "success" &&
+                      row.historyJson &&
+                      row.bestFitness !== undefined &&
+                      row.bestSolution &&
+                      row.solution
+                    ) {
+                      presenterRecords.push({
+                        description: `${row.benchmarkFunction}`,
+                        properties: {
+                          algorithm,
+                          benchmarkFunction: row.benchmarkFunction,
+                          iterations,
+                          bestSolution: row.bestSolution,
+                          bestFitness: row.bestFitness,
+                          dimensions,
+                          populationSize,
+                          lowerBound,
+                          upperBound,
+                          history: row.historyJson,
+                          solution: row.solution,
+                        },
+                      });
+                    }
+
+                    return {
+                      ...row,
+                      historyJson: undefined,
+                    };
+                  });
+
+                  return {
+                    ...s,
+                    status: "completed",
+                    result: {
+                      ...result,
+                      results: processedResults,
+                    },
+                    presenterData: presenterRecords,
+                  };
+                }
+
                 if (result.type !== "multi") return s;
 
                 const presenterRecords: ExperimentRecord[] = [];
@@ -525,11 +709,21 @@ export const useTestStore = create<TestStore>()(
                     `Multi-test session ${session.id} missing multiTestProgress - creating empty one`
                   );
 
-                  restoredMultiTestProgress = {
-                    completedAlgorithms: [], // Nie wiemy które algorytmy się wykonały
-                    partialResults: [], // Nie mamy częściowych wyników
-                    currentAlgorithm: undefined,
-                  };
+                  if (isAlgorithmComparison(session.config)) {
+                    restoredMultiTestProgress = {
+                      mode: "algorithms",
+                      completedAlgorithms: [],
+                      partialResults: [],
+                      currentAlgorithm: undefined,
+                    };
+                  } else if (isFunctionComparison(session.config)) {
+                    restoredMultiTestProgress = {
+                      mode: "functions",
+                      completedFunctions: [],
+                      partialResults: [],
+                      currentFunction: undefined,
+                    };
+                  }
                 }
 
                 return {

@@ -20,6 +20,7 @@ import {
   BarChart3,
   Activity,
   CirclePause,
+  FlaskConical,
 } from "lucide-react";
 import { toast } from "sonner";
 import { TestConfigurationForm } from "./TestConfigurationForm";
@@ -27,6 +28,7 @@ import { RunningTestView } from "./RunningTestView";
 import { TestResultsDialog } from "./TestResultsDialog";
 import { MultiAlgorithmConfigurationForm } from "@/components/Tester/MultiAlgorithmConfigurationForm";
 import { NavigationTab, useNavigationStore } from "@/stores/navigation-store";
+import { MultiFunctionConfigurationForm } from "./MultiFunctionConfigurationForm";
 
 export function MultiTabTestRunner() {
   const {
@@ -37,6 +39,7 @@ export function MultiTabTestRunner() {
     removeSession,
     syncCheckpoints,
     cancelSession,
+    setMultiTestMode,
   } = useTestStore();
 
   const { activeNavigationTab } = useNavigationStore();
@@ -96,6 +99,19 @@ export function MultiTabTestRunner() {
   // Show results dialog when test completes
   useEffect(() => {
     const session = testSessions.find((s) => s.id === activeTab);
+
+    console.log("Dialog check:", {
+      sessionId: session?.id,
+      sessionName: session?.name,
+      status: session?.status,
+      resultType: session?.result?.type,
+      resultsSeen: session?.resultsSeen,
+      endTime: session?.endTime,
+      hasResult: !!session?.result,
+      hasInCache: session?.endTime
+        ? shownDialogsRef.current.has(`${session?.id}-${session?.endTime}`)
+        : false,
+    });
 
     if (
       session &&
@@ -285,7 +301,11 @@ export function MultiTabTestRunner() {
                   >
                     <div className={"flex items-center gap-2"}>
                       {session.mode === "multi" ? (
-                        <BarChart3 className={"h-3 w-3 text-purple-400"} />
+                        session.multiTestMode === "functions" ? (
+                          <FlaskConical className={"h-3 w-3 text-cyan-400"} />
+                        ) : (
+                          <BarChart3 className={"h-3 w-3 text-purple-400"} />
+                        )
                       ) : (
                         <Activity className={"h-3 w-3 text-blue-400"} />
                       )}
@@ -397,15 +417,59 @@ export function MultiTabTestRunner() {
           </div>
 
           {/* Tab Content */}
-
           {filteredSessions.map((session) => (
             <TabsContent key={session.id} value={session.id} className="mt-0">
               {session.status === "running" ? (
                 <RunningTestView session={session} />
-              ) : activeNavigationTab === NavigationTab.Test ? (
+              ) : session.mode === "single" ? (
                 <TestConfigurationForm session={session} />
               ) : (
-                <MultiAlgorithmConfigurationForm session={session} />
+                <Tabs
+                  value={session.multiTestMode || "algorithms"}
+                  onValueChange={(v) =>
+                    setMultiTestMode(
+                      session.id,
+                      v as "algorithms" | "functions"
+                    )
+                  }
+                >
+                  {(() => {
+                    const canResume = !!(
+                      session.runId && session.status === "idle"
+                    );
+
+                    return (
+                      <>
+                        <TabsList className="grid w-full grid-cols-2 bg-neutral-800 mb-4">
+                          <TabsTrigger
+                            value="algorithms"
+                            disabled={canResume}
+                            className="data-[state=active]:bg-purple-600 data-[state=active]:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <BarChart3 className="h-4 w-4 mr-2" />
+                            Compare Algorithms
+                          </TabsTrigger>
+                          <TabsTrigger
+                            value="functions"
+                            disabled={canResume}
+                            className="data-[state=active]:bg-cyan-600 data-[state=active]:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <FlaskConical className="h-4 w-4 mr-2" />
+                            Compare Functions
+                          </TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="algorithms">
+                          <MultiAlgorithmConfigurationForm session={session} />
+                        </TabsContent>
+
+                        <TabsContent value="functions">
+                          <MultiFunctionConfigurationForm session={session} />
+                        </TabsContent>
+                      </>
+                    );
+                  })()}
+                </Tabs>
               )}
             </TabsContent>
           ))}

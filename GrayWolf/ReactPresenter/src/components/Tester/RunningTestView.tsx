@@ -4,6 +4,8 @@ import {
   SingleTestFormValues,
   TestSession,
   useTestStore,
+  isAlgorithmComparison,
+  isFunctionComparison,
 } from "@/stores/test-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,9 +22,9 @@ export function RunningTestView({ session }: RunningTestViewProps) {
   const { cancelSession } = useTestStore();
   const [, setTick] = useState(0);
 
-  const isMultiTest =
-    session.config?.selectedAlgorithms &&
-    session.config.selectedAlgorithms.length > 0;
+  const isAlgorithmComparisonMode = isAlgorithmComparison(session.config);
+  const isFunctionComparisonMode = isFunctionComparison(session.config);
+  const isMultiTest = isAlgorithmComparisonMode || isFunctionComparisonMode;
 
   // Force re-render every second to update elapsed time
   useEffect(() => {
@@ -68,13 +70,14 @@ export function RunningTestView({ session }: RunningTestViewProps) {
         {/* Algorithm Info */}
         <div className="flex items-center justify-between text-sm">
           <span className="text-neutral-400">
-            {isMultiTest ? "Algorithms:" : "Algorithm:"}
+            {isAlgorithmComparisonMode ? "Algorithms:" : "Algorithm:"}
           </span>
-          {isMultiTest ? (
+          {isAlgorithmComparisonMode &&
+          isAlgorithmComparison(session.config) ? (
             <div className={"flex flex-wrap gap-1 justify-end max-w-[70%]"}>
-              {session.config.selectedAlgorithms?.map((algo) => (
+              {session.config.selectedAlgorithms?.map((algo: string) => (
                 <Badge
-                  key={"algo"}
+                  key={algo}
                   variant={"outline"}
                   className={
                     "bg-neutral-800 border-neutral-700 text-neutral-300"
@@ -84,6 +87,11 @@ export function RunningTestView({ session }: RunningTestViewProps) {
                 </Badge>
               ))}
             </div>
+          ) : isFunctionComparisonMode &&
+            isFunctionComparison(session.config) ? (
+            <Badge variant="secondary" className="bg-neutral-800">
+              {session.config.algorithm}
+            </Badge>
           ) : (
             <Badge variant="secondary" className="bg-neutral-800">
               {session.config.algorithm}
@@ -92,18 +100,49 @@ export function RunningTestView({ session }: RunningTestViewProps) {
         </div>
 
         <div className="flex items-center justify-between text-sm">
-          <span className="text-neutral-400">Benchmark:</span>
-          <Badge variant="secondary" className="bg-neutral-800">
-            {session.config.benchmarkFunction}
-          </Badge>
+          <span className="text-neutral-400">
+            {isFunctionComparisonMode ? "Functions:" : "Benchmark:"}
+          </span>
+          {isFunctionComparisonMode && isFunctionComparison(session.config) ? (
+            <div className={"flex flex-wrap gap-1 justify-end max-w-[70%]"}>
+              {session.config.selectedBenchmarkFunctions?.map(
+                (func: string) => (
+                  <Badge
+                    key={func}
+                    variant={"outline"}
+                    className={
+                      "bg-neutral-800 border-neutral-700 text-neutral-300"
+                    }
+                  >
+                    {func}
+                  </Badge>
+                )
+              )}
+            </div>
+          ) : isAlgorithmComparisonMode &&
+            isAlgorithmComparison(session.config) ? (
+            <Badge variant="secondary" className="bg-neutral-800">
+              {session.config.benchmarkFunction}
+            </Badge>
+          ) : (
+            <Badge variant="secondary" className="bg-neutral-800">
+              {"benchmarkFunction" in session.config
+                ? session.config.benchmarkFunction
+                : "N/A"}
+            </Badge>
+          )}
         </div>
 
         {/* Progress Indicator */}
         <div className="space-y-2">
           <div className="flex justify-between text-sm text-neutral-400">
             <span>
-              {isMultiTest
-                ? `Processing ${session.config.selectedAlgorithms?.length} algorithms seqeqntially...`
+              {isAlgorithmComparisonMode &&
+              isAlgorithmComparison(session.config)
+                ? `Processing ${session.config.selectedAlgorithms?.length} algorithms sequentially...`
+                : isFunctionComparisonMode &&
+                  isFunctionComparison(session.config)
+                ? `Processing ${session.config.selectedBenchmarkFunctions?.length} functions sequentially...`
                 : "Running optimization..."}
             </span>
           </div>
