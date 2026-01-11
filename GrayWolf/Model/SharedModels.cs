@@ -95,4 +95,109 @@ namespace GrayWolf.Model
         public string FunctionName { get; set; }
         public List<MultiTrialComparisonResult> Results { get; set; }
     }
+
+    public class SingleTrialFunctionResult
+    {
+        public string FunctionName { get; set; }
+        public double BestFitness { get; set; }
+        public double[] BestSolution { get; set; }
+        public int EvaluationsCount { get; set; }
+    }
+
+    public class GenerateFunctionComparisonRequest
+    {
+        public string AlgorithmName { get; set; }
+        public List<SingleTrialFunctionResult> Results { get; set; }
+        public int PopulationSize { get; set; }
+        public int Iterations { get; set; }
+        public int Dimensions { get; set; }
+        public double LowerBound { get; set; }
+        public double UpperBound { get; set; }
+    }
+
+    public class MultiTrialFunctionResult
+    {
+        public string FunctionName { get; set; }
+
+        // statystyki z wielu prób
+        public double BestFitness { get; set; }
+        public double WorstFitness { get; set; }
+        public double MeanFitness { get; set; }
+        public double MedianFitness { get; set; }
+        public double StdDevFitness { get; set; }
+        public double CoeffOfVariationFitness { get; set; }
+
+        public double[] BestSolution { get; set; }
+        public int TrialsCount { get; set; }
+        public int EvaluationsCount { get; set; }
+    }
+
+    public class GenerateMultiTrialFunctionComparisonRequest
+    {
+        public string AlgorithmName { get; set; }
+        public List<MultiTrialFunctionResult> Results { get; set; }
+        public int PopulationSize { get; set; }
+        public int Iterations { get; set; }
+        public int Dimensions { get; set; }
+        public double LowerBound { get; set; }
+        public double UpperBound { get; set; }
+    }
+
+    public class FunctionComparisonResponse
+    {
+        public string AlgorithmName { get; set; }
+        public FunctionComparisonSummary Summary { get; set; }
+        public List<FunctionPerformance> Functions { get; set; }
+        public string Message { get; set; }
+    }
+
+    public class FunctionComparisonSummary
+    {
+        public string BestFunction { get; set; }  // Function where algorithm performed best
+        public double BestFitness { get; set; }
+        public string WorstFunction { get; set; }  // Function where algorithm performed worst
+        public double WorstFitness { get; set; }
+        public int FunctionsCompared { get; set; }
+    }
+
+    public class FunctionPerformance
+    {
+        public string FunctionName { get; set; }
+        public double BestFitness { get; set; }
+        public double[] BestSolution { get; set; }
+        public int Rank { get; set; }  // Rank based on fitness (1 = best performance)
+    }
+
+    public class MultiTrialFunctionComparisonResponse
+    {
+        public string AlgorithmName { get; set; }
+        public MultiTrialFunctionComparisonSummary Summary { get; set; }
+        public List<MultiTrialFunctionPerformance> Functions { get; set; }
+        public string Message { get; set; }
+    }
+
+    public class MultiTrialFunctionComparisonSummary
+    {
+        public string BestFunction { get; set; }
+        public double BestFitness { get; set; }
+        public string MostConsistentFunction { get; set; }
+        public double MostConsistentCV { get; set; }
+        public string WorstFunction { get; set; }
+        public double WorstFitness { get; set; }
+        public int FunctionsCompared { get; set; }
+    }
+
+    public class MultiTrialFunctionPerformance
+    {
+        public string FunctionName { get; set; }
+        public double BestFitness { get; set; }
+        public double WorstFitness { get; set; }
+        public double MeanFitness { get; set; }
+        public double MedianFitness { get; set; }
+        public double StdDevFitness { get; set; }
+        public double CoeffOfVariationFitness { get; set; }
+        public double[] BestSolution { get; set; }
+        public int TrialsCount { get; set; }
+        public int Rank { get; set; }
+    }
 }

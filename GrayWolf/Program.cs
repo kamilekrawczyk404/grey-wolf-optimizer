@@ -280,7 +280,6 @@ app.MapGet("/api/optimizer/checkpoints", () =>
     return Results.Ok(activeSessions);
 });
 
-// TO-DO: uzunąć to później, jeśli nie będzie potrzebne??
 // ENDPOINT - dla generowania raportu porównawczego (wielu algorytmów na tej samej funkcji)
 app.MapPost("/api/optimizer/compare", (GenerateComparisonRequest request) =>
 {
@@ -332,6 +331,66 @@ app.MapPost("/api/optimizer/compare-multitrial", (GenerateMultiTrialComparisonRe
     catch (Exception ex)
     {
         Console.WriteLine($"Wystąpił błąd krytyczny podczas generowania raportu z wielu prób: {ex.Message}");
+        return Results.Json(new
+        {
+            Error = ex.Message
+        }, statusCode: 500);
+    }
+});
+
+// ENDPOINT - porównanie funkcji dla danego algorytmu
+app.MapPost("/api/optimizer/compare-functions", (GenerateFunctionComparisonRequest request) =>
+{
+    try
+    {
+        Console.WriteLine("Otrzymano request do /api/optimizer/compare-functions");
+
+        if (request.Results == null || request.Results.Count == 0)
+        {
+            return Results.BadRequest("Brak wyników funkcji do porównania.");
+        }
+
+        var reportingSystem = new RaportingSystem();
+        reportingSystem.GenerateFunctionComparisonReport(request.AlgorithmName, request.Results, request.PopulationSize, request.Iterations, request.Dimensions, request.LowerBound, request.UpperBound);
+        Console.WriteLine("Raport porównawczy funkcji wygenerowany pomyślnie.");
+        return Results.Ok(new
+        {
+            Message = "Raport porównawczy funkcji wygenerowany pomyślnie.",
+            ReportType = "Function Comparison"
+        });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Wystąpił błąd krytyczny podczas generowania raportu porównawczego funkcji: {ex.Message}");
+        return Results.Json(new
+        {
+            Error = ex.Message
+        }, statusCode: 500);
+    }
+});
+
+// ENDPOINT - porównanie wielu prób funkcji dla danego algorytmu
+app.MapPost("/api/optimizer/compare-functions-multitrial", (GenerateMultiTrialFunctionComparisonRequest request) =>
+{
+    try
+    {
+        Console.WriteLine("Otrzymano request do /api/optimizer/compare-functions-multitrial");
+        if (request.Results == null || request.Results.Count == 0)
+        {
+            return Results.BadRequest("Brak wyników funkcji do porównania.");
+        }
+        var reportingSystem = new RaportingSystem();
+        reportingSystem.GenerateMultiTrialFunctionComparisonReport(request.AlgorithmName, request.Results, request.PopulationSize, request.Iterations, request.Dimensions, request.LowerBound, request.UpperBound);
+        Console.WriteLine("Raport porównawczy wielu prób funkcji wygenerowany pomyślnie.");
+        return Results.Ok(new
+        {
+            Message = "Raport porównawczy wielu prób funkcji wygenerowany pomyślnie.",
+            ReportType = "Multi-Trial Function Comparison"
+        });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Wystąpił błąd krytyczny podczas generowania raportu porównawczego wielu prób funkcji: {ex.Message}");
         return Results.Json(new
         {
             Error = ex.Message
