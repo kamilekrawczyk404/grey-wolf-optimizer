@@ -36,6 +36,7 @@ export function MultiTabTestRunner() {
     addSession,
     removeSession,
     syncCheckpoints,
+    cancelSession,
   } = useTestStore();
 
   const { activeNavigationTab } = useNavigationStore();
@@ -140,18 +141,70 @@ export function MultiTabTestRunner() {
     }
 
     const sessionToRemove = testSessions.find((s) => s.id === id);
-    // Usuń checkpoint TYLKO gdy użytkownik świadomie zamyka zakładkę (klika X)
+
+    if (sessionToRemove?.status === "running") {
+      console.log(`Cancelling running test before removal: ${id}`);
+      cancelSession(id);
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+
+    // Dla multi-test usuń WSZYSTKIE checkpointy z tym runId (mogą być checkpointy wielu algorytmów)
     if (sessionToRemove?.runId) {
       try {
-        await fetch(
-          `http://localhost:5000/api/optimizer/checkpoint/${sessionToRemove.runId}`,
-          { method: "DELETE" }
+        const checkResponse = await fetch(
+          "http://localhost:5000/api/optimizer/checkpoints"
         );
-        console.log(`Deleted checkpoint: ${sessionToRemove.runId}`);
+
+        if (checkResponse.ok) {
+          const checkpoints = await checkResponse.json();
+
+          const checkpointsToDelete = checkpoints.filter(
+            (cp: any) => cp.runId === sessionToRemove.runId
+          );
+
+          console.log(
+            `Found ${checkpointsToDelete.length} checkpoint(s) for runId ${sessionToRemove.runId}:`,
+            checkpointsToDelete.map((cp: any) => cp.algorithm)
+          );
+
+          for (const checkpoint of checkpointsToDelete) {
+            try {
+              const deleteResponse = await fetch(
+                `http://localhost:5000/api/optimizer/checkpoint/${checkpoint.runId}`,
+                { method: "DELETE" }
+              );
+
+              if (deleteResponse.ok) {
+                console.log(
+                  `Deleted checkpoint for algorithm ${checkpoint.algorithm}: ${checkpoint.runId}`
+                );
+              } else {
+                console.warn(
+                  `Failed to delete checkpoint for ${checkpoint.algorithm}`
+                );
+              }
+            } catch (err) {
+              console.error(
+                `Failed to delete checkpoint for ${checkpoint.algorithm}:`,
+                err
+              );
+            }
+          }
+
+          if (checkpointsToDelete.length === 0) {
+            console.log(
+              `No checkpoints found for runId ${sessionToRemove.runId} (already cleaned up)`
+            );
+          }
+        }
       } catch (err) {
-        console.error("Failed to delete checkpoint:", err);
+        console.error(
+          `Failed to check/delete checkpoints for ${sessionToRemove.runId}:`,
+          err
+        );
       }
     }
+
     removeSession(id);
   };
 

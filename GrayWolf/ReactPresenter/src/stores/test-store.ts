@@ -39,8 +39,8 @@ export const multiTestFormSchema = z.object({
   benchmarkFunction: z.nativeEnum(BenchmarkFunctions),
   selectedAlgorithms: z
     .array(z.nativeEnum(Algorithms))
-    .refine((value) => value.length > 0, {
-      message: "You must select at least one algorithm",
+    .refine((value) => value.length > 1, {
+      message: "You must select at least two algorithms to compare",
     }),
   populationSize: z.number().min(10).max(1000),
   dimensions: z.number().min(2).max(100),
@@ -102,6 +102,12 @@ export interface TestSession {
   resultsSeen: boolean;
   abortController?: AbortController;
   runId?: string;
+
+  multiTestProgress?: {
+    completedAlgorithms: Algorithms[]; // Lista już wykonanych algorytmów
+    currentAlgorithm?: Algorithms; // Aktualnie wykonywany algorytm
+    partialResults: ComparisionRow[]; // Częściowe wyniki
+  };
 }
 
 export interface TestStore {
@@ -130,6 +136,7 @@ function getDefaultConfig(mode: "single" | "multi"): TestFormValues {
   // Domyślna konfiguracja dla GWO + Rastrigin
   const defaultAlgorithm = Algorithms.GWO;
   const defaultBenchmark = BenchmarkFunctions.Rastrigin;
+  const defaultCompare = [Algorithms.GWO, Algorithms.Aquila];
 
   const algorithmConfig = ALGORITHM_CONFIGS[defaultAlgorithm];
   const benchmarkConfig = BENCHMARK_CONFIGS[defaultBenchmark];
@@ -148,7 +155,7 @@ function getDefaultConfig(mode: "single" | "multi"): TestFormValues {
 
     case "multi":
       return {
-        selectedAlgorithms: [defaultAlgorithm],
+        selectedAlgorithms: defaultCompare,
         populationSize: algorithmConfig.populationSize,
         dimensions: benchmarkConfig.dimensions,
         iterations: algorithmConfig.iterations,
@@ -498,6 +505,7 @@ export const useTestStore = create<TestStore>()(
                   ...session,
                   runId: undefined,
                   status: "idle" as SessionStatus,
+                  multiTestProgress: undefined,
                 };
               }
 
@@ -509,10 +517,26 @@ export const useTestStore = create<TestStore>()(
                 console.log(
                   `Session ${session.id} was ${session.status} but checkpoint exists - setting to idle with runId ${session.runId}`
                 );
+
+                let restoredMultiTestProgress = session.multiTestProgress;
+
+                if (session.mode === "multi" && !session.multiTestProgress) {
+                  console.log(
+                    `Multi-test session ${session.id} missing multiTestProgress - creating empty one`
+                  );
+
+                  restoredMultiTestProgress = {
+                    completedAlgorithms: [], // Nie wiemy które algorytmy się wykonały
+                    partialResults: [], // Nie mamy częściowych wyników
+                    currentAlgorithm: undefined,
+                  };
+                }
+
                 return {
                   ...session,
                   status: "idle" as SessionStatus,
                   abortController: undefined,
+                  multiTestProgress: restoredMultiTestProgress,
                   // runId zostaje!
                 };
               }
@@ -557,11 +581,26 @@ export const useTestStore = create<TestStore>()(
           return {
             ...s,
             status:
-              s.status === "running" ? (s.runId ? "idle" : s.status) : s.status,
+              s.status === "running"
+                ? s.runId || s.multiTestProgress
+                  ? "idle"
+                  : s.status
+                : s.status,
             abortController: undefined,
             runId: s.runId,
             result: formattedResult,
             presenterData: [],
+            multiTestProgress: s.multiTestProgress
+              ? {
+                  ...s.multiTestProgress,
+                  partialResults: s.multiTestProgress.partialResults.map(
+                    (r) => ({
+                      ...r,
+                      historyJson: undefined,
+                    })
+                  ),
+                }
+              : undefined,
           };
         }),
         activeTab: state.activeTab,
@@ -569,6 +608,7 @@ export const useTestStore = create<TestStore>()(
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.hydrate();
+          state.syncCheckpoints();
         }
       },
     }
