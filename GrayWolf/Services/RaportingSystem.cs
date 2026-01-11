@@ -249,6 +249,211 @@ namespace GrayWolf.Services
             Console.WriteLine($"Raport porównawczy wielopróbowy zapisany na pulpicie: {path}");
         }
 
+        public void GenerateFunctionComparisonReport(string algorithmName, List<SingleTrialFunctionResult> results,
+            int iterations, int populationSize, int dimensions, double lowerBound, double upperBound)
+        {
+            StringBuilder strBuilder = new StringBuilder();
+            strBuilder.Append($"\n\n{'=',80}\n");
+            strBuilder.Append($"RAPORT PORÓWNAWCZY FUNKCJI DLA ALGORYTMU: {algorithmName}\n");
+            strBuilder.Append($"{'=',80}\n");
+            strBuilder.Append($"Data: {DateTime.Now}\n");
+            strBuilder.Append($"Liczba funkcji testowych: {results.Count}\n");
+            strBuilder.Append($"Parametry testu:\n");
+            strBuilder.Append($"  - Wielkość populacji: {populationSize}\n");
+            strBuilder.Append($"  - Liczba iteracji: {iterations}\n");
+            strBuilder.Append($"  - Liczba wymiarów: {dimensions}\n");
+            strBuilder.Append($"  - Zakres: [{lowerBound}, {upperBound}]\n\n");
+
+            // podsumowanie wyników funkcji
+            strBuilder.Append("PODSUMOWANIE (posortowane według najlepszego wyniku):\n");
+            strBuilder.Append(new string('-', 100) + "\n");
+            strBuilder.Append($"{"Funkcja testowa",-30} {"Najlepszy Fitness",-25} {"Liczba ewaluacji",-20} {"Ranga",-10}\n");
+            strBuilder.Append(new string('-', 100) + "\n");
+
+            var sortedResults = results.OrderBy(r => r.BestFitness).ToList();
+            int rank = 1;
+            foreach (var result in sortedResults)
+            {
+                strBuilder.Append($"{result.FunctionName,-30} ");
+                strBuilder.Append($"{result.BestFitness,-25:E6} ");
+                strBuilder.Append($"{result.EvaluationsCount,-20} ");
+                strBuilder.AppendLine($"{rank,-10}");
+                rank++;
+            }
+
+            strBuilder.Append(new string('-', 100) + "\n\n");
+
+            strBuilder.Append("SZCZEGÓŁOWE WYNIKI FUNKCJI:\n\n");
+
+            foreach (var result in sortedResults)
+            {
+                strBuilder.Append($"{'=',80}\n");
+                strBuilder.Append($"Funkcja: {result.FunctionName}\n");
+                strBuilder.Append($"{'=',80}\n");
+                strBuilder.Append($"Najlepsza wartość funkcji celu: {result.BestFitness:E6}\n");
+                strBuilder.Append($"Liczba ewaluacji: {result.EvaluationsCount}\n\n");
+
+                strBuilder.Append("Najlepsze rozwiązanie:\n");
+                strBuilder.Append("  [");
+                strBuilder.Append(string.Join(", ", result.BestSolution.Select(x => x.ToString("F6"))));
+                strBuilder.AppendLine("]\n");
+            }
+
+            // analiza wyników
+            strBuilder.Append(new string('-', 80) + "\n");
+            strBuilder.Append("ANALIZA:\n");
+            strBuilder.Append(new string('-', 80) + "\n");
+
+            var bestResult = sortedResults.First();
+            var worstResult = sortedResults.Last();
+
+            strBuilder.AppendLine($"Najlepsza wydajność na funkcji: {bestResult.FunctionName}");
+            strBuilder.AppendLine($"  Fitness: {bestResult.BestFitness:E6}\n");
+
+            strBuilder.AppendLine($"Najgorsza wydajność na funkcji: {worstResult.FunctionName}");
+            strBuilder.AppendLine($"  Fitness: {worstResult.BestFitness:E6}\n");
+
+            double avgFitness = sortedResults.Average(r => r.BestFitness);
+            strBuilder.AppendLine($"Średnia wartość fitness na wszystkich funkcjach: {avgFitness:E6}");
+
+            string path = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                $"{algorithmName}_Function_Comparison_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.txt"
+            );
+
+            File.WriteAllText(path, strBuilder.ToString());
+            Console.WriteLine($"Raport porównawczy funkcji zapisany: {path}");
+        }
+
+        public void GenerateMultiTrialFunctionComparisonReport(string algorithmName, List<MultiTrialFunctionResult> results,
+            int iterations, int populationSize, int dimensions, double lowerBound, double upperBound)
+        {
+            StringBuilder strBuilder = new StringBuilder();
+            strBuilder.Append($"\n\n{'=',80}\n");
+            strBuilder.Append($"RAPORT PORÓWNAWCZY WIELOPRÓBOWY FUNKCJI DLA ALGORYTMU: {algorithmName}\n");
+            strBuilder.Append($"{'=',80}\n");
+            strBuilder.Append($"Data: {DateTime.Now}\n");
+            strBuilder.Append($"Liczba funkcji testowych: {results.Count}\n");
+
+            if (results.Count > 0)
+            {
+                strBuilder.Append($"Liczba prób na funkcję: {results.First().TrialsCount}\n");
+            }
+
+            strBuilder.Append($"Parametry testu:\n");
+            strBuilder.Append($"  - Wielkość populacji: {populationSize}\n");
+            strBuilder.Append($"  - Liczba iteracji: {iterations}\n");
+            strBuilder.Append($"  - Liczba wymiarów: {dimensions}\n");
+            strBuilder.Append($"  - Zakres: [{lowerBound}, {upperBound}]\n\n");
+
+            // Summary table sorted by best fitness
+            strBuilder.Append("PODSUMOWANIE (posortowane według najlepszego wyniku):\n");
+            strBuilder.Append(new string('-', 130) + "\n");
+            strBuilder.Append($"{"Funkcja",-25} {"Najlepszy",-15} {"Najgorszy",-15} {"Średni",-15} {"Mediana",-15} {"Odch.std",-15} {"Wsp.zm",-10} {"Ranga",-10}\n");
+            strBuilder.Append(new string('-', 130) + "\n");
+
+            var sortedResults = results.OrderBy(r => r.BestFitness).ToList();
+            int rank = 1;
+
+            foreach (var result in sortedResults)
+            {
+                strBuilder.Append($"{result.FunctionName,-25} ");
+                strBuilder.Append($"{result.BestFitness,-15:E6} ");
+                strBuilder.Append($"{result.WorstFitness,-15:E6} ");
+                strBuilder.Append($"{result.MeanFitness,-15:E6} ");
+                strBuilder.Append($"{result.MedianFitness,-15:E6} ");
+                strBuilder.Append($"{result.StdDevFitness,-15:E6} ");
+                strBuilder.Append($"{result.CoeffOfVariationFitness,-10:F2}% ");
+                strBuilder.AppendLine($"{rank,-10}");
+                rank++;
+            }
+
+            strBuilder.Append(new string('-', 130) + "\n\n");
+
+            // Detailed results for each function
+            strBuilder.Append("SZCZEGÓŁOWE WYNIKI DLA POSZCZEGÓLNYCH FUNKCJI:\n\n");
+
+            foreach (var result in sortedResults)
+            {
+                strBuilder.Append($"{'=',80}\n");
+                strBuilder.Append($"Funkcja: {result.FunctionName}\n");
+                strBuilder.Append($"{'=',80}\n");
+                strBuilder.Append($"Liczba prób: {result.TrialsCount}\n\n");
+
+                strBuilder.Append("Statystyki wartości funkcji celu:\n");
+                strBuilder.Append($"  Najlepsza wartość:       {result.BestFitness:E6}\n");
+                strBuilder.Append($"  Najgorsza wartość:       {result.WorstFitness:E6}\n");
+                strBuilder.Append($"  Średnia wartość:         {result.MeanFitness:E6}\n");
+                strBuilder.Append($"  Mediana:                 {result.MedianFitness:E6}\n");
+                strBuilder.Append($"  Odchylenie standardowe:  {result.StdDevFitness:E6}\n");
+                strBuilder.Append($"  Współczynnik zmienności: {result.CoeffOfVariationFitness:F2}%\n\n");
+
+                strBuilder.Append("Najlepsze rozwiązanie:\n");
+                strBuilder.Append("  [");
+                strBuilder.Append(string.Join(", ", result.BestSolution.Select(x => x.ToString("F6"))));
+                strBuilder.AppendLine("]\n");
+            }
+
+            // Statistical analysis
+            strBuilder.Append(new string('-', 80) + "\n");
+            strBuilder.Append("ANALIZA STATYSTYCZNA:\n");
+            strBuilder.Append(new string('-', 80) + "\n");
+
+            var bestResult = sortedResults.First();
+            var worstResult = sortedResults.Last();
+            var mostConsistent = results.OrderBy(r => r.CoeffOfVariationFitness).First();
+
+            strBuilder.AppendLine($"Najlepsza wydajność (według najlepszego wyniku): {bestResult.FunctionName}");
+            strBuilder.AppendLine($"   Fitness: {bestResult.BestFitness:E6}\n");
+
+            strBuilder.AppendLine($"Najbardziej spójna wydajność (najniższy CV): {mostConsistent.FunctionName}");
+            strBuilder.AppendLine($"   Współczynnik zmienności: {mostConsistent.CoeffOfVariationFitness:F2}%\n");
+
+            strBuilder.AppendLine($"Najgorsza wydajność: {worstResult.FunctionName}");
+            strBuilder.AppendLine($"   Fitness: {worstResult.BestFitness:E6}\n");
+
+            double avgBestFitness = results.Average(r => r.BestFitness);
+            double avgMeanFitness = results.Average(r => r.MeanFitness);
+
+            strBuilder.AppendLine($"Średnia najlepszych wyników ze wszystkich funkcji: {avgBestFitness:E6}");
+            strBuilder.AppendLine($"Średnia średnich wyników ze wszystkich funkcji: {avgMeanFitness:E6}");
+
+            // Recommendations
+            strBuilder.Append("\n" + new string('-', 80) + "\n");
+            strBuilder.Append("REKOMENDACJE:\n");
+            strBuilder.Append(new string('-', 80) + "\n");
+
+            strBuilder.AppendLine($"Algorytm {algorithmName} najlepiej radzi sobie z funkcją {bestResult.FunctionName}.");
+
+            if (bestResult.FunctionName == mostConsistent.FunctionName)
+            {
+                strBuilder.AppendLine($"Dodatkowo, wyniki na tej funkcji są najbardziej konsekwentne.");
+            }
+            else
+            {
+                strBuilder.AppendLine($"Jednak najbardziej przewidywalne wyniki uzyskano na funkcji {mostConsistent.FunctionName}.");
+            }
+
+            strBuilder.AppendLine($"\nAlgorytm ma największe trudności z funkcją {worstResult.FunctionName}.");
+
+            // Function difficulty ranking
+            strBuilder.AppendLine($"\nRanking funkcji wg trudności dla algorytmu {algorithmName}:");
+            strBuilder.AppendLine("(1 = najłatwiejsza, im wyższa ranga tym trudniejsza funkcja)");
+
+            for (int i = 0; i < sortedResults.Count; i++)
+            {
+                strBuilder.AppendLine($"  {i + 1}. {sortedResults[i].FunctionName} (fitness: {sortedResults[i].BestFitness:E6})");
+            }
+
+            string path = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                $"{algorithmName}_MultiTrial_Function_Comparison_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.txt"
+            );
+
+            File.WriteAllText(path, strBuilder.ToString());
+            Console.WriteLine($"Raport porównawczy wielopróbowy funkcji zapisany: {path}");
+        }
+
         private bool SaveData(StringBuilder data, string algName)
         {
             string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"{algName}_Raport_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.txt");
