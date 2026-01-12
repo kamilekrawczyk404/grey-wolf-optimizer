@@ -56,8 +56,6 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
             return Results.BadRequest("Liczba prób musi być co najmniej 1.");
         }
 
-
-
         if (optimizerRequest.Trials == 1)
         {
             // Wybór algorytmu na podstawie pola Algorithm w optimizerRequest oraz utworzenie unikalnej nazwy pliku checkpoint
@@ -96,24 +94,27 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
 
             Console.WriteLine("Test (API) zakończony sukcesem.");
 
-            var reportingSystem = new RaportingSystem();
-
             List<IterationLog> historyLogs = new List<IterationLog>();
             if (optimizer is GWOptimizer gwo) historyLogs = gwo.FullHistory;
             else if (optimizer is AquilaOptimizer aquila) historyLogs = aquila.FullHistory;
 
-            reportingSystem.GenerateReport(
-                optimizer.Name,
-                function,
-                optimizer.XBest,
-                optimizer.FBest,
-                historyLogs,
-                optimizerRequest.Iterations,
-                optimizerRequest.PopulationSize,
-                optimizerRequest.Dimensions,
-                optimizerRequest.LowerBound,
-                optimizerRequest.UpperBound
-            );
+            if (optimizerRequest.GenerateReport)
+            {
+                var reportingSystem = new RaportingSystem();
+
+                reportingSystem.GenerateReport(
+                    optimizer.Name,
+                    function,
+                    optimizer.XBest,
+                    optimizer.FBest,
+                    historyLogs,
+                    optimizerRequest.Iterations,
+                    optimizerRequest.PopulationSize,
+                    optimizerRequest.Dimensions,
+                    optimizerRequest.LowerBound,
+                    optimizerRequest.UpperBound
+                    );
+            }
 
             return Results.Ok(new
             {
@@ -123,6 +124,7 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
                 EvaluationsCount = optimizer.NumberOfEvaluationFitnessFunction,
                 Solution = function.GlobalMinimum,
                 HistoryJson = historyLogs,
+                ReportGenerated = optimizerRequest.GenerateReport,
                 Message = $"Test algorytmu {optimizer.Name} przeprowadzono pomyślnie."
             });
         }
@@ -442,6 +444,7 @@ public class OptimizerRequest
     public double UpperBound { get; set; }
     public string Function { get; set; }
     public int Trials { get; set; } = 1; //liczba niezależnych prób
+    public bool GenerateReport { get; set; } = false; // czy generować raport po zakończeniu
 }
 
 public static class BenchmarkFactory
