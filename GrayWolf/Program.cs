@@ -120,6 +120,7 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
                 RunId = runId,
                 BestSolution = optimizer.XBest,
                 BestFitness = optimizer.FBest,
+                EvaluationsCount = optimizer.NumberOfEvaluationFitnessFunction,
                 Solution = function.GlobalMinimum,
                 HistoryJson = historyLogs,
                 Message = $"Test algorytmu {optimizer.Name} przeprowadzono pomyślnie."
