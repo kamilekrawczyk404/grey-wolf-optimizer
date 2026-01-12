@@ -58,6 +58,24 @@ namespace GrayWolf.Model
         public double BestFitness { get; set; }
     }
 
+    public class PsoSpecificData
+    {
+        public double[] BestPosition { get; set; }
+        public double BestFitness { get; set; }
+        public double[][] Velocities { get; set; }
+        public double[][] PersonalBestPositions { get; set; }
+        public double[] PersonalBestFitnesses { get; set; }
+    }
+    namespace GrayWolf.Model
+    {
+        public class BoaSpecificData
+        {
+            public double[] BestPosition { get; set; }
+            public double BestFitness { get; set; }
+            public double[] Fragrance { get; set; }
+        }
+    }
+
     public class FinalVisualizerReport
     {
         public string Description { get; set; }

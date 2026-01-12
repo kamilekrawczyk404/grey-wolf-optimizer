@@ -127,6 +127,8 @@ export enum Algorithms {
     SSA = "SSA",
     BA = "BA",
     GA = "GA",
+    PSO = "PSO",
+    BOA = "BOA",
 }
 
 export enum BenchmarkFunctions {

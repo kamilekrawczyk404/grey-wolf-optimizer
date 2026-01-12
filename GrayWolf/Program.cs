@@ -86,6 +86,29 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
                         uniqueStateFileName
                         );
                     break;
+                case "PSO":
+                    optimizer = new PsoOptimizer(
+                        optimizerRequest.PopulationSize,
+                        optimizerRequest.Dimensions,
+                        optimizerRequest.Iterations,
+                        function,
+                        optimizerRequest.LowerBound,
+                        optimizerRequest.UpperBound,
+                        uniqueStateFileName 
+                    );
+                    break;
+
+                case "BOA":
+                    optimizer = new BoaOptimizer(
+                        optimizerRequest.PopulationSize,
+                        optimizerRequest.Dimensions,
+                        optimizerRequest.Iterations,
+                        function,
+                        optimizerRequest.LowerBound,
+                        optimizerRequest.UpperBound,
+                        uniqueStateFileName
+                    );
+                    break;
                 case "BA":
                     optimizer = new BaOptimizer(
                         optimizerRequest.PopulationSize,
@@ -133,6 +156,8 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
             else if (optimizer is SsaOptimizer ssa) historyLogs = ssa.FullHistory;
             else if (optimizer is BaOptimizer ba) historyLogs = ba.FullHistory;
             else if (optimizer is GaOptimizer ga) historyLogs = ga.FullHistory;
+            else if (optimizer is PsoOptimizer pso) historyLogs = pso.FullHistory;
+            else if (optimizer is BoaOptimizer boa) historyLogs = boa.FullHistory;
 
             if (optimizerRequest.GenerateReport)
             {
@@ -198,6 +223,29 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
                         break;
                     case "Aquila":
                         optimizer = new AquilaOptimizer(
+                            optimizerRequest.PopulationSize,
+                            optimizerRequest.Dimensions,
+                            optimizerRequest.Iterations,
+                            function,
+                            optimizerRequest.LowerBound,
+                            optimizerRequest.UpperBound,
+                            tempStateFileName
+                        );
+                        break;
+                    case "PSO":
+                        optimizer = new PsoOptimizer(
+                            optimizerRequest.PopulationSize,
+                            optimizerRequest.Dimensions,
+                            optimizerRequest.Iterations,
+                            function,
+                            optimizerRequest.LowerBound,
+                            optimizerRequest.UpperBound,
+                            tempStateFileName
+                        );
+                        break;
+
+                    case "BOA":
+                        optimizer = new BoaOptimizer(
                             optimizerRequest.PopulationSize,
                             optimizerRequest.Dimensions,
                             optimizerRequest.Iterations,

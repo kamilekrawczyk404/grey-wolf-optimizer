@@ -530,6 +530,11 @@ export const MultiFunctionConfigurationForm = ({
                         <SelectItem value={Algorithms.GA}>
                            Genetic Algorithm
                         </SelectItem>
+                        <SelectItem value={Algorithms.PSO}>
+                           Particle Swarm Optimization</SelectItem>
+                        <SelectItem value={Algorithms.BOA}>
+                          Butterfly Optimization Algorithm
+                        </SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
