@@ -305,8 +305,11 @@ export function TestConfigurationForm({ session }: TestConfigurationFormProps) {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="bg-neutral-800 border-neutral-700">
-                              <SelectItem value={Algorithms.GWO}>Gray Wolf Optimizer</SelectItem>
-                              <SelectItem value={Algorithms.Aquila}>Aquila Optimizer</SelectItem>
+                                <SelectItem value={Algorithms.GWO}>Gray Wolf Optimizer</SelectItem>
+                                <SelectItem value={Algorithms.Aquila}>Aquila Optimizer</SelectItem>
+                                <SelectItem value={Algorithms.SSA}>Salp Swarm Optimizer</SelectItem>
+                                <SelectItem value={Algorithms.BA}>Bat Algorithm</SelectItem>
+                                <SelectItem value={Algorithms.GA}>Genetic Algorithm</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />

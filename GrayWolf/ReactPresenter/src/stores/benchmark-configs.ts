@@ -56,6 +56,18 @@ export const ALGORITHM_CONFIGS: Record<Algorithms, AlgorithmConfig> = {
     populationSize: 50,
     iterations: 300,
   },
+  [Algorithms.SSA]: {
+     populationSize: 40,
+     iterations: 100,
+    },
+   [Algorithms.BA]: {
+     populationSize: 30,
+     iterations: 100,
+    },
+    [Algorithms.GA]: {
+        populationSize: 50,
+        iterations: 100,
+    }
 };
 
 // Funkcja pomocnicza do uzyskania pe�nej konfiguracji

@@ -10,7 +10,7 @@ using Microsoft.Extensions.Hosting;
 using System.Diagnostics; // only for Debug.WriteLine
 using System.IO;
 using System.Text.Json;
-
+using RaportingSystem = GrayWolf.Services.RaportingSystem;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCors(options =>
@@ -66,6 +66,39 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
 
             switch (optimizerRequest.Algorithm)
             {
+                case "SSA":
+                    optimizer = new SsaOptimizer(
+                        optimizerRequest.PopulationSize,
+                        optimizerRequest.Dimensions,
+                        optimizerRequest.Iterations,
+                        function,
+                        optimizerRequest.LowerBound,
+                        optimizerRequest.UpperBound,
+                        uniqueStateFileName
+                        );
+                    break;
+                case "GA":
+                    optimizer = new GaOptimizer(
+                        optimizerRequest.PopulationSize,
+                        optimizerRequest.Dimensions,
+                        optimizerRequest.Iterations,
+                        function,
+                        optimizerRequest.LowerBound,
+                        optimizerRequest.UpperBound,
+                        uniqueStateFileName
+                        );
+                    break;
+                case "BA":
+                    optimizer = new BaOptimizer(
+                        optimizerRequest.PopulationSize,
+                        optimizerRequest.Dimensions,
+                        optimizerRequest.Iterations,
+                        function,
+                        optimizerRequest.LowerBound,
+                        optimizerRequest.UpperBound,
+                        uniqueStateFileName
+                        );
+                    break;
                 case "Aquila":
                     optimizer = new AquilaOptimizer(
                         optimizerRequest.PopulationSize,
@@ -101,6 +134,9 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
             List<IterationLog> historyLogs = new List<IterationLog>();
             if (optimizer is GWOptimizer gwo) historyLogs = gwo.FullHistory;
             else if (optimizer is AquilaOptimizer aquila) historyLogs = aquila.FullHistory;
+            else if (optimizer is SsaOptimizer ssa) historyLogs = ssa.FullHistory;
+            else if (optimizer is BaOptimizer ba) historyLogs = ba.FullHistory;
+            else if (optimizer is GaOptimizer ga) historyLogs = ga.FullHistory;
 
             reportingSystem.GenerateReport(
                 optimizer.Name,
@@ -147,6 +183,17 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
 
                 switch (optimizerRequest.Algorithm)
                 {
+                    case "SSA":
+                        optimizer = new SsaOptimizer(
+                            optimizerRequest.PopulationSize,
+                            optimizerRequest.Dimensions,
+                            optimizerRequest.Iterations,
+                            function,
+                            optimizerRequest.LowerBound,
+                            optimizerRequest.UpperBound,
+                            tempStateFileName
+                            );
+                        break;
                     case "Aquila":
                         optimizer = new AquilaOptimizer(
                             optimizerRequest.PopulationSize,
@@ -157,6 +204,28 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
                             optimizerRequest.UpperBound,
                             tempStateFileName
                         );
+                        break;
+                    case "GA":
+                        optimizer = new GaOptimizer(
+                            optimizerRequest.PopulationSize,
+                            optimizerRequest.Dimensions,
+                            optimizerRequest.Iterations,
+                            function,
+                            optimizerRequest.LowerBound,
+                            optimizerRequest.UpperBound,
+                            tempStateFileName
+                            );
+                        break;
+                    case "BA":
+                        optimizer = new BaOptimizer(
+                            optimizerRequest.PopulationSize,
+                            optimizerRequest.Dimensions,
+                            optimizerRequest.Iterations,
+                            function,
+                            optimizerRequest.LowerBound,
+                            optimizerRequest.UpperBound,
+                            tempStateFileName
+                            );
                         break;
                     case "GWO":
                     default:

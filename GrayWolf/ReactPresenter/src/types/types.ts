@@ -124,6 +124,9 @@ export type HeaderProps = HTMLAttributes<HTMLHeadingElement> & {
 export enum Algorithms {
     GWO = "GWO",
     Aquila = "Aquila",
+    SSA = "SSA",
+    BA = "BA",
+    GA = "GA",
 }
 
 export enum BenchmarkFunctions {
@@ -132,4 +135,10 @@ export enum BenchmarkFunctions {
     Beale = "Beale",
     RosenBrock = "RosenBrock",
     BukinN6 = "BukinN6"
+}
+
+export type OptimizationTest = UserLocalFile;
+
+export function isOptimizationTestArray(obj: any): obj is UserLocalFile[] {
+    return Array.isArray(obj) && obj.every(isExperimentRecord);
 }

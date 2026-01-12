@@ -521,6 +521,15 @@ export const MultiFunctionConfigurationForm = ({
                       <SelectItem value={Algorithms.Aquila}>
                         Aquila Optimizer
                       </SelectItem>
+                      <SelectItem value={Algorithms.SSA}>
+                        Salp Swarm Optimizer
+                      </SelectItem>
+                      <SelectItem value={Algorithms.BA}>
+                          Bat Algorithm
+                       </SelectItem>
+                        <SelectItem value={Algorithms.GA}>
+                           Genetic Algorithm
+                        </SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

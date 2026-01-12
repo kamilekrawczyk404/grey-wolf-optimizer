@@ -36,6 +36,28 @@ namespace GrayWolf.Model
         public double BestScore { get; set; }
     }
 
+    public class SsaSpecificData
+    {
+        public double[] FoodPosition { get; set; }
+        public double FoodFitness { get; set; }
+    }
+
+    public class BaSpecificData
+    {
+        public double[] BestPosition { get; set; }
+        public double BestFitness { get; set; }
+        public double[][] Velocities { get; set; }
+        public double[] Loudness { get; set; }
+        public double[] PulseRates { get; set; }
+        public double[] InitialPulseRates { get; set; }
+    }
+
+    public class GaSpecificData
+    {
+        public double[] BestPosition { get; set; }
+        public double BestFitness { get; set; }
+    }
+
     public class FinalVisualizerReport
     {
         public string Description { get; set; }
