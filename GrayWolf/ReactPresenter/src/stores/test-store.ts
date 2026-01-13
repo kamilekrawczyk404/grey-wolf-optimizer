@@ -7,6 +7,8 @@ import {
   BenchmarkFunctions,
   ExperimentRecord,
   IterationSnapshot,
+  AlgorithmParameters,
+  AlgorithmParameterInfo,
 } from "../types/types";
 
 export type SessionStatus =
@@ -50,6 +52,13 @@ export interface MultiTrialResponse {
   statistics: TrialStatistics;
 }
 
+export interface FunctionConfig {
+  function: BenchmarkFunctions;
+  dimensions: number;
+  lowerBound: number;
+  upperBound: number;
+}
+
 // Schema Zod
 export const singleTestFormSchema = z
   .object({
@@ -62,6 +71,7 @@ export const singleTestFormSchema = z
     benchmarkFunction: z.nativeEnum(BenchmarkFunctions),
     selectedAlgorithms: z.array(z.nativeEnum(Algorithms)).optional(),
     trials: z.number().min(1).max(100),
+    parameters: z.record(z.string(), z.number()).optional(),
   })
   .refine((data) => data.upperBound > data.lowerBound, {
     message: "Upper bound must be greater than lower bound",
@@ -82,6 +92,7 @@ export const multiTestFormSchema = z.object({
   lowerBound: z.number(),
   upperBound: z.number(),
   trials: z.number().min(1).max(100),
+  parameters: z.record(z.string(), z.number()).optional(),
 });
 
 export const functionComparisonSchema = z.object({
@@ -92,11 +103,17 @@ export const functionComparisonSchema = z.object({
       message: "You must select at least two benchmark functions to compare",
     }),
   populationSize: z.number().min(10).max(1000),
-  dimensions: z.number().min(2).max(100),
   iterations: z.number().min(10).max(10000),
-  lowerBound: z.number(),
-  upperBound: z.number(),
   trials: z.number().min(1).max(100),
+  functionConfigs: z.array(
+    z.object({
+      function: z.nativeEnum(BenchmarkFunctions),
+      dimensions: z.number().min(2).max(100),
+      lowerBound: z.number(),
+      upperBound: z.number(),
+    })
+  ),
+  parameters: z.record(z.string(), z.number()).optional(),
 });
 
 export type SingleTestFormValues = z.infer<typeof singleTestFormSchema>;
@@ -260,6 +277,19 @@ export function hasFunctionProgress(
   return progress?.mode === "functions";
 }
 
+export function getDefaultParametersForAlgorithm(
+  algorithm: Algorithms
+): AlgorithmParameters {
+  const config = ALGORITHM_CONFIGS[algorithm];
+  const defaults: AlgorithmParameters = {};
+
+  config.parameters.forEach((param: AlgorithmParameterInfo) => {
+    defaults[param.name] = param.defaultValue;
+  });
+
+  return defaults;
+}
+
 function getDefaultConfig(
   mode: "single" | "multi",
   multiTestMode: MultiTestMode = "algorithms"
@@ -295,11 +325,17 @@ function getDefaultConfig(
           algorithm: defaultAlgorithm,
           selectedBenchmarkFunctions: defaultFunctions,
           populationSize: algorithmConfig.populationSize,
-          dimensions: benchmarkConfig.dimensions,
           iterations: algorithmConfig.iterations,
-          lowerBound: benchmarkConfig.lowerBound,
-          upperBound: benchmarkConfig.upperBound,
           trials: 1,
+          functionConfigs: defaultFunctions.map((func) => {
+            const config = BENCHMARK_CONFIGS[func];
+            return {
+              function: func,
+              dimensions: config.dimensions,
+              lowerBound: config.lowerBound,
+              upperBound: config.upperBound,
+            };
+          }),
         };
       }
 
@@ -521,13 +557,27 @@ export const useTestStore = create<TestStore>()(
           sessions: state.sessions.map((s) => {
             if (s.id !== id) return s;
 
-            const {
-              dimensions,
-              lowerBound,
-              upperBound,
-              populationSize,
-              iterations,
-            } = s.config;
+            let dimensions: number;
+            let lowerBound: number;
+            let upperBound: number;
+            const { populationSize, iterations } = s.config;
+            const parameters =
+              "parameters" in s.config ? s.config.parameters || {} : {};
+
+            // Dla single test i algorithm comparison
+            if ("dimensions" in s.config) {
+              dimensions = s.config.dimensions;
+              lowerBound = s.config.lowerBound;
+              upperBound = s.config.upperBound;
+            } else {
+              // Dla function comparison - użyj pierwszej funkcji jako domyślnej
+              // (w zasadzie nie używamy tych wartości dla function-comparison)
+              const firstConfig = (s.config as FunctionComparisonFormValues)
+                .functionConfigs?.[0];
+              dimensions = firstConfig?.dimensions ?? 10;
+              lowerBound = firstConfig?.lowerBound ?? -5;
+              upperBound = firstConfig?.upperBound ?? 5;
+            }
 
             switch (s.mode) {
               case "single": {
@@ -565,6 +615,7 @@ export const useTestStore = create<TestStore>()(
                     upperBound,
                     history: historyJson,
                     solution,
+                    parameters,
                   },
                 };
 
@@ -581,6 +632,9 @@ export const useTestStore = create<TestStore>()(
                   const presenterRecords: ExperimentRecord[] = [];
 
                   const algorithm = result.algorithm;
+                  const functionConfigs =
+                    (s.config as FunctionComparisonFormValues)
+                      .functionConfigs || [];
 
                   const processedResults = result.results.map((row) => {
                     if (
@@ -590,6 +644,17 @@ export const useTestStore = create<TestStore>()(
                       row.bestSolution &&
                       row.solution
                     ) {
+                      const funcConfig = functionConfigs.find(
+                        (c) => c.function === row.benchmarkFunction
+                      );
+
+                      const funcDimensions =
+                        funcConfig?.dimensions ?? dimensions;
+                      const funcLowerBound =
+                        funcConfig?.lowerBound ?? lowerBound;
+                      const funcUpperBound =
+                        funcConfig?.upperBound ?? upperBound;
+
                       presenterRecords.push({
                         description: `${row.benchmarkFunction}`,
                         properties: {
@@ -598,12 +663,13 @@ export const useTestStore = create<TestStore>()(
                           iterations,
                           bestSolution: row.bestSolution,
                           bestFitness: row.bestFitness,
-                          dimensions,
+                          dimensions: funcDimensions,
                           populationSize,
-                          lowerBound,
-                          upperBound,
+                          lowerBound: funcLowerBound,
+                          upperBound: funcUpperBound,
                           history: row.historyJson,
                           solution: row.solution,
+                          // parameters: parameters,
                         },
                       });
                     }
@@ -653,6 +719,7 @@ export const useTestStore = create<TestStore>()(
                         upperBound,
                         history: row.historyJson,
                         solution: row.solution,
+                        // parameters,
                       },
                     });
                   }

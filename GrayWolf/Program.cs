@@ -5,13 +5,21 @@ using GrayWolf.Model;
 using GrayWolf.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Diagnostics; // only for Debug.WriteLine
 using System.IO;
 using System.Text.Json;
 using RaportingSystem = GrayWolf.Services.RaportingSystem;
+using Microsoft.AspNetCore.Hosting;
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 100_000_000; // 100 MB
+});
 
 builder.Services.AddCors(options =>
 {
@@ -23,9 +31,22 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.Limits.MaxRequestBodySize = 100_000_000; // 100 MB
+    serverOptions.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(10); // Zwiększ timeout
+    serverOptions.Limits.RequestHeadersTimeout = TimeSpan.FromMinutes(10);
+});
+
 var app = builder.Build();
 
 app.UseCors();
+
+app.Use(async (context, next) =>
+{
+    context.Features.Get<IHttpMaxRequestBodySizeFeature>()!.MaxRequestBodySize = 100_000_000;
+    await next.Invoke();
+});
 
 // ENDPOINT - metadane dotyczące parametrów algorytmu (dla UI)
 app.MapGet("/api/optimizer/parameters", () =>

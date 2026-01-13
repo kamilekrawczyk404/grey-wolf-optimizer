@@ -9,11 +9,16 @@ import {
   hasFunctionProgress,
   isFunctionComparison,
   TrialStatistics,
+  FunctionConfig,
+  getDefaultParametersForAlgorithm,
 } from "@/stores/test-store";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React, { useEffect, useRef } from "react";
-import { BENCHMARK_CONFIGS } from "@/stores/benchmark-configs";
+import {
+  BENCHMARK_CONFIGS,
+  ALGORITHM_CONFIGS,
+} from "@/stores/benchmark-configs";
 import { toast } from "sonner";
 import {
   Card,
@@ -44,6 +49,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { OptimizerDTO } from "@/types/types";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { AlgorithmParametersPanel } from "./AlgorithmParametersPanel";
 
 export interface MultiFunctionConfigurationFormProps {
   session: TestSession;
@@ -67,12 +74,27 @@ export const MultiFunctionConfigurationForm = ({
       ? {
           ...session.config,
           trials: (session.config as FunctionComparisonFormValues).trials ?? 1,
+          parameters:
+            (session.config as FunctionComparisonFormValues).parameters ?? {},
           selectedBenchmarkFunctions: (
             session.config as FunctionComparisonFormValues
           ).selectedBenchmarkFunctions || [
             BenchmarkFunctions.Rastrigin,
             BenchmarkFunctions.Sphere,
           ],
+          functionConfigs:
+            (session.config as FunctionComparisonFormValues).functionConfigs ||
+            [BenchmarkFunctions.Rastrigin, BenchmarkFunctions.Sphere].map(
+              (func) => {
+                const config = BENCHMARK_CONFIGS[func];
+                return {
+                  function: func,
+                  dimensions: config.dimensions,
+                  lowerBound: config.lowerBound,
+                  upperBound: config.upperBound,
+                };
+              }
+            ),
         }
       : {
           algorithm: Algorithms.GWO,
@@ -81,13 +103,55 @@ export const MultiFunctionConfigurationForm = ({
             BenchmarkFunctions.Sphere,
           ],
           populationSize: 30,
-          dimensions: 10,
           iterations: 100,
-          lowerBound: -5.12,
-          upperBound: 5.12,
           trials: 1,
+          parameters: {},
+          functionConfigs: [
+            BenchmarkFunctions.Rastrigin,
+            BenchmarkFunctions.Sphere,
+          ].map((func) => {
+            const config = BENCHMARK_CONFIGS[func];
+            return {
+              function: func,
+              dimensions: config.dimensions,
+              lowerBound: config.lowerBound,
+              upperBound: config.upperBound,
+            };
+          }),
         },
   });
+
+  const selectedFunctions = form.watch("selectedBenchmarkFunctions");
+  const watchAlgorithm = form.watch("algorithm");
+
+  useEffect(() => {
+    const currentConfigs = form.getValues("functionConfigs") || [];
+
+    const filteredConfigs = currentConfigs.filter((config) =>
+      selectedFunctions.includes(config.function)
+    );
+
+    const newConfigs = selectedFunctions
+      .filter((func) => !filteredConfigs.some((c) => c.function === func))
+      .map((func) => {
+        const config = BENCHMARK_CONFIGS[func];
+        return {
+          function: func,
+          dimensions: config.dimensions,
+          lowerBound: config.lowerBound,
+          upperBound: config.upperBound,
+        };
+      });
+
+    const updatedConfigs = [...filteredConfigs, ...newConfigs].sort((a, b) => {
+      return (
+        selectedFunctions.indexOf(a.function) -
+        selectedFunctions.indexOf(b.function)
+      );
+    });
+
+    form.setValue("functionConfigs", updatedConfigs);
+  }, [selectedFunctions]);
 
   // Reset form when switching tabs
   useEffect(() => {
@@ -103,9 +167,22 @@ export const MultiFunctionConfigurationForm = ({
     }
   }, [activeTab, session, form]);
 
-  // Watch for algorithm changes
-  const watchAlgorithm = form.watch("algorithm");
+  useEffect(() => {
+    const algorithmConfig = ALGORITHM_CONFIGS[watchAlgorithm];
 
+    if (algorithmConfig.parameters.length > 0) {
+      const currentParams = form.getValues("parameters") || {};
+
+      // Ustaw domyślne parametry tylko jeśli nie ma żadnych wartości
+      if (Object.keys(currentParams).length === 0) {
+        const defaultParams = getDefaultParametersForAlgorithm(watchAlgorithm);
+        form.setValue("parameters", defaultParams);
+      }
+    } else {
+      // Jeśli algorytm nie ma parametrów, wyczyść
+      form.setValue("parameters", {});
+    }
+  }, [watchAlgorithm, form]);
   useEffect(() => {
     const subscription = form.watch((value, { name, type }) => {
       if (name === "algorithm" && type === "change") {
@@ -129,11 +206,10 @@ export const MultiFunctionConfigurationForm = ({
     form.watch("algorithm"),
     form.watch("selectedBenchmarkFunctions"),
     form.watch("populationSize"),
-    form.watch("dimensions"),
     form.watch("iterations"),
-    form.watch("lowerBound"),
-    form.watch("upperBound"),
     form.watch("trials"),
+    form.watch("functionConfigs"),
+    form.watch("parameters"),
     activeTab,
     session.id,
   ]);
@@ -282,19 +358,26 @@ export const MultiFunctionConfigurationForm = ({
           });
         }
 
-        const benchmarkConfig = BENCHMARK_CONFIGS[func];
+        const funcConfig = values.functionConfigs.find(
+          (c) => c.function === func
+        );
+
+        if (!funcConfig) {
+          throw new Error(`Configuration not found for function ${func}`);
+        }
 
         const requestBody = {
           RunId: runId,
           Algorithm: values.algorithm,
           PopulationSize: values.populationSize,
-          Dimensions: benchmarkConfig.dimensions,
+          Dimensions: funcConfig.dimensions,
           Iterations: values.iterations,
-          LowerBound: benchmarkConfig.lowerBound,
-          UpperBound: benchmarkConfig.upperBound,
+          LowerBound: funcConfig.lowerBound,
+          UpperBound: funcConfig.upperBound,
           Function: func,
           Trials: values.trials,
           GenerateReport: false,
+          Parameters: values.parameters || {},
         };
 
         console.log(`Starting function ${func} with session RunId: ${runId}`);
@@ -434,7 +517,7 @@ export const MultiFunctionConfigurationForm = ({
       }
     }
 
-    // ✅ GENEROWANIE RAPORTU - po zakończeniu wszystkich funkcji
+    //  GENEROWANIE RAPORTU
     console.log("🎯 All functions completed. Generating comparison report...");
 
     try {
@@ -451,22 +534,28 @@ export const MultiFunctionConfigurationForm = ({
           algorithmName: values.algorithm,
           populationSize: values.populationSize,
           iterations: values.iterations,
-          dimensions: values.dimensions,
-          lowerBound: values.lowerBound,
-          upperBound: values.upperBound,
           results: partialResults
             .filter((r) => r.status === "success" && r.statistics)
-            .map((r) => ({
-              functionName: r.benchmarkFunction,
-              trialsCount: r.statistics!.totalTrials,
-              bestFitness: r.statistics!.bestFitness,
-              worstFitness: r.statistics!.worstFitness,
-              meanFitness: r.statistics!.meanFitness,
-              medianFitness: r.statistics!.medianFitness,
-              stdDevFitness: r.statistics!.stdDevFitness,
-              coeffOfVariationFitness: r.statistics!.coeffOfVariationFitness,
-              bestSolution: r.statistics!.bestSolution,
-            })),
+            .map((r) => {
+              const funcConfig = values.functionConfigs.find(
+                (c) => c.function === r.benchmarkFunction
+              );
+
+              return {
+                functionName: r.benchmarkFunction,
+                trialsCount: r.statistics!.totalTrials,
+                bestFitness: r.statistics!.bestFitness,
+                worstFitness: r.statistics!.worstFitness,
+                meanFitness: r.statistics!.meanFitness,
+                medianFitness: r.statistics!.medianFitness,
+                stdDevFitness: r.statistics!.stdDevFitness,
+                coeffOfVariationFitness: r.statistics!.coeffOfVariationFitness,
+                bestSolution: r.statistics!.bestSolution,
+                dimensions: funcConfig?.dimensions,
+                lowerBound: funcConfig?.lowerBound,
+                upperBound: funcConfig?.upperBound,
+              };
+            }),
         };
       } else {
         // Request body dla single trial
@@ -474,17 +563,24 @@ export const MultiFunctionConfigurationForm = ({
           algorithmName: values.algorithm,
           populationSize: values.populationSize,
           iterations: values.iterations,
-          dimensions: values.dimensions,
-          lowerBound: values.lowerBound,
-          upperBound: values.upperBound,
           results: partialResults
             .filter((r) => r.status === "success")
-            .map((r) => ({
-              functionName: r.benchmarkFunction,
-              bestFitness: r.bestFitness,
-              bestSolution: r.bestSolution,
-              evaluationsCount: values.populationSize * values.iterations, // ✅ Oblicz evaluationsCount
-            })),
+            .map((r) => {
+              // ✅ POPRAWKA: Zadeklaruj funcConfig wewnątrz map
+              const funcConfig = values.functionConfigs.find(
+                (c) => c.function === r.benchmarkFunction
+              );
+
+              return {
+                functionName: r.benchmarkFunction,
+                bestFitness: r.bestFitness,
+                bestSolution: r.bestSolution,
+                evaluationsCount: values.populationSize * values.iterations,
+                dimensions: funcConfig?.dimensions,
+                lowerBound: funcConfig?.lowerBound,
+                upperBound: funcConfig?.upperBound,
+              };
+            }),
         };
       }
 
@@ -593,6 +689,8 @@ export const MultiFunctionConfigurationForm = ({
 
   if (session.id !== activeTab) return null;
 
+  const values = form.getValues();
+
   return (
     <Card className="bg-neutral-900 border-neutral-800">
       <CardHeader>
@@ -672,6 +770,13 @@ export const MultiFunctionConfigurationForm = ({
               )}
             />
 
+            <AlgorithmParametersPanel
+              parameters={ALGORITHM_CONFIGS[watchAlgorithm].parameters}
+              values={form.watch("parameters") || {}}
+              onChange={(newParams) => form.setValue("parameters", newParams)}
+              disabled={canResume}
+            />
+
             {/* Benchmark Functions Selection */}
             <FormField
               control={form.control}
@@ -726,6 +831,125 @@ export const MultiFunctionConfigurationForm = ({
                 </FormItem>
               )}
             />
+
+            <Separator />
+
+            {selectedFunctions.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-neutral-300">
+                  Function Configurations
+                </h3>
+                <div className="space-y-3">
+                  {selectedFunctions.map((func, index) => {
+                    const funcConfig = values.functionConfigs?.find(
+                      (c: FunctionConfig) => c.function === func
+                    );
+                    const configIndex = values.functionConfigs?.findIndex(
+                      (c: FunctionConfig) => c.function === func
+                    );
+
+                    if (configIndex === -1 || configIndex === undefined)
+                      return null;
+
+                    return (
+                      <div
+                        key={func}
+                        className="p-4 bg-neutral-800 rounded-lg space-y-3"
+                      >
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-medium text-white">
+                            {func}
+                          </h4>
+                          <span className="text-xs text-neutral-400">
+                            Default: {BENCHMARK_CONFIGS[func].dimensions}D
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <FormField
+                            control={form.control}
+                            name={`functionConfigs.${configIndex}.dimensions`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-neutral-300 text-xs">
+                                  Dimensions
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    className="bg-neutral-700 border-neutral-600 text-white h-9"
+                                    {...field}
+                                    onChange={(e) =>
+                                      field.onChange(+e.target.value)
+                                    }
+                                    disabled={canResume}
+                                    min={2}
+                                    max={100}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name={`functionConfigs.${configIndex}.lowerBound`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-neutral-300 text-xs">
+                                  Lower Bound
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    className="bg-neutral-700 border-neutral-600 text-white h-9"
+                                    {...field}
+                                    onChange={(e) =>
+                                      field.onChange(+e.target.value)
+                                    }
+                                    disabled={canResume}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name={`functionConfigs.${configIndex}.upperBound`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-neutral-300 text-xs">
+                                  Upper Bound
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    className="bg-neutral-700 border-neutral-600 text-white h-9"
+                                    {...field}
+                                    onChange={(e) =>
+                                      field.onChange(+e.target.value)
+                                    }
+                                    disabled={canResume}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <Separator />
 
             {/* Configuration Parameters */}
             <div className="grid grid-cols-2 gap-4">

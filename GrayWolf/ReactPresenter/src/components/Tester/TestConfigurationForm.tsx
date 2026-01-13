@@ -11,6 +11,7 @@ import {
   singleTestFormSchema,
   MultiTrialResponse,
   TrialStatistics,
+  getDefaultParametersForAlgorithm,
 } from "@/stores/test-store";
 import {
   BENCHMARK_CONFIGS,
@@ -45,6 +46,7 @@ import { Activity, BarChart3, Play, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { OptimizerDTO } from "@/types/types";
+import { AlgorithmParametersPanel } from "./AlgorithmParametersPanel";
 
 export interface TestConfigurationFormProps {
   session: TestSession;
@@ -65,6 +67,7 @@ export function TestConfigurationForm({ session }: TestConfigurationFormProps) {
     defaultValues: {
       ...session.config,
       trials: (session.config as SingleTestFormValues).trials ?? 1,
+      parameters: (session.config as SingleTestFormValues).parameters ?? {},
     },
   });
 
@@ -72,9 +75,16 @@ export function TestConfigurationForm({ session }: TestConfigurationFormProps) {
   useEffect(() => {
     if (previousTabRef.current !== activeTab && session.id === activeTab) {
       requestAnimationFrame(() => {
-        form.reset(session.config, {
-          keepDefaultValues: false,
-        });
+        form.reset(
+          {
+            ...session.config,
+            parameters:
+              (session.config as SingleTestFormValues).parameters ?? {},
+          },
+          {
+            keepDefaultValues: false,
+          }
+        );
       });
       previousTabRef.current = activeTab;
     }
@@ -83,6 +93,24 @@ export function TestConfigurationForm({ session }: TestConfigurationFormProps) {
   // Watch for benchmark function changes
   const watchBenchmarkFunction = form.watch("benchmarkFunction");
   const watchAlgorithm = form.watch("algorithm");
+
+  // Automatyczne ustawianie domyślnych parametrów gdy zmienia się algorytm
+  useEffect(() => {
+    const algorithmConfig = ALGORITHM_CONFIGS[watchAlgorithm];
+
+    if (algorithmConfig.parameters.length > 0) {
+      const currentParams = form.getValues("parameters") || {};
+
+      // Ustaw domyślne parametry tylko jeśli nie ma żadnych wartości dla tego algorytmu
+      if (Object.keys(currentParams).length === 0) {
+        const defaultParams = getDefaultParametersForAlgorithm(watchAlgorithm);
+        form.setValue("parameters", defaultParams);
+      }
+    } else {
+      // Jeśli algorytm nie ma parametrów, wyczyść
+      form.setValue("parameters", {});
+    }
+  }, [watchAlgorithm, form]);
 
   // Auto-fill configuration when benchmark function changes
   useEffect(() => {
@@ -131,6 +159,7 @@ export function TestConfigurationForm({ session }: TestConfigurationFormProps) {
     form.watch("upperBound"),
     form.watch("benchmarkFunction"),
     form.watch("trials"),
+    form.watch("parameters"),
     activeTab,
     session.id,
     updateSessionConfig,
@@ -176,6 +205,7 @@ export function TestConfigurationForm({ session }: TestConfigurationFormProps) {
         Function: values.benchmarkFunction,
         Trials: values.trials,
         GenerateReport: true,
+        Parameters: values.parameters || {},
       };
 
       const response = await fetch("http://localhost:5000/api/optimizer/run", {
@@ -583,6 +613,13 @@ export function TestConfigurationForm({ session }: TestConfigurationFormProps) {
                 />
               </div>
             </div>
+
+            <AlgorithmParametersPanel
+              parameters={ALGORITHM_CONFIGS[watchAlgorithm].parameters}
+              values={form.watch("parameters") || {}}
+              onChange={(newParams) => form.setValue("parameters", newParams)}
+              disabled={hasCheckpoint}
+            />
 
             {/* Warunkowe renderowanie przycisków */}
             <div className="flex gap-2 mt-4">

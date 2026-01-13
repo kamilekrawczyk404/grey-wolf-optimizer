@@ -8,6 +8,7 @@ import {
   FunctionComparisonResult,
   FunctionComparisonFormValues,
 } from "@/stores/test-store";
+import { ALGORITHM_CONFIGS } from "@/stores/benchmark-configs";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +40,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { NavigationTab, useNavigationStore } from "@/stores/navigation-store";
+import { AlgorithmParameters } from "@/types/types";
 
 interface TestResultsDialogProps {
   open: boolean;
@@ -123,9 +125,71 @@ export function TestResultsDialog({
     }
   };
 
+  const getAlgorithmParameters = (): AlgorithmParameters | null => {
+    if ("parameters" in session.config && session.config.parameters) {
+      return session.config.parameters as AlgorithmParameters;
+    }
+    return null;
+  };
+
+  const getTrialsCount = (): number | null => {
+    if ("trials" in session.config) {
+      return session.config.trials;
+    }
+    return null;
+  };
+
   const openTestPresenter = () => {
     setNavigationTab(NavigationTab.Presenter);
     handleClose();
+  };
+
+  const AlgorithmParametersDisplay = () => {
+    const parameters = getAlgorithmParameters();
+    if (!parameters || Object.keys(parameters).length === 0) return null;
+
+    return (
+      <Card className="bg-neutral-800 border-neutral-700">
+        <CardContent className="pt-4">
+          <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
+            <Badge variant="outline" className="bg-neutral-700">
+              Algorithm Parameters
+            </Badge>
+          </h4>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            {Object.entries(parameters).map(([key, value]) => {
+              // Znajdź opis parametru z konfiguracji
+              const algorithm =
+                session.result?.type === "single"
+                  ? (session.result as SingleTestResult).algorithm
+                  : session.result?.type === "function-comparison"
+                  ? (session.result as FunctionComparisonResult).algorithm
+                  : null;
+
+              const paramInfo = algorithm
+                ? ALGORITHM_CONFIGS[algorithm]?.parameters.find(
+                    (p) => p.name === key
+                  )
+                : null;
+
+              return (
+                <div
+                  key={key}
+                  className="flex justify-between items-center p-2 rounded bg-neutral-900/50"
+                >
+                  <span className="text-neutral-400">
+                    {paramInfo?.description || key}:
+                  </span>
+                  <span className="text-white font-mono text-sm">
+                    {typeof value === "number" ? value.toFixed(3) : value}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    );
   };
 
   if (session.result.type === "function-comparison") {
@@ -353,6 +417,44 @@ export function TestResultsDialog({
 
   const result = session.result as SingleTestResult;
 
+  const getDimensionsDisplay = () => {
+    if ("dimensions" in session.config) {
+      return session.config.dimensions;
+    }
+    const configs = (session.config as FunctionComparisonFormValues)
+      .functionConfigs;
+    if (configs && configs.length > 0) {
+      const dims = configs.map((c) => c.dimensions);
+      const uniqueDims = Array.from(new Set(dims));
+      if (uniqueDims.length === 1) {
+        return uniqueDims[0];
+      }
+      return `${Math.min(...dims)}-${Math.max(...dims)}`;
+    }
+    return "N/A";
+  };
+
+  const getBoundsDisplay = () => {
+    if ("lowerBound" in session.config && "upperBound" in session.config) {
+      return `[${session.config.lowerBound}, ${session.config.upperBound}]`;
+    }
+    const configs = (session.config as FunctionComparisonFormValues)
+      .functionConfigs;
+    if (configs && configs.length > 0) {
+      const lowerBounds = configs.map((c) => c.lowerBound);
+      const upperBounds = configs.map((c) => c.upperBound);
+      const uniqueLower = Array.from(new Set(lowerBounds));
+      const uniqueUpper = Array.from(new Set(upperBounds));
+
+      if (uniqueLower.length === 1 && uniqueUpper.length === 1) {
+        return `[${uniqueLower[0]}, ${uniqueUpper[0]}]`;
+      }
+
+      return `[${Math.min(...lowerBounds)}, ${Math.max(...upperBounds)}]`;
+    }
+    return "N/A";
+  };
+
   return (
     <Dialog
       open={open}
@@ -451,18 +553,31 @@ export function TestResultsDialog({
                   <div className="flex justify-between items-center p-2 rounded bg-neutral-900/50">
                     <span className="text-neutral-400">Dimensions:</span>
                     <span className="text-white font-mono">
-                      {session.config.dimensions}
+                      {getDimensionsDisplay()}
                     </span>
                   </div>
                   <div className="flex justify-between items-center p-2 rounded bg-neutral-900/50">
                     <span className="text-neutral-400">Range:</span>
                     <span className="text-white font-mono text-xs">
-                      [{session.config.lowerBound}, {session.config.upperBound}]
+                      {getBoundsDisplay()}
                     </span>
                   </div>
+                  {getTrialsCount() && getTrialsCount()! > 1 && (
+                    <div className="flex justify-between items-center p-2 rounded bg-neutral-900/50 col-span-2">
+                      <span className="text-neutral-400">Trials:</span>
+                      <Badge
+                        variant="secondary"
+                        className="bg-orange-600/20 text-orange-400 border-orange-600"
+                      >
+                        {getTrialsCount()} independent runs
+                      </Badge>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
+
+            <AlgorithmParametersDisplay />
 
             {/* Best Solution */}
             {result &&

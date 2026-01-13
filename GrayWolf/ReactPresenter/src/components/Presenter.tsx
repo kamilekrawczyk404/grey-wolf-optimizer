@@ -205,6 +205,13 @@ const Presenter = () => {
   }, [isExternalData, userExternalFiles, sessions, activeTab]);
 
   const SessionRow = ({ session }: { session: TestSession }) => {
+    const getTrialsCount = (): number | null => {
+      if ("trials" in session.config) {
+        return session.config.trials;
+      }
+      return null;
+    };
+
     return (
       <div
         onClick={() => runPresenter(session)}
@@ -219,6 +226,14 @@ const Presenter = () => {
               {session.name}
             </span>
             <SessionStatusBadge status={session.status} />
+            {getTrialsCount() && getTrialsCount()! > 1 && (
+              <Badge
+                variant="outline"
+                className="bg-orange-950/30 text-orange-400 border-orange-800 text-xs"
+              >
+                {getTrialsCount()} trials
+              </Badge>
+            )}
           </div>
           {session.status === "completed" && (
             <div className="text-xs text-neutral-500 flex flex-col gap-1">

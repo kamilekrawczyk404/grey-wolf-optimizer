@@ -6,6 +6,7 @@ import {
   useTestStore,
   isAlgorithmComparison,
   isFunctionComparison,
+  FunctionComparisonFormValues,
 } from "@/stores/test-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,44 @@ export function RunningTestView({ session }: RunningTestViewProps) {
 
   const handleCancel = () => {
     cancelSession(session.id);
+  };
+
+  const getDimensionsDisplay = () => {
+    if ("dimensions" in session.config) {
+      return session.config.dimensions;
+    }
+    const configs = (session.config as FunctionComparisonFormValues)
+      .functionConfigs;
+    if (configs && configs.length > 0) {
+      const dims = configs.map((c) => c.dimensions);
+      const uniqueDims = Array.from(new Set(dims));
+      if (uniqueDims.length === 1) {
+        return uniqueDims[0];
+      }
+      return `${Math.min(...dims)}-${Math.max(...dims)}`;
+    }
+    return "N/A";
+  };
+
+  const getBoundsDisplay = () => {
+    if ("lowerBound" in session.config && "upperBound" in session.config) {
+      return `[${session.config.lowerBound}, ${session.config.upperBound}]`;
+    }
+    const configs = (session.config as FunctionComparisonFormValues)
+      .functionConfigs;
+    if (configs && configs.length > 0) {
+      const lowerBounds = configs.map((c) => c.lowerBound);
+      const upperBounds = configs.map((c) => c.upperBound);
+      const uniqueLower = Array.from(new Set(lowerBounds));
+      const uniqueUpper = Array.from(new Set(upperBounds));
+
+      if (uniqueLower.length === 1 && uniqueUpper.length === 1) {
+        return `[${uniqueLower[0]}, ${uniqueUpper[0]}]`;
+      }
+
+      return `[${Math.min(...lowerBounds)}, ${Math.max(...upperBounds)}]`;
+    }
+    return "N/A";
   };
 
   return (
@@ -166,7 +205,7 @@ export function RunningTestView({ session }: RunningTestViewProps) {
           </div>
           <div className="flex justify-between">
             <span className="text-neutral-400">Dimensions:</span>
-            <span className="text-white">{session.config.dimensions}</span>
+            <span className="text-white">{getDimensionsDisplay()}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-neutral-400">Iterations:</span>
@@ -174,9 +213,7 @@ export function RunningTestView({ session }: RunningTestViewProps) {
           </div>
           <div className="flex justify-between">
             <span className="text-neutral-400">Range:</span>
-            <span className="text-white">
-              [{session.config.lowerBound}, {session.config.upperBound}]
-            </span>
+            <span className="text-white">{getBoundsDisplay()}</span>
           </div>
         </div>
       </CardContent>

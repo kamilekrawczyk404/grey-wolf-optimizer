@@ -1,48 +1,48 @@
 import { HTMLAttributes } from "react";
 
 export interface OptimizerConfiguration {
-  iterations: number,
-  dimensions: number,
-  lowerBound: number,
-  upperBound: number,
-  populationSize: number,
-  benchmarkFunction: BenchmarkFunctions,
-  algorithm: Algorithms
+  iterations: number;
+  dimensions: number;
+  lowerBound: number;
+  upperBound: number;
+  populationSize: number;
+  benchmarkFunction: BenchmarkFunctions;
+  algorithm: Algorithms;
 }
 
 export interface AgentState {
-  isLeader: boolean,
-  role: string,
-  fitness: number,
-  position: number[]
+  isLeader: boolean;
+  role: string;
+  fitness: number;
+  position: number[];
 }
 
 export interface IterationSnapshot {
   iteration: number;
-  entities: AgentState[]
+  entities: AgentState[];
 }
 
 export type OptimizationRun = {
-  algorithm: Algorithms,
+  algorithm: Algorithms;
   benchmarkFunction: BenchmarkFunctions;
-  populationSize: number,
+  populationSize: number;
   iterations: number;
   lowerBound: number;
   upperBound: number;
   bestFitness: number;
   bestSolution: number[];
-  solution: number[][]
+  solution: number[][];
   dimensions: number;
   history: IterationSnapshot[];
 };
 
-type UserLocalFileProperties = Omit<OptimizationRun, 'history'>
+type UserLocalFileProperties = Omit<OptimizationRun, "history">;
 
 export type UserLocalFile = {
   description: string;
   properties: UserLocalFileProperties;
-  history: IterationSnapshot[]
-}
+  history: IterationSnapshot[];
+};
 
 export type ExperimentRecord = {
   description: string;
@@ -50,11 +50,11 @@ export type ExperimentRecord = {
 };
 
 export interface OptimizerDTO {
-  bestSolution: number[],
-  bestFitness: number,
-  solution: number[][],
-  historyJson: IterationSnapshot[],
-  message?: string
+  bestSolution: number[];
+  bestFitness: number;
+  solution: number[][];
+  historyJson: IterationSnapshot[];
+  message?: string;
 }
 
 function isNumberArray(arr: any): arr is number[] {
@@ -62,13 +62,15 @@ function isNumberArray(arr: any): arr is number[] {
 }
 
 const isAgentState = (obj: any) => {
-  if (!obj || typeof obj !== 'object') return false
+  if (!obj || typeof obj !== "object") return false;
 
-  return isNumberArray(obj.position) &&
-      typeof obj.fitness === 'number' &&
-      typeof obj.role === 'string' &&
-      typeof obj.isLeader === 'boolean'
-}
+  return (
+    isNumberArray(obj.position) &&
+    typeof obj.fitness === "number" &&
+    typeof obj.role === "string" &&
+    typeof obj.isLeader === "boolean"
+  );
+};
 
 export function isIterationSnapshot(obj: any): obj is IterationSnapshot {
   if (!obj || typeof obj !== "object") {
@@ -82,9 +84,7 @@ export function isIterationSnapshot(obj: any): obj is IterationSnapshot {
   );
 }
 
-export function isOptimizationRunProperties(
-  obj: any,
-): obj is OptimizationRun {
+export function isOptimizationRunProperties(obj: any): obj is OptimizationRun {
   if (!obj || typeof obj !== "object") {
     return false;
   }
@@ -110,10 +110,10 @@ export function isExperimentRecord(obj: any): obj is UserLocalFile {
   }
 
   return (
-      typeof obj.description === "string" &&
-      isOptimizationRunProperties(obj.properties) && // Validate the nested properties object
-      Array.isArray(obj.history) &&
-      obj.history.every(isIterationSnapshot) // Validate every item in history
+    typeof obj.description === "string" &&
+    isOptimizationRunProperties(obj.properties) && // Validate the nested properties object
+    Array.isArray(obj.history) &&
+    obj.history.every(isIterationSnapshot) // Validate every item in history
   );
 }
 
@@ -122,25 +122,42 @@ export type HeaderProps = HTMLAttributes<HTMLHeadingElement> & {
 };
 
 export enum Algorithms {
-    GWO = "GWO",
-    Aquila = "Aquila",
-    SSA = "SSA",
-    BA = "BA",
-    GA = "GA",
-    PSO = "PSO",
-    BOA = "BOA",
+  GWO = "GWO",
+  Aquila = "Aquila",
+  SSA = "SSA",
+  BA = "BA",
+  GA = "GA",
+  PSO = "PSO",
+  BOA = "BOA",
 }
 
 export enum BenchmarkFunctions {
-    Rastrigin = "Rastrigin",
-    Sphere = "Sphere",
-    Beale = "Beale",
-    RosenBrock = "RosenBrock",
-    BukinN6 = "BukinN6"
+  Rastrigin = "Rastrigin",
+  Sphere = "Sphere",
+  Beale = "Beale",
+  RosenBrock = "RosenBrock",
+  BukinN6 = "BukinN6",
 }
+
+export interface AlgorithmParameterInfo {
+  name: string;
+  description: string;
+  min: number;
+  max: number;
+  step: number;
+  defaultValue: number;
+}
+
+export interface AlgorithmMetadata {
+  algorithmName: string;
+  parameters: AlgorithmParameterInfo[];
+}
+
+// Typ dla wartości parametrów (nazwa parametru → wartość)
+export type AlgorithmParameters = Record<string, number>;
 
 export type OptimizationTest = UserLocalFile;
 
 export function isOptimizationTestArray(obj: any): obj is UserLocalFile[] {
-    return Array.isArray(obj) && obj.every(isExperimentRecord);
+  return Array.isArray(obj) && obj.every(isExperimentRecord);
 }
