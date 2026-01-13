@@ -8,7 +8,7 @@ namespace GrayWolf.Services
 {
     internal static class NumberFormatter
     {
-        private const double ScientificThreshold = 1e-4;
+        private const double ScientificThreshold = 1e-8;
         private const double LargeNumberThreshold = 1e6;
 
         public static string Format(double value, int fixedDecimals = 6)
@@ -31,7 +31,7 @@ namespace GrayWolf.Services
             if (double.IsNaN(value) || double.IsInfinity(value))
                 return "N/A";
 
-            return Format(value, 2) + "%";
+            return value.ToString("F2") + "%";
         }
     }
 

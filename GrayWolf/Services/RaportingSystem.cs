@@ -191,9 +191,9 @@ namespace GrayWolf.Services
 
             foreach (var result in results.OrderBy(x => x.BestFitness))
             {
-                strBuilder.Append($"{'=',80}\n");
+                strBuilder.Append(new string('-', 80) + "\n");
                 strBuilder.Append($"Algorytm: {result.AlgorithmName}\n");
-                strBuilder.Append($"{'=',80}\n");
+                strBuilder.Append(new string('-', 80) + "\n");
                 strBuilder.Append($"Liczba prób: {result.TrialsCount}\n");
                 strBuilder.Append($"Liczba iteracji na próbę: {result.TrialsCount}\n\n");
 
@@ -256,9 +256,10 @@ namespace GrayWolf.Services
             int iterations, int populationSize, int dimensions, double lowerBound, double upperBound)
         {
             StringBuilder strBuilder = new StringBuilder();
-            strBuilder.Append($"\n\n{'=',80}\n");
+            strBuilder.Append($"\n\n");
+            strBuilder.Append(new string('-', 80) + "\n");
             strBuilder.Append($"RAPORT PORÓWNAWCZY FUNKCJI DLA ALGORYTMU: {algorithmName}\n");
-            strBuilder.Append($"{'=',80}\n");
+            strBuilder.Append(new string('-', 80) + "\n");
             strBuilder.Append($"Data: {DateTime.Now}\n");
             strBuilder.Append($"Liczba funkcji testowych: {results.Count}\n");
             strBuilder.Append($"Parametry testu:\n");
@@ -290,9 +291,9 @@ namespace GrayWolf.Services
 
             foreach (var result in sortedResults)
             {
-                strBuilder.Append($"{'=',80}\n");
+                strBuilder.Append(new string('-', 80) + "\n");
                 strBuilder.Append($"Funkcja: {result.FunctionName}\n");
-                strBuilder.Append($"{'=',80}\n");
+                strBuilder.Append(new string('-', 80) + "\n");
                 strBuilder.Append($"Najlepsza wartość funkcji celu: {NumberFormatter.Format(result.BestFitness)}\n");
                 strBuilder.Append($"Liczba ewaluacji: {result.EvaluationsCount}\n\n");
 
@@ -332,9 +333,10 @@ namespace GrayWolf.Services
             int iterations, int populationSize, int dimensions, double lowerBound, double upperBound)
         {
             StringBuilder strBuilder = new StringBuilder();
-            strBuilder.Append($"\n\n{'=',80}\n");
+            strBuilder.Append($"\n\n");
+            strBuilder.Append(new string('-', 80) + "\n");
             strBuilder.Append($"RAPORT PORÓWNAWCZY WIELOPRÓBOWY FUNKCJI DLA ALGORYTMU: {algorithmName}\n");
-            strBuilder.Append($"{'=',80}\n");
+            strBuilder.Append(new string('-', 80) + "\n");
             strBuilder.Append($"Data: {DateTime.Now}\n");
             strBuilder.Append($"Liczba funkcji testowych: {results.Count}\n");
 
@@ -378,9 +380,9 @@ namespace GrayWolf.Services
 
             foreach (var result in sortedResults)
             {
-                strBuilder.Append($"{'=',80}\n");
+                strBuilder.Append(new string('-', 80) + "\n");
                 strBuilder.Append($"Funkcja: {result.FunctionName}\n");
-                strBuilder.Append($"{'=',80}\n");
+                strBuilder.Append(new string('-', 80) + "\n");
                 strBuilder.Append($"Liczba prób: {result.TrialsCount}\n\n");
 
                 strBuilder.Append("Statystyki wartości funkcji celu:\n");

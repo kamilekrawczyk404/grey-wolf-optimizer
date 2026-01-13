@@ -16,3 +16,4 @@
 .idea/
 .vscode/
 GrayWolf/ReactPresenter/package-lock.json
+/package-lock.json
