@@ -1,13 +1,14 @@
-﻿using System;
+﻿using GrayWolf.Algorithms;
+using GrayWolf.Interfaces;
+using GrayWolf.Model;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using System.IO;
-using GrayWolf.Interfaces;
-using GrayWolf.Algorithms;
 using System.Text.Json;
-using GrayWolf.Model;
+using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 
 namespace GrayWolf.Services
 {
@@ -66,7 +67,8 @@ namespace GrayWolf.Services
             string jsonContent = JsonSerializer.Serialize(vizualizerData, new JsonSerializerOptions
             {
                 WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals
             });
 
             SaveJson(jsonContent, algorithmName);
@@ -132,7 +134,8 @@ namespace GrayWolf.Services
             string jsonContent = JsonSerializer.Serialize(vizualizerData, new JsonSerializerOptions
             {
                 WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals
             });
 
             SaveJson(jsonContent, algorithmName + "_MultiTrial_Best");

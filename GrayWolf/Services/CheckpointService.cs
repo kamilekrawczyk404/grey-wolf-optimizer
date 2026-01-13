@@ -1,10 +1,11 @@
-﻿using System;
+﻿using GrayWolf.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using GrayWolf.Model;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 
 namespace GrayWolf.Services
 {
@@ -12,7 +13,8 @@ namespace GrayWolf.Services
     {
         private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
         {
-            WriteIndented = true
+            WriteIndented = true,
+            NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals
         };
 
         public static void SaveCheckpoint(string fileName, CheckpointData checkpointData)
