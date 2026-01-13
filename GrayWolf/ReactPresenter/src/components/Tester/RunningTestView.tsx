@@ -7,6 +7,8 @@ import {
   isAlgorithmComparison,
   isFunctionComparison,
   FunctionComparisonFormValues,
+  hasAlgorithmProgress,
+  hasFunctionProgress,
 } from "@/stores/test-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,6 +37,82 @@ export function RunningTestView({ session }: RunningTestViewProps) {
 
     return () => clearInterval(interval);
   }, []);
+
+  const getProgressPercentage = (): number | undefined => {
+    if (!session.multiTestProgress) return undefined;
+
+    if (hasAlgorithmProgress(session.multiTestProgress)) {
+      // Algorithm comparison
+      const completed = session.multiTestProgress.completedAlgorithms.length;
+      const total = isAlgorithmComparison(session.config)
+        ? (session.config as MultiTestFormValues).selectedAlgorithms?.length ||
+          0
+        : 0;
+
+      if (total === 0) return undefined;
+      return Math.round((completed / total) * 100);
+    }
+
+    if (hasFunctionProgress(session.multiTestProgress)) {
+      // Function comparison
+      const completed = session.multiTestProgress.completedFunctions.length;
+      const total = isFunctionComparison(session.config)
+        ? (session.config as FunctionComparisonFormValues)
+            .selectedBenchmarkFunctions?.length || 0
+        : 0;
+
+      if (total === 0) return undefined;
+      return Math.round((completed / total) * 100);
+    }
+
+    return undefined;
+  };
+
+  const getProgressText = (): string => {
+    if (!session.multiTestProgress) {
+      if (isAlgorithmComparisonMode && isAlgorithmComparison(session.config)) {
+        return `Processing ${
+          session.config.selectedAlgorithms?.length || 0
+        } algorithms sequentially...`;
+      }
+      if (isFunctionComparisonMode && isFunctionComparison(session.config)) {
+        return `Processing ${
+          session.config.selectedBenchmarkFunctions?.length || 0
+        } functions sequentially...`;
+      }
+      return "Running optimization...";
+    }
+
+    if (hasAlgorithmProgress(session.multiTestProgress)) {
+      const completed = session.multiTestProgress.completedAlgorithms.length;
+      const total = isAlgorithmComparison(session.config)
+        ? (session.config as MultiTestFormValues).selectedAlgorithms?.length ||
+          0
+        : 0;
+      const current = session.multiTestProgress.currentAlgorithm;
+
+      if (current) {
+        return `Processing ${current} (${completed + 1}/${total})...`;
+      }
+      return `${completed}/${total} algorithms completed`;
+    }
+
+    if (hasFunctionProgress(session.multiTestProgress)) {
+      const completed = session.multiTestProgress.completedFunctions.length;
+      const total = isFunctionComparison(session.config)
+        ? (session.config as FunctionComparisonFormValues)
+            .selectedBenchmarkFunctions?.length || 0
+        : 0;
+      const current = session.multiTestProgress.currentFunction;
+
+      if (current) {
+        return `Processing ${current} (${completed + 1}/${total})...`;
+      }
+      return `${completed}/${total} functions completed`;
+    }
+
+    return "Running optimization...";
+  };
 
   const formatElapsedTime = (startTime: number) => {
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
@@ -84,6 +162,8 @@ export function RunningTestView({ session }: RunningTestViewProps) {
     }
     return "N/A";
   };
+
+  const progressPercentage = getProgressPercentage();
 
   return (
     <Card className="bg-neutral-900 border-neutral-800">
@@ -175,17 +255,14 @@ export function RunningTestView({ session }: RunningTestViewProps) {
         {/* Progress Indicator */}
         <div className="space-y-2">
           <div className="flex justify-between text-sm text-neutral-400">
-            <span>
-              {isAlgorithmComparisonMode &&
-              isAlgorithmComparison(session.config)
-                ? `Processing ${session.config.selectedAlgorithms?.length} algorithms sequentially...`
-                : isFunctionComparisonMode &&
-                  isFunctionComparison(session.config)
-                ? `Processing ${session.config.selectedBenchmarkFunctions?.length} functions sequentially...`
-                : "Running optimization..."}
-            </span>
+            <span>{getProgressText()}</span>
+            {progressPercentage !== undefined && (
+              <span className="text-blue-400 font-medium">
+                {progressPercentage}%
+              </span>
+            )}
           </div>
-          <Progress value={undefined} className="h-2" />
+          <Progress value={progressPercentage} className="h-2" />
         </div>
 
         {/* Elapsed Time */}
