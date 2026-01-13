@@ -17,7 +17,8 @@ namespace GrayWolf.Services
             var sortedTrials = trials.OrderBy(t => t.BestFitness).ToList();
 
             // determine if we should exclude the worst trial
-            int trialsToExclude = trials.Count > 2 ? 2 : 0;
+            int amountOfTrials = trials.Count;
+            int trialsToExclude = (int)Math.Floor(amountOfTrials*0.2);
             int trialsForStatsInt = trials.Count - trialsToExclude;
 
             var trialsForStats = sortedTrials.Take(trialsForStatsInt).ToList();
@@ -139,7 +140,6 @@ namespace GrayWolf.Services
             strBuilder.AppendLine("--------|-------------|----------------|---------------------");
             for (int i = 0; i < stats.MeanSolution.Length; i++)
             {
-                // Note: Padding is applied after the number formatting
                 strBuilder.AppendLine($"   {i + 9}    | {NumberFormatter.Format(stats.MeanSolution[i]),13} | {NumberFormatter.Format(stats.StdDevSolution[i]),13} | {NumberFormatter.FormatPercent(stats.CoeffOfVariationSolution[i]),8}");
             }
             strBuilder.AppendLine();

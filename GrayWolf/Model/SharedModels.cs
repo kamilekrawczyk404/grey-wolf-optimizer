@@ -95,6 +95,7 @@ namespace GrayWolf.Model
         public double[] BestSolution { get; set; }
         public double BestFitness { get; set; }
         public double[][] Solution { get; set; }
+        public Dictionary<string, double> Parameters { get; set; }
     }
 
     // potrzebne do porównania algorytmów

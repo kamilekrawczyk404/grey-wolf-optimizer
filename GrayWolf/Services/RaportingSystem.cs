@@ -14,7 +14,8 @@ namespace GrayWolf.Services
     internal class RaportingSystem
     {
         public void GenerateReport(string algorithmName, IBenchmarkFunc function, double[] bestSolution, double bestFitness, List<IterationLog> historyLogs,
-            int iterations, int populationSize, int dim, double lowerBound, double upperBound, bool generateTextReport)
+            int iterations, int populationSize, int dim, double lowerBound,
+            double upperBound, bool generateTextReport, Dictionary<string, double>? parameters)
         {
             if (generateTextReport)
             {
@@ -22,6 +23,9 @@ namespace GrayWolf.Services
 
                 strBuilder.Append($"\n\n=== RAPORT KOŃCOWY: {algorithmName} ===\n");
                 strBuilder.Append($"\nUżyta funkcja: {function}\n");
+
+                strBuilder.Append("\nParametry Algorytmu:\n");
+                strBuilder.Append(FormatParameters(parameters));
 
                 if (bestSolution != null)
                 {
@@ -69,7 +73,8 @@ namespace GrayWolf.Services
         }
 
         public void GenerateMultiTrialReport(string algorithmName, IBenchmarkFunc function, StatisticalSummary stats,
-            int iterations, int populationSize, int dim, double lowerBound, double upperBound)
+            int iterations, int populationSize, int dim,
+            double lowerBound, double upperBound, Dictionary<string, double>? parameters)
         {
             StringBuilder strBuilder = new StringBuilder();
             strBuilder.Append($"\n\n=== RAPORT WIELOPRÓBOWY: {algorithmName} ===\n");
@@ -81,6 +86,10 @@ namespace GrayWolf.Services
             strBuilder.Append($"Liczba iteracji: {iterations}\n");
             strBuilder.Append($"Zakres wartości: [{lowerBound}, {upperBound}]\n\n");
             strBuilder.Append(new string('-', 90) + "\n");
+
+            strBuilder.Append("Parametry Algorytmu:\n");
+            strBuilder.Append(FormatParameters(parameters));
+            strBuilder.Append("\n");
 
             strBuilder.Append(StatisticsService.FormatStats(stats, algorithmName, function.ToString()));
 
@@ -351,7 +360,6 @@ namespace GrayWolf.Services
             strBuilder.Append($"  - Liczba wymiarów: {dimensions}\n");
             strBuilder.Append($"  - Zakres: [{lowerBound}, {upperBound}]\n\n");
 
-            // Summary table sorted by best fitness
             strBuilder.Append("PODSUMOWANIE (posortowane według najlepszego wyniku):\n");
             strBuilder.Append(new string('-', 130) + "\n");
             strBuilder.Append($"{"Funkcja",-25} {"Najlepszy",-15} {"Najgorszy",-15} {"Średni",-15} {"Mediana",-15} {"Odch.std",-15} {"Wsp.zm",-10} {"Ranga",-10}\n");
@@ -375,7 +383,6 @@ namespace GrayWolf.Services
 
             strBuilder.Append(new string('-', 130) + "\n\n");
 
-            // Detailed results for each function
             strBuilder.Append("SZCZEGÓŁOWE WYNIKI DLA POSZCZEGÓLNYCH FUNKCJI:\n\n");
 
             foreach (var result in sortedResults)
@@ -471,6 +478,19 @@ namespace GrayWolf.Services
             string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"{algName}_Visualizer_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.json");
             try { File.WriteAllText(path, json); return true; }
             catch { return false; }
+        }
+
+        private string FormatParameters(Dictionary<string, double>? parameters)
+        {
+            if (parameters == null || parameters.Count == 0)
+                return "  - (Brak specyficznych parametrów)\n";
+
+            StringBuilder sb = new StringBuilder();
+            foreach (var param in parameters)
+            {
+                sb.AppendLine($"  - {param.Key}: {param.Value}");
+            }
+            return sb.ToString();
         }
     }
 }

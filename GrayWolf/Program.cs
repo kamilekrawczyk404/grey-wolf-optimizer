@@ -18,7 +18,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<FormOptions>(options =>
 {
-    options.MultipartBodyLengthLimit = 100_000_000; // 100 MB
+    options.MultipartBodyLengthLimit = 262_144_000; // 200 MB
+
 });
 
 builder.Services.AddCors(options =>
@@ -33,9 +34,9 @@ builder.Services.AddCors(options =>
 
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
-    serverOptions.Limits.MaxRequestBodySize = 100_000_000; // 100 MB
-    serverOptions.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(10); // Zwiększ timeout
-    serverOptions.Limits.RequestHeadersTimeout = TimeSpan.FromMinutes(10);
+    serverOptions.Limits.MaxRequestBodySize = 262_144_000; // 200 MB
+    serverOptions.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(20); // Zwiększ timeout
+    serverOptions.Limits.RequestHeadersTimeout = TimeSpan.FromMinutes(20);
 });
 
 var app = builder.Build();
@@ -258,7 +259,8 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
                 optimizerRequest.Dimensions,
                 optimizerRequest.LowerBound,
                 optimizerRequest.UpperBound,
-                optimizerRequest.GenerateReport
+                optimizerRequest.GenerateReport,
+                optimizerRequest.Parameters
                 );
 
             return Results.Ok(new
@@ -505,7 +507,8 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
                     optimizerRequest.PopulationSize,
                     optimizerRequest.Dimensions,
                     optimizerRequest.LowerBound,
-                    optimizerRequest.UpperBound
+                    optimizerRequest.UpperBound,
+                    optimizerRequest.Parameters
                 );
             }
 

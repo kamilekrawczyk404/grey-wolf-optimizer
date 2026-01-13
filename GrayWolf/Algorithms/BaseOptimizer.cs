@@ -84,13 +84,19 @@ namespace GrayWolf.Algorithms
             // obliczamy dynamiczny krok zapisywania stanu
             int checkpointStep = CalculateCheckpointInterval(IterNum);
 
+            int historyStep = Math.Max(1, IterNum / 500);
+
+
             // główna pętla optymalizacji
             for (int iter = startIteration; iter < IterNum; iter++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                LogHistory(iter);
-
+                if (iter % historyStep == 0 || iter == IterNum - 1)
+                {
+                    LogHistory(iter);
+                }
+                
                 // wykonaj krok optymalizacji
                 RunIteration(iter, cancellationToken);
                 // zapisujemy stan co określoną liczbę iteracji
