@@ -8,6 +8,8 @@ import {
   useTestStore,
   hasAlgorithmProgress,
   isAlgorithmComparison,
+  TrialStatistics,
+  MultiTrialResponse,
 } from "@/stores/test-store";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -45,13 +47,13 @@ import { OptimizerDTO } from "@/types/types";
 import { Badge } from "@/components/ui/badge";
 import { useRef } from "react";
 
-export interface MultiAlgorithmsConfigurationFromProps {
+export interface MultiAlgorithmsConfigurationFormProps {
   session: TestSession;
 }
 
 export const MultiAlgorithmConfigurationForm = ({
   session,
-}: MultiAlgorithmsConfigurationFromProps) => {
+}: MultiAlgorithmsConfigurationFormProps) => {
   const {
     activeTab,
     setSessionStatus,
@@ -69,12 +71,16 @@ export const MultiAlgorithmConfigurationForm = ({
     iterations: 100,
     lowerBound: -5.12,
     upperBound: 5.12,
+    trials: 1,
   };
 
   const form = useForm<MultiTestFormValues>({
     resolver: zodResolver(multiTestFormSchema),
     defaultValues: isAlgorithmComparison(session.config)
-      ? session.config
+      ? {
+          ...session.config,
+          trials: (session.config as MultiTestFormValues).trials ?? 1,
+        }
       : {
           benchmarkFunction: BenchmarkFunctions.Rastrigin,
           selectedAlgorithms: [Algorithms.GWO, Algorithms.Aquila],
@@ -83,6 +89,7 @@ export const MultiAlgorithmConfigurationForm = ({
           iterations: 100,
           lowerBound: -5.12,
           upperBound: 5.12,
+          trials: 1,
         },
   });
 
@@ -135,6 +142,7 @@ export const MultiAlgorithmConfigurationForm = ({
     form.watch("iterations"),
     form.watch("lowerBound"),
     form.watch("upperBound"),
+    form.watch("trials"),
     activeTab,
     session.id,
   ]);
@@ -171,6 +179,18 @@ export const MultiAlgorithmConfigurationForm = ({
     let algorithmsToRun: Algorithms[];
     let partialResults: ComparisionRow[] = [];
 
+    if (!values.selectedAlgorithms || values.selectedAlgorithms.length < 2) {
+      toast.error("At least two algorithms required", {
+        description: "Comparison requires at least two algorithms",
+      });
+
+      setSessionStatus(activeTab, "idle", {
+        endTime: Date.now(),
+      });
+
+      return;
+    }
+
     if (
       isResume &&
       session.multiTestProgress &&
@@ -188,6 +208,18 @@ export const MultiAlgorithmConfigurationForm = ({
         remaining: algorithmsToRun,
         partialResults: partialResults.length,
       });
+
+      if (algorithmsToRun.length === 0) {
+        toast.error("All algorithms already completed", {
+          description: "No algorithms left to process",
+        });
+
+        setSessionStatus(activeTab, "idle", {
+          endTime: Date.now(),
+        });
+
+        return;
+      }
 
       toast.info(
         `Resuming comparison - ${algorithmsToRun.length} algorithm${
@@ -270,6 +302,8 @@ export const MultiAlgorithmConfigurationForm = ({
           LowerBound: values.lowerBound,
           UpperBound: values.upperBound,
           Function: values.benchmarkFunction,
+          Trials: values.trials,
+          GenerateReport: false, // osobny endpoint
         };
 
         console.log(`Starting algorithm ${algo} with session RunId: ${runId}`);
@@ -307,18 +341,48 @@ export const MultiAlgorithmConfigurationForm = ({
           throw new Error(errorData.Error || `API error for ${algo}`);
         }
 
-        const { historyJson, bestFitness, bestSolution, solution } =
-          (await response.json()) as OptimizerDTO;
+        const data = await response.json();
+        const algoDuration = (Date.now() - algoStartTime) / 1000;
 
-        const result: ComparisionRow = {
-          status: "success",
-          duration: (Date.now() - algoStartTime) / 1000,
-          algorithm: algo,
-          historyJson,
-          bestSolution,
-          bestFitness,
-          solution,
-        };
+        let result: ComparisionRow;
+
+        if (data.statistics) {
+          // Odpowiedź dla trials > 1
+          const stats = data.statistics as TrialStatistics;
+
+          const cleanedStats: TrialStatistics = {
+            ...stats,
+            allTrials: stats.allTrials.map((trial) => ({
+              ...trial,
+              historyLogs: [],
+            })),
+          };
+
+          result = {
+            status: "success",
+            algorithm: algo,
+            duration: algoDuration,
+            bestSolution: stats.bestSolution,
+            bestFitness: stats.bestFitness,
+            // pozniej do zmiany solution
+            solution: stats.allTrials?.[0]?.bestSolution
+              ? [stats.allTrials[0].bestSolution]
+              : undefined,
+            statistics: cleanedStats,
+            historyJson: stats.allTrials?.[0]?.historyLogs,
+          };
+        } else {
+          // Odpowiedź dla trials = 1
+          result = {
+            status: "success",
+            algorithm: algo,
+            duration: algoDuration,
+            bestSolution: data.bestSolution,
+            bestFitness: data.bestFitness,
+            solution: data.solution,
+            historyJson: data.historyJson,
+          };
+        }
 
         partialResults.push(result);
 
@@ -378,6 +442,76 @@ export const MultiAlgorithmConfigurationForm = ({
           description: e instanceof Error ? e.message : "Unknown error",
         });
       }
+    }
+
+    //  GENEROWANIE RAPORTU
+    console.log("🎯 All algorithms completed. Generating comparison report...");
+
+    try {
+      const reportEndpoint =
+        values.trials > 1
+          ? "http://localhost:5000/api/optimizer/compare-multitrial"
+          : "http://localhost:5000/api/optimizer/compare";
+
+      let reportRequestBody: any;
+
+      if (values.trials > 1) {
+        // Request body dla multitrial
+        reportRequestBody = {
+          functionName: values.benchmarkFunction,
+          results: partialResults
+            .filter((r) => r.status === "success" && r.statistics)
+            .map((r) => ({
+              algorithmName: r.algorithm,
+              trialsCount: r.statistics!.totalTrials,
+              bestFitness: r.statistics!.bestFitness,
+              worstFitness: r.statistics!.worstFitness,
+              meanFitness: r.statistics!.meanFitness,
+              medianFitness: r.statistics!.medianFitness,
+              stdDevFitness: r.statistics!.stdDevFitness,
+              coeffOfVariationFitness: r.statistics!.coeffOfVariationFitness,
+              bestSolution: r.statistics!.bestSolution,
+            })),
+        };
+      } else {
+        // Request body dla single trial
+        reportRequestBody = {
+          functionName: values.benchmarkFunction,
+          results: partialResults
+            .filter((r) => r.status === "success")
+            .map((r) => ({
+              algorithmName: r.algorithm,
+              bestFitness: r.bestFitness,
+              iterations: values.iterations,
+              bestSolution: r.bestSolution,
+            })),
+        };
+      }
+
+      console.log(`Calling ${reportEndpoint} with:`, reportRequestBody);
+
+      const reportResponse = await fetch(reportEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(reportRequestBody),
+      });
+
+      if (reportResponse.ok) {
+        const reportResult = await reportResponse.json();
+        console.log("✅ Report generated successfully:", reportResult);
+        toast.success("Comparison report generated", {
+          description: "Check your desktop for the report file",
+        });
+      } else {
+        const errorText = await reportResponse.text();
+        console.warn("Failed to generate report:", errorText);
+        toast.warning("Comparison completed but report generation failed", {
+          description: errorText,
+        });
+      }
+    } catch (reportError) {
+      console.error("Error generating report:", reportError);
+      toast.warning("Comparison completed but report generation failed");
     }
 
     const algorithmsNames =
@@ -635,6 +769,33 @@ export const MultiAlgorithmConfigurationForm = ({
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="trials"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-neutral-300">
+                    Number of Trials
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      className="bg-neutral-800 border-neutral-700 text-white"
+                      {...field}
+                      onChange={(e) => field.onChange(+e.target.value)}
+                      disabled={canResume}
+                      min={1}
+                      max={100}
+                    />
+                  </FormControl>
+                  <FormDescription className="text-neutral-500 text-xs">
+                    Number of independent runs per algorithm.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="flex gap-2">
               {canResume ? (

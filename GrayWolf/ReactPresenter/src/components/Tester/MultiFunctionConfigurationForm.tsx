@@ -8,6 +8,7 @@ import {
   useTestStore,
   hasFunctionProgress,
   isFunctionComparison,
+  TrialStatistics,
 } from "@/stores/test-store";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -63,7 +64,16 @@ export const MultiFunctionConfigurationForm = ({
   const form = useForm<FunctionComparisonFormValues>({
     resolver: zodResolver(functionComparisonSchema),
     defaultValues: isFunctionComparison(session.config)
-      ? session.config
+      ? {
+          ...session.config,
+          trials: (session.config as FunctionComparisonFormValues).trials ?? 1,
+          selectedBenchmarkFunctions: (
+            session.config as FunctionComparisonFormValues
+          ).selectedBenchmarkFunctions || [
+            BenchmarkFunctions.Rastrigin,
+            BenchmarkFunctions.Sphere,
+          ],
+        }
       : {
           algorithm: Algorithms.GWO,
           selectedBenchmarkFunctions: [
@@ -75,6 +85,7 @@ export const MultiFunctionConfigurationForm = ({
           iterations: 100,
           lowerBound: -5.12,
           upperBound: 5.12,
+          trials: 1,
         },
   });
 
@@ -122,6 +133,7 @@ export const MultiFunctionConfigurationForm = ({
     form.watch("iterations"),
     form.watch("lowerBound"),
     form.watch("upperBound"),
+    form.watch("trials"),
     activeTab,
     session.id,
   ]);
@@ -162,6 +174,21 @@ export const MultiFunctionConfigurationForm = ({
     let partialResults: FunctionComparisonRow[] = [];
 
     if (
+      !values.selectedBenchmarkFunctions ||
+      values.selectedBenchmarkFunctions.length < 2
+    ) {
+      toast.error("At least two functions required", {
+        description: "Comparison requires at least two benchmark functions",
+      });
+
+      setSessionStatus(activeTab, "idle", {
+        endTime: Date.now(),
+      });
+
+      return;
+    }
+
+    if (
       isResume &&
       session.multiTestProgress &&
       hasFunctionProgress(session.multiTestProgress)
@@ -180,6 +207,18 @@ export const MultiFunctionConfigurationForm = ({
         partialResults: partialResults.length,
       });
 
+      if (functionsToRun.length === 0) {
+        toast.error("All functions already completed", {
+          description: "No functions left to process",
+        });
+
+        setSessionStatus(activeTab, "idle", {
+          endTime: Date.now(),
+        });
+
+        return;
+      }
+
       toast.info(
         `Resuming comparison - ${functionsToRun.length} function${
           functionsToRun.length > 1 ? "s" : ""
@@ -191,21 +230,6 @@ export const MultiFunctionConfigurationForm = ({
     } else if (isResume && session.runId && !session.multiTestProgress) {
       // Resume po refresh
       console.log("Resuming function-comparison after refresh");
-
-      if (
-        !values.selectedBenchmarkFunctions ||
-        values.selectedBenchmarkFunctions.length < 2
-      ) {
-        toast.error("Cannot resume - at least two functions required", {
-          description: "Please select at least two benchmark functions",
-        });
-
-        setSessionStatus(activeTab, "idle", {
-          endTime: Date.now(),
-        });
-
-        return;
-      }
 
       functionsToRun = values.selectedBenchmarkFunctions;
       partialResults = [];
@@ -234,18 +258,6 @@ export const MultiFunctionConfigurationForm = ({
           currentFunction: undefined,
         },
       });
-    }
-
-    if (!functionsToRun || functionsToRun.length < 2) {
-      toast.error("At least two functions required", {
-        description: "Comparison requires at least two benchmark functions",
-      });
-
-      setSessionStatus(activeTab, "idle", {
-        endTime: Date.now(),
-      });
-
-      return;
     }
 
     let hasError = false;
@@ -281,6 +293,8 @@ export const MultiFunctionConfigurationForm = ({
           LowerBound: benchmarkConfig.lowerBound,
           UpperBound: benchmarkConfig.upperBound,
           Function: func,
+          Trials: values.trials,
+          GenerateReport: false,
         };
 
         console.log(`Starting function ${func} with session RunId: ${runId}`);
@@ -318,18 +332,47 @@ export const MultiFunctionConfigurationForm = ({
           throw new Error(errorData.Error || `API error for ${func}`);
         }
 
-        const { historyJson, bestFitness, bestSolution, solution } =
-          (await response.json()) as OptimizerDTO;
+        const data = await response.json();
+        const funcDuration = (Date.now() - funcStartTime) / 1000;
 
-        const result: FunctionComparisonRow = {
-          status: "success",
-          duration: (Date.now() - funcStartTime) / 1000,
-          benchmarkFunction: func,
-          historyJson,
-          bestSolution,
-          bestFitness,
-          solution,
-        };
+        let result: FunctionComparisonRow;
+
+        if (data.statistics) {
+          // Odpowiedź dla trials > 1
+          const stats = data.statistics as TrialStatistics;
+
+          const cleanedStats: TrialStatistics = {
+            ...stats,
+            allTrials: stats.allTrials.map((trial) => ({
+              ...trial,
+              historyLogs: [],
+            })),
+          };
+
+          result = {
+            status: "success",
+            benchmarkFunction: func,
+            duration: funcDuration,
+            bestSolution: stats.bestSolution,
+            bestFitness: stats.bestFitness,
+            solution: stats.allTrials?.[0]?.bestSolution
+              ? [stats.allTrials[0].bestSolution]
+              : undefined,
+            historyJson: stats.allTrials?.[0]?.historyLogs,
+            statistics: cleanedStats,
+          };
+        } else {
+          // Odpowiedź dla trials = 1
+          result = {
+            status: "success",
+            benchmarkFunction: func,
+            duration: funcDuration,
+            bestSolution: data.bestSolution,
+            bestFitness: data.bestFitness,
+            solution: data.solution,
+            historyJson: data.historyJson,
+          };
+        }
 
         partialResults.push(result);
 
@@ -389,6 +432,92 @@ export const MultiFunctionConfigurationForm = ({
           description: e instanceof Error ? e.message : "Unknown error",
         });
       }
+    }
+
+    // ✅ GENEROWANIE RAPORTU - po zakończeniu wszystkich funkcji
+    console.log("🎯 All functions completed. Generating comparison report...");
+
+    try {
+      const reportEndpoint =
+        values.trials > 1
+          ? "http://localhost:5000/api/optimizer/compare-functions-multitrial"
+          : "http://localhost:5000/api/optimizer/compare-functions";
+
+      let reportRequestBody: any;
+
+      if (values.trials > 1) {
+        // Request body dla multitrial
+        reportRequestBody = {
+          algorithmName: values.algorithm,
+          populationSize: values.populationSize,
+          iterations: values.iterations,
+          dimensions: values.dimensions,
+          lowerBound: values.lowerBound,
+          upperBound: values.upperBound,
+          results: partialResults
+            .filter((r) => r.status === "success" && r.statistics)
+            .map((r) => ({
+              functionName: r.benchmarkFunction,
+              trialsCount: r.statistics!.totalTrials,
+              bestFitness: r.statistics!.bestFitness,
+              worstFitness: r.statistics!.worstFitness,
+              meanFitness: r.statistics!.meanFitness,
+              medianFitness: r.statistics!.medianFitness,
+              stdDevFitness: r.statistics!.stdDevFitness,
+              coeffOfVariationFitness: r.statistics!.coeffOfVariationFitness,
+              bestSolution: r.statistics!.bestSolution,
+            })),
+        };
+      } else {
+        // Request body dla single trial
+        reportRequestBody = {
+          algorithmName: values.algorithm,
+          populationSize: values.populationSize,
+          iterations: values.iterations,
+          dimensions: values.dimensions,
+          lowerBound: values.lowerBound,
+          upperBound: values.upperBound,
+          results: partialResults
+            .filter((r) => r.status === "success")
+            .map((r) => ({
+              functionName: r.benchmarkFunction,
+              bestFitness: r.bestFitness,
+              bestSolution: r.bestSolution,
+              evaluationsCount: values.populationSize * values.iterations, // ✅ Oblicz evaluationsCount
+            })),
+        };
+      }
+
+      console.log(`📤 Calling ${reportEndpoint} with:`, reportRequestBody);
+
+      const reportResponse = await fetch(reportEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(reportRequestBody),
+      });
+
+      if (reportResponse.ok) {
+        const reportResult = await reportResponse.json();
+        console.log("✅ Report generated successfully:", reportResult);
+        toast.success("Comparison report generated", {
+          description: "Check your desktop for the report file",
+        });
+      } else {
+        const errorText = await reportResponse.text();
+        console.error("❌ Report generation failed:", errorText);
+        toast.warning("Comparison completed but report generation failed", {
+          description: errorText,
+        });
+      }
+    } catch (reportError) {
+      console.error("❌ Error generating report:", reportError);
+
+      if (reportError instanceof Error) {
+        console.error("Error message:", reportError.message);
+        console.error("Error stack:", reportError.stack);
+      }
+
+      toast.warning("Comparison completed but report generation failed");
     }
 
     const functionsNames =
@@ -525,11 +654,11 @@ export const MultiFunctionConfigurationForm = ({
                         Salp Swarm Optimizer
                       </SelectItem>
                       <SelectItem value={Algorithms.BA}>
-                          Bat Algorithm
-                       </SelectItem>
-                        <SelectItem value={Algorithms.GA}>
-                           Genetic Algorithm
-                        </SelectItem>
+                        Bat Algorithm
+                      </SelectItem>
+                      <SelectItem value={Algorithms.GA}>
+                        Genetic Algorithm
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -638,6 +767,33 @@ export const MultiFunctionConfigurationForm = ({
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="trials"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-neutral-300">
+                    Number of Trials
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      className="bg-neutral-800 border-neutral-700 text-white"
+                      {...field}
+                      onChange={(e) => field.onChange(+e.target.value)}
+                      disabled={canResume}
+                      min={1}
+                      max={100}
+                    />
+                  </FormControl>
+                  <FormDescription className="text-neutral-500 text-xs">
+                    Number of independent runs per function.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* Buttons */}
             <div className="flex gap-2">

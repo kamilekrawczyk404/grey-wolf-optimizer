@@ -19,6 +19,37 @@ export { Algorithms, BenchmarkFunctions };
 
 export type MultiTestMode = "algorithms" | "functions";
 
+export interface TrialStatistics {
+  bestFitness: number;
+  worstFitness: number;
+  bestSolution: number[];
+  worstSolution: number[];
+  meanFitness: number;
+  medianFitness: number;
+  stdDevFitness: number;
+  coeffOfVariationFitness: number;
+  meanSolution: number[];
+  stdDevSolution: number[];
+  coeffOfVariationSolution: number[];
+  totalTrials: number;
+  trialsUsedForStats: number;
+  allFitnessValues: number[];
+  allTrials: {
+    trialNumber: number;
+    bestSolution: number[];
+    bestFitness: number;
+    evaluationsCount: number;
+    historyLogs: IterationSnapshot[];
+  }[];
+}
+
+export interface MultiTrialResponse {
+  runId: string;
+  algorithmName: string;
+  functionName: string;
+  statistics: TrialStatistics;
+}
+
 // Schema Zod
 export const singleTestFormSchema = z
   .object({
@@ -30,6 +61,7 @@ export const singleTestFormSchema = z
     upperBound: z.number(),
     benchmarkFunction: z.nativeEnum(BenchmarkFunctions),
     selectedAlgorithms: z.array(z.nativeEnum(Algorithms)).optional(),
+    trials: z.number().min(1).max(100),
   })
   .refine((data) => data.upperBound > data.lowerBound, {
     message: "Upper bound must be greater than lower bound",
@@ -49,6 +81,7 @@ export const multiTestFormSchema = z.object({
   iterations: z.number().min(10).max(10000),
   lowerBound: z.number(),
   upperBound: z.number(),
+  trials: z.number().min(1).max(100),
 });
 
 export const functionComparisonSchema = z.object({
@@ -63,6 +96,7 @@ export const functionComparisonSchema = z.object({
   iterations: z.number().min(10).max(10000),
   lowerBound: z.number(),
   upperBound: z.number(),
+  trials: z.number().min(1).max(100),
 });
 
 export type SingleTestFormValues = z.infer<typeof singleTestFormSchema>;
@@ -95,6 +129,7 @@ export interface ComparisionRow {
   solution?: number[][];
   error?: string;
   historyJson?: IterationSnapshot[];
+  statistics?: TrialStatistics;
 }
 
 export interface FunctionComparisonRow {
@@ -106,6 +141,7 @@ export interface FunctionComparisonRow {
   solution?: number[][];
   error?: string;
   historyJson?: IterationSnapshot[];
+  statistics?: TrialStatistics;
 }
 
 export interface MultiTestResult {
@@ -250,6 +286,7 @@ function getDefaultConfig(
         lowerBound: benchmarkConfig.lowerBound,
         upperBound: benchmarkConfig.upperBound,
         benchmarkFunction: defaultBenchmark,
+        trials: 1,
       };
 
     case "multi":
@@ -262,6 +299,7 @@ function getDefaultConfig(
           iterations: algorithmConfig.iterations,
           lowerBound: benchmarkConfig.lowerBound,
           upperBound: benchmarkConfig.upperBound,
+          trials: 1,
         };
       }
 
@@ -274,6 +312,7 @@ function getDefaultConfig(
         iterations: algorithmConfig.iterations,
         lowerBound: benchmarkConfig.lowerBound,
         upperBound: benchmarkConfig.upperBound,
+        trials: 1,
       };
   }
 }
