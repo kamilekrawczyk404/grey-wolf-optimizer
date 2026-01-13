@@ -6,11 +6,13 @@ import AquilaParameters from "./AquilaParameters";
 import SsaParameters from "./SsaParameters"; //PAMIĘTAJ o importcie
 import BaParameters from "./BaParameters";
 import GaParameters from "./GaParameters";
+import PsoParameters from "./PsoParameters";
+import BoaParameters from "./BoaParameters";
 
 const TestView: React.FC = () => {
     const [selectedAlgorithm, setSelectedAlgorithm] = useState<string>("GWO");
 
-    const algorithms = ["GWO", "Aquila", "SSA", "BA", "GA"];
+    const algorithms = ["GWO", "Aquila", "SSA", "BA", "GA","PSO", "BOA"];
 
     return (
         <Container className="max-w-4xl mx-auto space-y-6">
@@ -38,6 +40,8 @@ const TestView: React.FC = () => {
                 {selectedAlgorithm === "SSA" && <SsaParameters />}
                 {selectedAlgorithm === "BA" && <BaParameters />}
                 {selectedAlgorithm === "GA" && <GaParameters />}
+                {selectedAlgorithm === "PSO" && <PsoParameters />}
+                {selectedAlgorithm === "BOA" && <BoaParameters />}
             </div>
         </Container>
     );
