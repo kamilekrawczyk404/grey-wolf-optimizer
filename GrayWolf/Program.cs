@@ -27,6 +27,64 @@ var app = builder.Build();
 
 app.UseCors();
 
+// ENDPOINT - metadane dotyczące parametrów algorytmu (dla UI)
+app.MapGet("/api/optimizer/parameters", () =>
+{
+    var metadata = new List<AlgorithmMetadata>
+    {
+        new AlgorithmMetadata
+        {
+            AlgorithmName = "GA",
+            Parameters = new List<AlgorithmParameterInfo>
+            {
+                new() { Name = "CrossoverProbability", Description = "Prawdopodobieństwo krzyżowania", Min = 0.0, Max = 1.0, Step = 0.01, DefaultValue = 0.8 },
+                new() { Name = "MutationRate", Description = "Szansa na mutację", Min = 0.0, Max = 1.0, Step = 0.01, DefaultValue = 0.05 },
+                new() { Name = "MutationStrength", Description = "Siła mutacji", Min = 0.0, Max = 1.0, Step = 0.01, DefaultValue = 0.01 },
+                new() { Name = "TournamentSize", Description = "Rozmiar turnieju", Min = 1, Max = 10, Step = 1, DefaultValue = 3 }
+            }
+        },
+        new AlgorithmMetadata
+        {
+            AlgorithmName = "BA",
+            Parameters = new List<AlgorithmParameterInfo>
+            {
+                new() { Name = "Qmin", Description = "Min częstotliwość", Min = 0.0, Max = 5.0, Step = 0.1, DefaultValue = 0.0 },
+                new() { Name = "Qmax", Description = "Max częstotliwość", Min = 0.0, Max = 5.0, Step = 0.1, DefaultValue = 2.0 },
+                new() { Name = "Alpha", Description = "Stała zaniku głośności", Min = 0.0, Max = 1.0, Step = 0.01, DefaultValue = 0.9 },
+                new() { Name = "Gamma", Description = "Stała wzrostu impulsów", Min = 0.0, Max = 1.0, Step = 0.01, DefaultValue = 0.9 }
+            }
+        },
+        new AlgorithmMetadata
+        {
+            AlgorithmName = "PSO",
+            Parameters = new List<AlgorithmParameterInfo>
+            {
+                new() { Name = "w", Description = "Waga inercji", Min = 0.0, Max = 1.0, Step = 0.01, DefaultValue = 0.7 },
+                new() { Name = "c1", Description = "Współczynnik kognitywny", Min = 0.0, Max = 4.0, Step = 0.1, DefaultValue = 1.5 },
+                new() { Name = "c2", Description = "Współczynnik socjalny", Min = 0.0, Max = 4.0, Step = 0.1, DefaultValue = 1.5 }
+            }
+        },
+        new AlgorithmMetadata
+        {
+            AlgorithmName = "BOA",
+            Parameters = new List<AlgorithmParameterInfo>
+            {
+                new() { Name = "p", Description = "Prawdopodobieństwo przełączenia", Min = 0.0, Max = 1.0, Step = 0.01, DefaultValue = 0.8 },
+                new() { Name = "c", Description = "Modalność sensora", Min = 0.0, Max = 1.0, Step = 0.01, DefaultValue = 0.01 },
+                new() { Name = "a", Description = "Wykładnik potęgowy", Min = 0.0, Max = 1.0, Step = 0.01, DefaultValue = 0.1 }
+            }
+        },
+        // algorytmy bez określonych parametrów mają puste listy
+        new AlgorithmMetadata { AlgorithmName = "GWO", Parameters = new List<AlgorithmParameterInfo>() },
+        new AlgorithmMetadata { AlgorithmName = "Aquila", Parameters = new List<AlgorithmParameterInfo>() },
+        new AlgorithmMetadata { AlgorithmName = "SSA", Parameters = new List<AlgorithmParameterInfo>() }
+
+
+    };
+
+    return Results.Ok(metadata);
+});
+
 //ENDPOINT
 app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken ct) =>
 {
@@ -72,7 +130,8 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
                         function,
                         optimizerRequest.LowerBound,
                         optimizerRequest.UpperBound,
-                        uniqueStateFileName
+                        uniqueStateFileName,
+                        optimizerRequest.Parameters
                         );
                     break;
                 case "GA":
@@ -83,7 +142,8 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
                         function,
                         optimizerRequest.LowerBound,
                         optimizerRequest.UpperBound,
-                        uniqueStateFileName
+                        uniqueStateFileName,
+                        optimizerRequest.Parameters
                         );
                     break;
                 case "PSO":
@@ -94,7 +154,8 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
                         function,
                         optimizerRequest.LowerBound,
                         optimizerRequest.UpperBound,
-                        uniqueStateFileName 
+                        uniqueStateFileName,
+                        optimizerRequest.Parameters
                     );
                     break;
 
@@ -106,7 +167,8 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
                         function,
                         optimizerRequest.LowerBound,
                         optimizerRequest.UpperBound,
-                        uniqueStateFileName
+                        uniqueStateFileName,
+                        optimizerRequest.Parameters
                     );
                     break;
                 case "BA":
@@ -117,7 +179,8 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
                         function,
                         optimizerRequest.LowerBound,
                         optimizerRequest.UpperBound,
-                        uniqueStateFileName
+                        uniqueStateFileName,
+                        optimizerRequest.Parameters
                         );
                     break;
                 case "Aquila":
@@ -128,7 +191,8 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
                         function,
                         optimizerRequest.LowerBound,
                         optimizerRequest.UpperBound,
-                        uniqueStateFileName
+                        uniqueStateFileName,
+                        optimizerRequest.Parameters
                     );
                     break;
 
@@ -141,7 +205,8 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
                         function,
                         optimizerRequest.LowerBound,
                         optimizerRequest.UpperBound,
-                        uniqueStateFileName
+                        uniqueStateFileName,
+                        optimizerRequest.Parameters
                     );
                     break;
             }
@@ -159,23 +224,21 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
             else if (optimizer is PsoOptimizer pso) historyLogs = pso.FullHistory;
             else if (optimizer is BoaOptimizer boa) historyLogs = boa.FullHistory;
 
-            if (optimizerRequest.GenerateReport)
-            {
-                var reportingSystem = new RaportingSystem();
+            var reportingSystem = new RaportingSystem();
 
-                reportingSystem.GenerateReport(
-                    optimizer.Name,
-                    function,
-                    optimizer.XBest,
-                    optimizer.FBest,
-                    historyLogs,
-                    optimizerRequest.Iterations,
-                    optimizerRequest.PopulationSize,
-                    optimizerRequest.Dimensions,
-                    optimizerRequest.LowerBound,
-                    optimizerRequest.UpperBound
-                    );
-            }
+            reportingSystem.GenerateReport(
+                optimizer.Name,
+                function,
+                optimizer.XBest,
+                optimizer.FBest,
+                historyLogs,
+                optimizerRequest.Iterations,
+                optimizerRequest.PopulationSize,
+                optimizerRequest.Dimensions,
+                optimizerRequest.LowerBound,
+                optimizerRequest.UpperBound,
+                optimizerRequest.GenerateReport
+                );
 
             return Results.Ok(new
             {
@@ -191,20 +254,62 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
         }
         else
         {
-            // TO-DO: checkpointing dla wielu prób, jeśli potrzebne
+            // Multi-trial z checkpointami
             Console.WriteLine($"Rozpoczynanie {optimizerRequest.Trials} prób dla algorytmu {optimizerRequest.Algorithm}");
 
-            var trials = new List<TrialResult>();
+            // Plik kontrolny wielu prób
+            string multiTrialCheckpointFile = $"chckpnt_multitrial_{optimizerRequest.Algorithm.ToLower()}_{runId}.json";
 
-            for (int trialNum = 1; trialNum <= optimizerRequest.Trials; trialNum++)
+            // Probujemy wczytać istniejący checkpoint wielu prób
+            var multiTrialCheckpoint = CheckpointService.LoadMultiTrialCheckpoint(multiTrialCheckpointFile);
+
+            List<TrialResult> trials = new List<TrialResult>();
+            int startTrialNum = 1;
+
+            // Sprawdzamy poprawność i wznawiamy od checkpointu, jeśli jest dostępny
+            if (multiTrialCheckpoint != null)
+            {
+                if (CheckpointService.ValidateMultiTrialCheckpoint(multiTrialCheckpoint, optimizerRequest, optimizerRequest.Algorithm, function.ToString()))
+                {
+                    Console.WriteLine($"[MultiTrial] Wznowienie: {multiTrialCheckpoint.CompletedTrials} prób już ukończonych");
+                    trials = multiTrialCheckpoint.CompletedTrialResults ?? new List<TrialResult>();
+                    startTrialNum = multiTrialCheckpoint.CompletedTrials + 1;
+
+                    if (startTrialNum > optimizerRequest.Trials)
+                    {
+                        Console.WriteLine("[MultiTrial] Wszystkie próby już ukończone!");
+                        var existingStats = StatisticsService.CalculateStats(trials);
+
+                        // Clean up checkpoint after returning results
+                        CheckpointService.ClearCheckpoint(multiTrialCheckpointFile);
+
+                        return Results.Ok(new
+                        {
+                            RunId = runId,
+                            AlgorithmName = optimizerRequest.Algorithm,
+                            FunctionName = optimizerRequest.Function,
+                            Statistics = existingStats,
+                            Message = $"Wszystkie {optimizerRequest.Trials} prób zostały już ukończone (wczytano z checkpointu)."
+                        });
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("[MultiTrial] Checkpoint nie pasuje do żądania. Rozpoczynanie od nowa.");
+                    trials.Clear();
+                    startTrialNum = 1;
+                }
+            }
+
+            // Przeprowadzamy pozostałe próby
+            for (int trialNum = startTrialNum; trialNum <= optimizerRequest.Trials; trialNum++)
             {
                 ct.ThrowIfCancellationRequested();
 
-                Console.WriteLine($"Rozpoczynanie próby {trialNum}/{optimizerRequest.Trials}...");
+                Console.WriteLine($"[MultiTrial] Rozpoczynanie próby {trialNum}/{optimizerRequest.Trials}...");
 
-                // dla wielu prób nie mamy checkpointingu, więc używamy tymczasowej nazwy pliku
-
-                string tempStateFileName = $"temp_chckpnt_{optimizerRequest.Algorithm.ToLower()}_{runId}_trial{trialNum}.json";
+                // Każda indywidualna próba otrzymuje własny plik z checkpointem
+                string trialCheckpointFile = $"chckpnt_{optimizerRequest.Algorithm.ToLower()}_trial{trialNum}_{runId}.json";
 
                 IOptimizationAlgorithm optimizer;
 
@@ -218,8 +323,9 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
                             function,
                             optimizerRequest.LowerBound,
                             optimizerRequest.UpperBound,
-                            tempStateFileName
-                            );
+                            trialCheckpointFile,
+                            optimizerRequest.Parameters
+                        );
                         break;
                     case "Aquila":
                         optimizer = new AquilaOptimizer(
@@ -229,7 +335,8 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
                             function,
                             optimizerRequest.LowerBound,
                             optimizerRequest.UpperBound,
-                            tempStateFileName
+                            trialCheckpointFile,
+                            optimizerRequest.Parameters
                         );
                         break;
                     case "PSO":
@@ -240,10 +347,10 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
                             function,
                             optimizerRequest.LowerBound,
                             optimizerRequest.UpperBound,
-                            tempStateFileName
+                            trialCheckpointFile,
+                            optimizerRequest.Parameters
                         );
                         break;
-
                     case "BOA":
                         optimizer = new BoaOptimizer(
                             optimizerRequest.PopulationSize,
@@ -252,7 +359,8 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
                             function,
                             optimizerRequest.LowerBound,
                             optimizerRequest.UpperBound,
-                            tempStateFileName
+                            trialCheckpointFile,
+                            optimizerRequest.Parameters
                         );
                         break;
                     case "GA":
@@ -263,8 +371,9 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
                             function,
                             optimizerRequest.LowerBound,
                             optimizerRequest.UpperBound,
-                            tempStateFileName
-                            );
+                            trialCheckpointFile,
+                            optimizerRequest.Parameters
+                        );
                         break;
                     case "BA":
                         optimizer = new BaOptimizer(
@@ -274,8 +383,9 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
                             function,
                             optimizerRequest.LowerBound,
                             optimizerRequest.UpperBound,
-                            tempStateFileName
-                            );
+                            trialCheckpointFile,
+                            optimizerRequest.Parameters
+                        );
                         break;
                     case "GWO":
                     default:
@@ -286,44 +396,99 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
                             function,
                             optimizerRequest.LowerBound,
                             optimizerRequest.UpperBound,
-                            tempStateFileName
+                            trialCheckpointFile,
+                            optimizerRequest.Parameters
                         );
                         break;
                 }
 
-                optimizer.Solve(ct);
-
-                List<IterationLog> historyLogs = new List<IterationLog>();
-                if (optimizer is GWOptimizer gwo) historyLogs = gwo.FullHistory;
-                else if (optimizer is AquilaOptimizer aquila) historyLogs = aquila.FullHistory;
-
-                trials.Add(new TrialResult
+                try
                 {
-                    TrialNumber = trialNum,
-                    BestSolution = optimizer.XBest,
-                    BestFitness = optimizer.FBest,
-                    EvaluationsCount = optimizer.NumberOfEvaluationFitnessFunction,
-                    HistoryLogs = historyLogs
-                });
+                    optimizer.Solve(ct);
 
-                // usuwamy tymczasowy plik checkpoint po zakończeniu próby
-                CheckpointService.ClearCheckpoint(tempStateFileName);
-                Console.WriteLine($"Próba {trialNum} zakończona. Najlepszy fitness: {optimizer.FBest}");
+                    List<IterationLog> historyLogs = new List<IterationLog>();
+                    if (optimizer is GWOptimizer gwo) historyLogs = gwo.FullHistory;
+                    else if (optimizer is AquilaOptimizer aquila) historyLogs = aquila.FullHistory;
+                    else if (optimizer is SsaOptimizer ssa) historyLogs = ssa.FullHistory;
+                    else if (optimizer is BaOptimizer ba) historyLogs = ba.FullHistory;
+                    else if (optimizer is GaOptimizer ga) historyLogs = ga.FullHistory;
+                    else if (optimizer is PsoOptimizer pso) historyLogs = pso.FullHistory;
+                    else if (optimizer is BoaOptimizer boa) historyLogs = boa.FullHistory;
+
+                    var trialResult = new TrialResult
+                    {
+                        TrialNumber = trialNum,
+                        BestSolution = optimizer.XBest,
+                        BestFitness = optimizer.FBest,
+                        EvaluationsCount = optimizer.NumberOfEvaluationFitnessFunction,
+                        HistoryLogs = historyLogs
+                    };
+
+                    trials.Add(trialResult);
+
+                    Console.WriteLine($"[MultiTrial] Próba {trialNum} zakończona. Fitness: {optimizer.FBest:E6}");
+
+                    // Save multi-trial checkpoint after each completed trial
+                    var multiTrialCheckpointData = new MultiTrialCheckpointData
+                    {
+                        RunId = runId,
+                        AlgorithmName = optimizerRequest.Algorithm,
+                        FunctionName = function.ToString(),
+                        TotalTrials = optimizerRequest.Trials,
+                        CompletedTrials = trialNum,
+                        CompletedTrialResults = trials,
+                        PopulationSize = optimizerRequest.PopulationSize,
+                        Dimensions = optimizerRequest.Dimensions,
+                        Iterations = optimizerRequest.Iterations,
+                        LowerBound = optimizerRequest.LowerBound,
+                        UpperBound = optimizerRequest.UpperBound,
+                        Parameters = optimizerRequest.Parameters
+                    };
+
+                    CheckpointService.SaveMultiTrialCheckpoint(multiTrialCheckpointFile, multiTrialCheckpointData);
+
+                    // Clean up individual trial checkpoint after successful completion
+                    CheckpointService.ClearCheckpoint(trialCheckpointFile);
+                }
+                catch (OperationCanceledException)
+                {
+                    // User cancelled - keep both checkpoints for resumption
+                    Console.WriteLine($"[MultiTrial] Próba {trialNum} anulowana. Checkpointy zachowane.");
+                    throw; // Re-throw to outer handler
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[MultiTrial] Błąd w próbie {trialNum}: {ex.Message}");
+                    // Keep multi-trial checkpoint but clean up failed trial
+                    CheckpointService.ClearCheckpoint(trialCheckpointFile);
+                    throw;
+                }
             }
+
+            // Wszystkie próby zakończone powodzeniem
+            Console.WriteLine($"[MultiTrial] Wszystkie {optimizerRequest.Trials} prób zakończone pomyślnie!");
 
             var stats = StatisticsService.CalculateStats(trials);
 
-            var reportingSystem = new RaportingSystem();
-            reportingSystem.GenerateMultiTrialReport(
-                optimizerRequest.Algorithm,
-                function,
-                stats,
-                optimizerRequest.Iterations,
-                optimizerRequest.PopulationSize,
-                optimizerRequest.Dimensions,
-                optimizerRequest.LowerBound,
-                optimizerRequest.UpperBound
-            );
+            Console.WriteLine(StatisticsService.FormatStats(stats, optimizerRequest.Algorithm, function.ToString()));
+
+            // W razie potrzeby generujemy raport
+            if (optimizerRequest.GenerateReport)
+            {
+                var reportingSystem = new RaportingSystem();
+                reportingSystem.GenerateMultiTrialReport(
+                    optimizerRequest.Algorithm,
+                    function,
+                    stats,
+                    optimizerRequest.Iterations,
+                    optimizerRequest.PopulationSize,
+                    optimizerRequest.Dimensions,
+                    optimizerRequest.LowerBound,
+                    optimizerRequest.UpperBound
+                );
+            }
+
+            CheckpointService.ClearCheckpoint(multiTrialCheckpointFile);
 
             return Results.Ok(new
             {
@@ -360,44 +525,126 @@ app.MapPost("/api/optimizer/run", async (HttpRequest request, CancellationToken 
 // ENDPOINT - pobieranie aktywnych/nie zakończonych sesji optymalizacyjnych
 app.MapGet("/api/optimizer/checkpoints", () =>
 {
-    // pobieramy wszystkie pliki zaczynające się od "chckpnt_" i kończące na ".json"
-    var checkpointFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), "chckpnt_*.json");
-
-    var activeSessions = new List<object>();
-
-    foreach (var file in checkpointFiles)
+    try
     {
-        try
+        var currentDir = Directory.GetCurrentDirectory();
+        Console.WriteLine($"[Checkpoints] Searching in: {currentDir}");
+
+        var activeSessions = new List<object>();
+
+        // pobieramy wszystkie pliki checkpointów (trials=1 lub indywidualne checkpointy w trakcie multitrial testu)
+        // zaczynające się od "chckpnt_" i kończące na ".json"
+        var singleRunFiles = Directory.GetFiles(currentDir, "chckpnt_*.json")
+            .Where(f => !Path.GetFileName(f).StartsWith("chckpnt_multitrial_"))
+            .ToArray();
+
+        Console.WriteLine($"[Checkpoints] Found {singleRunFiles.Length} single-run checkpoint files");
+
+        foreach (var file in singleRunFiles)
         {
-            // odczytujemy podstawowe dane z pliku checkpoint
-            var content = File.ReadAllText(file);
-            var checkpointData = JsonSerializer.Deserialize<CheckpointData>(content);
-
-            // wyciągamy RunId (GUID) z nazwy pliku
-            string fileName = Path.GetFileNameWithoutExtension(file);
-            string runId = fileName.Split("_").Last();
-
-            activeSessions.Add(new
+            try
             {
-                RunId = runId,
-                Algorithm = checkpointData.AlgorithmName,
-                Function = checkpointData.FunctionName,
-                PopulationSize = checkpointData.PopulationSize,
-                Dimensions = checkpointData.Dimensions,
-                CurrentIteration = checkpointData.CurrentIteration,
-                GlobalBestFitness = checkpointData.GlobalBestFitness,
-                EvaluationsCount = checkpointData.EvaluationsCount,
-                LastUpdated = File.GetLastWriteTime(file)
-            });
-        }
-        catch
-        {
-            // plik może być obecnie używany lub uszkodzony, pomijamy go
-            continue;
-        }
-    }
+                var content = File.ReadAllText(file);
+                var checkpointData = JsonSerializer.Deserialize<CheckpointData>(content);
 
-    return Results.Ok(activeSessions);
+                string fileName = Path.GetFileNameWithoutExtension(file);
+
+                // Extract RunId and trial number if present
+                // Format: chckpnt_gwo_trial5_runId OR chckpnt_gwo_state_runId
+                var parts = fileName.Split('_');
+                string runId = parts.Last();
+                string checkpointType = "Single Run";
+                int? trialNumber = null;
+
+                // Check if this is a trial checkpoint
+                if (parts.Length > 3 && parts[^2].StartsWith("trial"))
+                {
+                    checkpointType = "Multi-Trial (Individual Trial)";
+                    string trialStr = parts[^2].Replace("trial", "");
+                    if (int.TryParse(trialStr, out int trial))
+                    {
+                        trialNumber = trial;
+                    }
+                }
+
+                var session = new
+                {
+                    RunId = runId,
+                    Type = checkpointType,
+                    TrialNumber = trialNumber,
+                    Algorithm = checkpointData.AlgorithmName,
+                    Function = checkpointData.FunctionName,
+                    PopulationSize = checkpointData.PopulationSize,
+                    Dimensions = checkpointData.Dimensions,
+                    CurrentIteration = checkpointData.CurrentIteration,
+                    TotalIterations = checkpointData.PopulationSize > 0 ?
+                        (checkpointData.HistoryLogs?.Count ?? 0) : 0,
+                    GlobalBestFitness = checkpointData.GlobalBestFitness,
+                    EvaluationsCount = checkpointData.EvaluationsCount,
+                    LastUpdated = File.GetLastWriteTime(file),
+                    CanResume = true
+                };
+
+                activeSessions.Add(session);
+                Console.WriteLine($"[Checkpoints] Processed: {checkpointType} - {checkpointData.AlgorithmName} (RunId: {runId})");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Checkpoints] Error processing {Path.GetFileName(file)}: {ex.Message}");
+                continue;
+            }
+        }
+        // 2. Get multi-trial master checkpoints
+        var multiTrialFiles = Directory.GetFiles(currentDir, "chckpnt_multitrial_*.json");
+        Console.WriteLine($"[Checkpoints] Found {multiTrialFiles.Length} multi-trial checkpoint files");
+
+        foreach (var file in multiTrialFiles)
+        {
+            try
+            {
+                var content = File.ReadAllText(file);
+                var checkpointData = JsonSerializer.Deserialize<MultiTrialCheckpointData>(content);
+
+                double? bestFitnessSoFar = checkpointData.CompletedTrialResults?.Any() == true
+                    ? checkpointData.CompletedTrialResults.Min(t => t.BestFitness)
+                    : null;
+
+                var session = new
+                {
+                    RunId = checkpointData.RunId,
+                    Type = "Multi-Trial (Master)",
+                    TrialNumber = (int?)null,
+                    Algorithm = checkpointData.AlgorithmName,
+                    Function = checkpointData.FunctionName,
+                    PopulationSize = checkpointData.PopulationSize,
+                    Dimensions = checkpointData.Dimensions,
+                    CurrentIteration = checkpointData.Iterations, // Total iterations per trial
+                    CompletedTrials = checkpointData.CompletedTrials,
+                    TotalTrials = checkpointData.TotalTrials,
+                    Progress = $"{checkpointData.CompletedTrials}/{checkpointData.TotalTrials}",
+                    BestFitnessSoFar = bestFitnessSoFar,
+                    LastUpdated = checkpointData.LastUpdated,
+                    CanResume = checkpointData.CompletedTrials < checkpointData.TotalTrials
+                };
+
+                activeSessions.Add(session);
+                Console.WriteLine($"[Checkpoints] Processed: Multi-Trial Master - {checkpointData.AlgorithmName} ({checkpointData.CompletedTrials}/{checkpointData.TotalTrials})");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Checkpoints] Error processing {Path.GetFileName(file)}: {ex.Message}");
+                continue;
+            }
+        }
+
+        Console.WriteLine($"[Checkpoints] Returning {activeSessions.Count} total sessions");
+        return Results.Ok(activeSessions);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[Checkpoints] Critical error: {ex.Message}");
+        return Results.Problem($"Error fetching checkpoints: {ex.Message}");
+    }
 });
 
 // ENDPOINT - dla generowania raportu porównawczego (wielu algorytmów na tej samej funkcji)
@@ -518,26 +765,67 @@ app.MapPost("/api/optimizer/compare-functions-multitrial", (GenerateMultiTrialFu
     }
 });
 
-// ENDPOINT - usuwanie checkpointu
+// ENDPOINT - usuwanie checkpointu/checkpointów z odpowiednim 'runId'
 app.MapDelete("/api/optimizer/checkpoint/{runId}", (string runId) =>
 {
     try
     {
-        string fileNamePattern = $"chckpnt_*_{runId}.json";
-        var files = Directory.GetFiles(Directory.GetCurrentDirectory(), fileNamePattern);
-        if (files.Length == 0)
-        {
-            return Results.NotFound(new { Message = "Checkpoint not found." });
-        }
-        foreach (var file in files)
+        int deletedCount = 0;
+
+        // 1. Delete single-run checkpoints
+        string singleRunPattern = $"chckpnt_*_{runId}.json";
+        var singleRunFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), singleRunPattern)
+            .Where(f => !Path.GetFileName(f).Contains("multitrial"))
+            .ToArray();
+
+        foreach (var file in singleRunFiles)
         {
             File.Delete(file);
+            deletedCount++;
+            Console.WriteLine($"[Delete] Removed: {Path.GetFileName(file)}");
         }
-        return Results.Ok(new { Message = "Checkpoint deleted successfully." });
+
+        // 2. Delete multi-trial master checkpoint
+        string multiTrialPattern = $"chckpnt_multitrial_*_{runId}.json";
+        var multiTrialFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), multiTrialPattern);
+
+        foreach (var file in multiTrialFiles)
+        {
+            File.Delete(file);
+            deletedCount++;
+            Console.WriteLine($"[Delete] Removed: {Path.GetFileName(file)}");
+        }
+
+        // 3. Delete individual trial checkpoints (pattern: chckpnt_algo_trial#_runId.json)
+        var allCheckpoints = Directory.GetFiles(Directory.GetCurrentDirectory(), "chckpnt_*.json");
+        var trialCheckpoints = allCheckpoints.Where(f =>
+        {
+            string fileName = Path.GetFileNameWithoutExtension(f);
+            return fileName.EndsWith(runId) && fileName.Contains("_trial");
+        }).ToArray();
+
+        foreach (var file in trialCheckpoints)
+        {
+            File.Delete(file);
+            deletedCount++;
+            Console.WriteLine($"[Delete] Removed trial checkpoint: {Path.GetFileName(file)}");
+        }
+
+        if (deletedCount == 0)
+        {
+            return Results.NotFound(new { Message = $"No checkpoints found for RunId: {runId}" });
+        }
+
+        Console.WriteLine($"[Delete] Deleted {deletedCount} checkpoint file(s) for RunId: {runId}");
+        return Results.Ok(new
+        {
+            Message = $"Deleted {deletedCount} checkpoint file(s) successfully.",
+            DeletedCount = deletedCount
+        });
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Error deleting checkpoint: {ex.Message}");
+        Console.WriteLine($"[Delete] Error deleting checkpoint: {ex.Message}");
         return Results.Json(new
         {
             Error = ex.Message
@@ -562,6 +850,9 @@ public class OptimizerRequest
     public string Function { get; set; }
     public int Trials { get; set; } = 1; //liczba niezależnych prób
     public bool GenerateReport { get; set; } = false; // czy generować raport po zakończeniu
+
+    // Przechowuje określone parametry, np {"c1": 1.5, "w": 0.7}
+    public Dictionary<string, double>? Parameters { get; set; }
 }
 
 public static class BenchmarkFactory

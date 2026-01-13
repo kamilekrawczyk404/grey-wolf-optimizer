@@ -129,10 +129,13 @@ namespace GrayWolf.Algorithms
         public override string Name { get; set; } = "Aquila Optimizer";
         private AquilaMath _aquilaMath;
 
-        public AquilaOptimizer(int n, int D, int IterNum, IBenchmarkFunc funkcja, double min_range, double max_range, string stateFilePath)
-            : base(n, D, IterNum, funkcja, min_range, max_range, stateFilePath)
+        public AquilaOptimizer(int n, int D, int IterNum, IBenchmarkFunc funkcja, double min_range, double max_range,
+            string stateFilePath, Dictionary<string, double>? parameters = null)
+            : base(n, D, IterNum, funkcja, min_range, max_range, stateFilePath, parameters)
         {
             _aquilaMath = new AquilaMath(D);
+            // Jeśli algorytm Aquila miałby parametry (np. alpha), pobralibyśmy je tutaj:
+            // np.: double alpha = Parameters.ContainsKey("alpha") ? Parameters["alpha"] : 0.1;
         }
 
         protected override void InitializeLeaders(double[][] pop, double[] fit)

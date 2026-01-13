@@ -21,9 +21,18 @@ namespace GrayWolf.Algorithms
         private double[][] PersonalBestPositions; 
         private double[] PersonalBestFitnesses;
 
-        public PsoOptimizer(int n, int dim, int iterNum, IBenchmarkFunc function, double minRange, double maxRange, string stateFilePath)
-            : base(n, dim, iterNum, function, minRange, maxRange, stateFilePath)
+        private double _w;
+        private double _c1;
+        private double _c2;
+
+        public PsoOptimizer(int n, int dim, int iterNum, IBenchmarkFunc function, double minRange, double maxRange,
+            string stateFilePath, Dictionary<string, double>? parameters)
+            : base(n, dim, iterNum, function, minRange, maxRange, stateFilePath, parameters)
         {
+            _w = Parameters.ContainsKey("w") ? Parameters["w"] : 0.7;
+            _c1 = Parameters.ContainsKey("c1") ? Parameters["c1"] : 1.5;
+            _c2 = Parameters.ContainsKey("c2") ? Parameters["c2"] : 1.5;
+
             Velocities = new double[N][];
             PersonalBestPositions = new double[N][];
             PersonalBestFitnesses = new double[N];
@@ -66,10 +75,10 @@ namespace GrayWolf.Algorithms
                     double r1 = RandomGenerator.NextDouble();
                     double r2 = RandomGenerator.NextDouble();
 
-                    double cognitive = c1 * r1 * (PersonalBestPositions[i][d] - currentParticle[d]);
-                    double social = c2 * r2 * (XBest[d] - currentParticle[d]);
+                    double cognitive = _c1 * r1 * (PersonalBestPositions[i][d] - currentParticle[d]);
+                    double social = _c2 * r2 * (XBest[d] - currentParticle[d]);
 
-                    Velocities[i][d] = (w* Velocities[i][d]) + cognitive + social;
+                    Velocities[i][d] = (_w * Velocities[i][d]) + cognitive + social;
 
                     currentParticle[d] = currentParticle[d]+Velocities[i][d]; 
                 }

@@ -29,11 +29,14 @@ namespace GrayWolf.Algorithms
         // dane stanu optymalizatora
         protected double[][] Population;
         protected double[] FitnessValues;
+
+        protected Dictionary<string, double> Parameters;
         public List<IterationLog> FullHistory { get; set; } = new List<IterationLog>();
         protected Random RandomGenerator = new Random();
 
         // konstruktor
-        protected BaseOptimizer(int n, int dim, int iterNum, IBenchmarkFunc function, double minRange, double maxRange, string stateFilePath)
+        protected BaseOptimizer(int n, int dim, int iterNum, IBenchmarkFunc function, double minRange, double maxRange,
+            string stateFilePath, Dictionary<string, double>? parameters = null)
         {
             N = n;
             Dim = dim;
@@ -42,11 +45,7 @@ namespace GrayWolf.Algorithms
             MinRange = minRange;
             MaxRange = maxRange;
             StateFilePath = stateFilePath;
-            //XBest = new double[Dim];
-            //FBest = double.MaxValue;
-            //NumberOfEvaluationFitnessFunction = 0;
-            //Population = new double[N][];
-            //FitnessValues = new double[N];
+            Parameters = parameters ?? new Dictionary<string, double>();
         }
 
         // metoda abstrakcyjna do implementacji w klasach pochodnych

@@ -21,10 +21,19 @@ namespace GrayWolf.Algorithms
         private bool a_dynamic = true;
         private double a_static = 0.1;
 
+        private double _p;
+        private double _c;
+        private double _a;
+
         private double[] Fragrance;
-        public BoaOptimizer(int n, int dim, int iterNum, IBenchmarkFunc function, double minRange, double maxRange, string stateFilePath)
-            : base(n, dim, iterNum, function, minRange, maxRange, stateFilePath)
+        public BoaOptimizer(int n, int dim, int iterNum, IBenchmarkFunc function, double minRange, double maxRange,
+            string stateFilePath, Dictionary<string, double>? parameters)
+            : base(n, dim, iterNum, function, minRange, maxRange, stateFilePath, parameters)
         {
+            _p = Parameters.ContainsKey("p") ? Parameters["p"] : 0.8;
+            _c = Parameters.ContainsKey("c") ? Parameters["c"] : 0.01;
+            _a = Parameters.ContainsKey("a") ? Parameters["a"] : 0.1;
+
             Fragrance = new double[N];
         }
 
@@ -43,7 +52,7 @@ namespace GrayWolf.Algorithms
             {
                 double safeFitness = Math.Max(FitnessValues[i], 1e-290);
 
-                Fragrance[i] = c * Math.Pow(safeFitness, a);
+                Fragrance[i] = _c * Math.Pow(safeFitness, _a);
             }
         }
 
@@ -52,11 +61,11 @@ namespace GrayWolf.Algorithms
             if (a_dynamic)
             {
                 double maxIterDivisor = (IterNum <= 1) ? 1.0 : (double)(IterNum - 1);
-                a = 0.1 + (0.3 - 0.1) * (iteration / maxIterDivisor);
+                _a = 0.1 + (0.3 - 0.1) * (iteration / maxIterDivisor);
             }
             else
             {
-                a = a_static;
+                _a = a_static;
             }
 
             CalculateFragrance();
@@ -70,7 +79,7 @@ namespace GrayWolf.Algorithms
 
                 double r_switch = RandomGenerator.NextDouble();
 
-                if (r_switch < p)
+                if (r_switch < _p)
                 {
                     double r_step = RandomGenerator.NextDouble();
                     for (int d = 0; d < Dim; d++)

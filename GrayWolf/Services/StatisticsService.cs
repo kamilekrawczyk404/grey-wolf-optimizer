@@ -34,10 +34,16 @@ namespace GrayWolf.Services
             double meanFitness = fitnessValues.Average();
             double medianFitness = CalculateMedian(fitnessValues);
             double stdDevFitness = CalculateStandardDeviation(fitnessValues, meanFitness);
-            double coeffOfVariationFitness = meanFitness != 0 ? (stdDevFitness / Math.Abs(meanFitness)) * 100 : 0;
+            double coeffOfVariationFitness;
+            if (Math.Abs(meanFitness) < 1e-12)
+            {
+                coeffOfVariationFitness = double.NaN; // undefined
+            }
+            else
+            {
+                coeffOfVariationFitness = (stdDevFitness / Math.Abs(meanFitness)) * 100.0;
+            }
 
-            if (meanFitness < 0.0001 && meanFitness > -0.0001)
-                coeffOfVariationFitness = 0;
 
             // calculate solution params stats
             int dimension = bestTrial.BestSolution.Length;
@@ -48,12 +54,21 @@ namespace GrayWolf.Services
             for (int dim = 0; dim < dimension; dim++)
             {
                 var dimValues = trialsForStats.Select(t => t.BestSolution[dim]).ToList();
+
                 meanSolution[dim] = dimValues.Average();
                 stdDevSolution[dim] = CalculateStandardDeviation(dimValues, meanSolution[dim]);
-                double dimCoeffOfVariation = meanSolution[dim] != 0 ? (stdDevSolution[dim] / Math.Abs(meanSolution[dim])) * 100 : 0;
-                if (meanSolution[dim] < 0.0001 && meanSolution[dim] > -0.0001)
-                    dimCoeffOfVariation = 0;
+
+                if (Math.Abs(meanSolution[dim]) < 1e-12)
+                {
+                    coeffOfVariationSolution[dim] = double.NaN;
+                }
+                else
+                {
+                    coeffOfVariationSolution[dim] =
+                        (stdDevSolution[dim] / Math.Abs(meanSolution[dim])) * 100.0;
+                }
             }
+
 
             return new StatisticalSummary
             {
@@ -111,12 +126,12 @@ namespace GrayWolf.Services
             strBuilder.AppendLine();
 
             strBuilder.AppendLine("Statystyki wartości funkcji celu:");
-            strBuilder.AppendLine($"  Najlepsza wartość: {stats.BestFitness:F6}");
-            strBuilder.AppendLine($"  Najgorsza wartość: {stats.WorstFitness:F6}");
-            strBuilder.AppendLine($"  Średnia wartość: {stats.MeanFitness:F6}");
-            strBuilder.AppendLine($"  Mediana wartości: {stats.MedianFitness:F6}");
-            strBuilder.AppendLine($"  Odchylenie standardowe: {stats.StdDevFitness:F6}");
-            strBuilder.AppendLine($"  Współczynnik zmienności: {stats.CoeffOfVariationFitness:F2}%");
+            strBuilder.AppendLine($"  Najlepsza wartość: {NumberFormatter.Format(stats.BestFitness)}");
+            strBuilder.AppendLine($"  Najgorsza wartość: {NumberFormatter.Format(stats.WorstFitness)}");
+            strBuilder.AppendLine($"  Średnia wartość: {NumberFormatter.Format(stats.MeanFitness)}");
+            strBuilder.AppendLine($"  Mediana wartości: {NumberFormatter.Format(stats.MedianFitness)}");
+            strBuilder.AppendLine($"  Odchylenie standardowe: {NumberFormatter.Format(stats.StdDevFitness)}");
+            strBuilder.AppendLine($"  Współczynnik zmienności: {NumberFormatter.FormatPercent(stats.CoeffOfVariationFitness)}");
             strBuilder.AppendLine();
 
             strBuilder.AppendLine("Statystyki parametrów rozwiązania:");
@@ -124,18 +139,19 @@ namespace GrayWolf.Services
             strBuilder.AppendLine("--------|-------------|----------------|---------------------");
             for (int i = 0; i < stats.MeanSolution.Length; i++)
             {
-                strBuilder.AppendLine($"   {i + 9}   | {stats.MeanSolution[i],13:F6} | {stats.StdDevSolution[i],13:F6} | {stats.CoeffOfVariationSolution[i],8:F2}%");
+                // Note: Padding is applied after the number formatting
+                strBuilder.AppendLine($"   {i + 9}    | {NumberFormatter.Format(stats.MeanSolution[i]),13} | {NumberFormatter.Format(stats.StdDevSolution[i]),13} | {NumberFormatter.FormatPercent(stats.CoeffOfVariationSolution[i]),8}");
             }
             strBuilder.AppendLine();
             strBuilder.Append("Najlepsze rozwiązanie znalezione w próbie:");
             strBuilder.Append("  [");
-            strBuilder.Append(string.Join(", ", stats.BestSolution.Select(x => x.ToString("F6"))));
+            strBuilder.Append(string.Join(", ", stats.BestSolution.Select(x => NumberFormatter.Format(x))));
             strBuilder.AppendLine("]");
             strBuilder.AppendLine();
 
             strBuilder.AppendLine("Wszystkie wartości funkcji celu z prób (posortowane):");
             strBuilder.Append("  ");
-            strBuilder.AppendLine(string.Join(", ", stats.AllFitnessValues.Select(x => x.ToString("F6"))));
+            strBuilder.AppendLine(string.Join(", ", stats.AllFitnessValues.Select(x => NumberFormatter.Format(x))));
 
             return strBuilder.ToString();
         }

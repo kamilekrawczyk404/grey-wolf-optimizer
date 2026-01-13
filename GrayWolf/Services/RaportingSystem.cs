@@ -13,29 +13,32 @@ namespace GrayWolf.Services
 {
     internal class RaportingSystem
     {
-        public void GenerateReport(string algorithmName, IBenchmarkFunc function, double[] bestSolution,double bestFitness, List<IterationLog> historyLogs,
-            int iterations, int populationSize, int dim, double lowerBound, double upperBound)
+        public void GenerateReport(string algorithmName, IBenchmarkFunc function, double[] bestSolution, double bestFitness, List<IterationLog> historyLogs,
+            int iterations, int populationSize, int dim, double lowerBound, double upperBound, bool generateTextReport)
         {
-            StringBuilder strBuilder = new StringBuilder();
-
-            strBuilder.Append($"\n\n=== RAPORT KOŃCOWY: {algorithmName} ===\n");
-            strBuilder.Append($"\nUżyta funkcja: {function}\n");
-
-            if (bestSolution != null)
+            if (generateTextReport)
             {
-                strBuilder.Append($"\nNajlepsze rozwiązanie (Fitness: {bestFitness}):");
-                for (int i = 0; i < bestSolution.Length; i++)
+                StringBuilder strBuilder = new StringBuilder();
+
+                strBuilder.Append($"\n\n=== RAPORT KOŃCOWY: {algorithmName} ===\n");
+                strBuilder.Append($"\nUżyta funkcja: {function}\n");
+
+                if (bestSolution != null)
                 {
-                    strBuilder.Append($"\nx[{i}] = {bestSolution[i]}");
+                    strBuilder.Append($"\nNajlepsze rozwiązanie (Fitness: {NumberFormatter.Format(bestFitness)}):");
+                    for (int i = 0; i < bestSolution.Length; i++)
+                    {
+                        strBuilder.Append($"\nx[{i}] = {NumberFormatter.Format(bestSolution[i])}");
+                    }
+                    strBuilder.Append("\n\nWartość funkcji celu: " + NumberFormatter.Format(function.Calculate_Value(bestSolution)) + "\n\n");
                 }
-                strBuilder.Append("\n\nWartość funkcji celu: " + function.Calculate_Value(bestSolution) + "\n\n");
-            }
-            else
-            {
-                strBuilder.Append("\n\nNie udało się pobrać najlepszego rozwiązania (wynik jest null).\n\n");
-            }
+                else
+                {
+                    strBuilder.Append("\n\nNie udało się pobrać najlepszego rozwiązania (wynik jest null).\n\n");
+                }
 
-            SaveData(strBuilder, algorithmName);
+                SaveData(strBuilder, algorithmName);
+            }
 
             var vizualizerData = new FinalVisualizerReport
             {
@@ -86,11 +89,11 @@ namespace GrayWolf.Services
             {
                 var trial = stats.AllTrials[i];
                 strBuilder.Append($"\n--- Próba {trial.TrialNumber} ---\n");
-                strBuilder.Append($"Funkcja celu w najlepszym rozwiązaniu: {trial.BestFitness:F6}\n");
+                strBuilder.Append($"Funkcja celu w najlepszym rozwiązaniu: {NumberFormatter.Format(trial.BestFitness)}\n");
                 strBuilder.Append($"Najlepsze rozwiązanie: [");
-                strBuilder.Append(string.Join(", ", trial.BestSolution.Select(x => x.ToString("F5"))));
+                strBuilder.Append(string.Join(", ", trial.BestSolution.Select(x => NumberFormatter.Format(x, 5))));
                 strBuilder.AppendLine("]");
-                strBuilder.AppendLine($"Najlepsza wartość funkcji celu: {trial.BestFitness:F6}");
+                strBuilder.AppendLine($"Najlepsza wartość funkcji celu: {NumberFormatter.Format(trial.BestFitness)}");
                 strBuilder.AppendLine($"Liczba ewaluacji: {trial.EvaluationsCount}");
             }
 
@@ -136,19 +139,19 @@ namespace GrayWolf.Services
             strBuilder.Append($"{"Algorytm",-20} {"Najlepszy Fitness",-20} {"Czas (ms)",-15} {"Ilość Iteracji",-15}\n");
             strBuilder.Append(new string('-', 90) + "\n");
 
-            foreach(var result in results.OrderBy(x => x.BestFitness))
+            foreach (var result in results.OrderBy(x => x.BestFitness))
             {
-                strBuilder.Append($"{result.AlgorithmName,-20} {result.BestFitness,-20:F4} {result.Iterations,-15}\n");
+                strBuilder.Append($"{result.AlgorithmName,-20} {NumberFormatter.Format(result.BestFitness, 4),-20} {result.Iterations,-15}\n");
             }
 
             strBuilder.Append(new string('-', 90) + "\n");
             strBuilder.Append("Szczegóły poszczególnych uruchomień\n");
 
-            foreach(var result in results)
+            foreach (var result in results)
             {
                 strBuilder.Append($"\n--- {result.AlgorithmName} ---\n");
                 strBuilder.Append("Pozycja: [");
-                strBuilder.Append(string.Join(", ", result.BestSolution.Select(x => x.ToString("F5"))));
+                strBuilder.Append(string.Join(", ", result.BestSolution.Select(x => NumberFormatter.Format(x, 5))));
                 strBuilder.AppendLine("]");
             }
 
@@ -173,12 +176,12 @@ namespace GrayWolf.Services
             foreach (var result in results.OrderBy(x => x.BestFitness))
             {
                 strBuilder.Append($"{result.AlgorithmName,-20} ");
-                strBuilder.Append($"{result.BestFitness,-15:E6} ");
-                strBuilder.Append($"{result.WorstFitness,-15:E6} ");
-                strBuilder.Append($"{result.MeanFitness,-15:E6} ");
-                strBuilder.Append($"{result.MedianFitness,-15:E6} ");
-                strBuilder.Append($"{result.StdDevFitness,-15:E6} ");
-                strBuilder.AppendLine($"{result.CoeffOfVariationFitness,-10:F2}%");
+                strBuilder.Append($"{NumberFormatter.Format(result.BestFitness),-15} ");
+                strBuilder.Append($"{NumberFormatter.Format(result.WorstFitness),-15} ");
+                strBuilder.Append($"{NumberFormatter.Format(result.MeanFitness),-15} ");
+                strBuilder.Append($"{NumberFormatter.Format(result.MedianFitness),-15} ");
+                strBuilder.Append($"{NumberFormatter.Format(result.StdDevFitness),-15} ");
+                strBuilder.AppendLine($"{NumberFormatter.FormatPercent(result.CoeffOfVariationFitness),-10}");
             }
 
             strBuilder.Append(new string('-', 120) + "\n");
@@ -195,16 +198,16 @@ namespace GrayWolf.Services
                 strBuilder.Append($"Liczba iteracji na próbę: {result.TrialsCount}\n\n");
 
                 strBuilder.Append($"Statystyki wartości funkcji celu:\n");
-                strBuilder.Append($"  Najlepsza wartość: {result.BestFitness:E6}\n");
-                strBuilder.Append($"  Najgorsza wartość: {result.WorstFitness:E6}\n");
-                strBuilder.Append($"  Średnia wartość: {result.MeanFitness:E6}\n");
-                strBuilder.Append($"  Mediana wartości: {result.MedianFitness:E6}\n");
-                strBuilder.Append($"  Odchylenie standardowe: {result.StdDevFitness:E6}\n");
-                strBuilder.Append($"  Współczynnik zmienności: {result.CoeffOfVariationFitness:F2}%\n\n");
+                strBuilder.Append($"  Najlepsza wartość: {NumberFormatter.Format(result.BestFitness)}\n");
+                strBuilder.Append($"  Najgorsza wartość: {NumberFormatter.Format(result.WorstFitness)}\n");
+                strBuilder.Append($"  Średnia wartość: {NumberFormatter.Format(result.MeanFitness)}\n");
+                strBuilder.Append($"  Mediana wartości: {NumberFormatter.Format(result.MedianFitness)}\n");
+                strBuilder.Append($"  Odchylenie standardowe: {NumberFormatter.Format(result.StdDevFitness)}\n");
+                strBuilder.Append($"  Współczynnik zmienności: {NumberFormatter.FormatPercent(result.CoeffOfVariationFitness)}\n\n");
 
                 strBuilder.Append("Najlepsze rozwiązanie znalezione w próbie:\n");
                 strBuilder.Append("  [");
-                strBuilder.Append(string.Join(", ", result.BestSolution.Select(x => x.ToString("F6"))));
+                strBuilder.Append(string.Join(", ", result.BestSolution.Select(x => NumberFormatter.Format(x))));
                 strBuilder.AppendLine("]\n");
             }
 
@@ -216,17 +219,17 @@ namespace GrayWolf.Services
             var worstAlgorithm = results.OrderBy(x => x.BestFitness).Last();
 
             strBuilder.AppendLine($"Najlepszy algorytm (według najlepszego wyniku): {bestAlgorithm.AlgorithmName}");
-            strBuilder.AppendLine($"Wynik najlepszego algorytmu: {bestAlgorithm.BestFitness:E6}\n");
+            strBuilder.AppendLine($"Wynik najlepszego algorytmu: {NumberFormatter.Format(bestAlgorithm.BestFitness)}\n");
             strBuilder.AppendLine($"Najgorszy algorytm (według najlepszego wyniku): {worstAlgorithm.AlgorithmName}");
-            strBuilder.AppendLine($"Wynik najgorszego algorytmu: {worstAlgorithm.BestFitness:E6}\n");
+            strBuilder.AppendLine($"Wynik najgorszego algorytmu: {NumberFormatter.Format(worstAlgorithm.BestFitness)}\n");
 
             var mostConsistent = results.OrderBy(x => x.CoeffOfVariationFitness).First();
             strBuilder.AppendLine($"Najbardziej spójny algorytm (według współczynnika zmienności): {mostConsistent.AlgorithmName}");
-            strBuilder.AppendLine($"Współczynnik zmienności najlepszego algorytmu: {mostConsistent.CoeffOfVariationFitness:F2}%\n");
+            strBuilder.AppendLine($"Współczynnik zmienności najlepszego algorytmu: {NumberFormatter.FormatPercent(mostConsistent.CoeffOfVariationFitness)}\n");
 
             var bestMean = results.OrderBy(x => x.MeanFitness).First();
             strBuilder.AppendLine($"Algorytm o najlepszej średniej wartości: {bestMean.AlgorithmName}");
-            strBuilder.AppendLine($"Średnia wartość najlepszego algorytmu: {bestMean.MeanFitness:E6}\n");
+            strBuilder.AppendLine($"Średnia wartość najlepszego algorytmu: {NumberFormatter.Format(bestMean.MeanFitness)}\n");
 
             // Rekomendacje
             strBuilder.Append(new string('-', 120) + "\n");
@@ -275,7 +278,7 @@ namespace GrayWolf.Services
             foreach (var result in sortedResults)
             {
                 strBuilder.Append($"{result.FunctionName,-30} ");
-                strBuilder.Append($"{result.BestFitness,-25:E6} ");
+                strBuilder.Append($"{NumberFormatter.Format(result.BestFitness),-25} ");
                 strBuilder.Append($"{result.EvaluationsCount,-20} ");
                 strBuilder.AppendLine($"{rank,-10}");
                 rank++;
@@ -290,12 +293,12 @@ namespace GrayWolf.Services
                 strBuilder.Append($"{'=',80}\n");
                 strBuilder.Append($"Funkcja: {result.FunctionName}\n");
                 strBuilder.Append($"{'=',80}\n");
-                strBuilder.Append($"Najlepsza wartość funkcji celu: {result.BestFitness:E6}\n");
+                strBuilder.Append($"Najlepsza wartość funkcji celu: {NumberFormatter.Format(result.BestFitness)}\n");
                 strBuilder.Append($"Liczba ewaluacji: {result.EvaluationsCount}\n\n");
 
                 strBuilder.Append("Najlepsze rozwiązanie:\n");
                 strBuilder.Append("  [");
-                strBuilder.Append(string.Join(", ", result.BestSolution.Select(x => x.ToString("F6"))));
+                strBuilder.Append(string.Join(", ", result.BestSolution.Select(x => NumberFormatter.Format(x))));
                 strBuilder.AppendLine("]\n");
             }
 
@@ -308,13 +311,13 @@ namespace GrayWolf.Services
             var worstResult = sortedResults.Last();
 
             strBuilder.AppendLine($"Najlepsza wydajność na funkcji: {bestResult.FunctionName}");
-            strBuilder.AppendLine($"  Fitness: {bestResult.BestFitness:E6}\n");
+            strBuilder.AppendLine($"  Fitness: {NumberFormatter.Format(bestResult.BestFitness)}\n");
 
             strBuilder.AppendLine($"Najgorsza wydajność na funkcji: {worstResult.FunctionName}");
-            strBuilder.AppendLine($"  Fitness: {worstResult.BestFitness:E6}\n");
+            strBuilder.AppendLine($"  Fitness: {NumberFormatter.Format(worstResult.BestFitness)}\n");
 
             double avgFitness = sortedResults.Average(r => r.BestFitness);
-            strBuilder.AppendLine($"Średnia wartość fitness na wszystkich funkcjach: {avgFitness:E6}");
+            strBuilder.AppendLine($"Średnia wartość fitness na wszystkich funkcjach: {NumberFormatter.Format(avgFitness)}");
 
             string path = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
@@ -358,12 +361,12 @@ namespace GrayWolf.Services
             foreach (var result in sortedResults)
             {
                 strBuilder.Append($"{result.FunctionName,-25} ");
-                strBuilder.Append($"{result.BestFitness,-15:E6} ");
-                strBuilder.Append($"{result.WorstFitness,-15:E6} ");
-                strBuilder.Append($"{result.MeanFitness,-15:E6} ");
-                strBuilder.Append($"{result.MedianFitness,-15:E6} ");
-                strBuilder.Append($"{result.StdDevFitness,-15:E6} ");
-                strBuilder.Append($"{result.CoeffOfVariationFitness,-10:F2}% ");
+                strBuilder.Append($"{NumberFormatter.Format(result.BestFitness),-15} ");
+                strBuilder.Append($"{NumberFormatter.Format(result.WorstFitness),-15} ");
+                strBuilder.Append($"{NumberFormatter.Format(result.MeanFitness),-15} ");
+                strBuilder.Append($"{NumberFormatter.Format(result.MedianFitness),-15} ");
+                strBuilder.Append($"{NumberFormatter.Format(result.StdDevFitness),-15} ");
+                strBuilder.Append($"{NumberFormatter.FormatPercent(result.CoeffOfVariationFitness),-10} ");
                 strBuilder.AppendLine($"{rank,-10}");
                 rank++;
             }
@@ -381,16 +384,16 @@ namespace GrayWolf.Services
                 strBuilder.Append($"Liczba prób: {result.TrialsCount}\n\n");
 
                 strBuilder.Append("Statystyki wartości funkcji celu:\n");
-                strBuilder.Append($"  Najlepsza wartość:       {result.BestFitness:E6}\n");
-                strBuilder.Append($"  Najgorsza wartość:       {result.WorstFitness:E6}\n");
-                strBuilder.Append($"  Średnia wartość:         {result.MeanFitness:E6}\n");
-                strBuilder.Append($"  Mediana:                 {result.MedianFitness:E6}\n");
-                strBuilder.Append($"  Odchylenie standardowe:  {result.StdDevFitness:E6}\n");
-                strBuilder.Append($"  Współczynnik zmienności: {result.CoeffOfVariationFitness:F2}%\n\n");
+                strBuilder.Append($"  Najlepsza wartość:        {NumberFormatter.Format(result.BestFitness)}\n");
+                strBuilder.Append($"  Najgorsza wartość:        {NumberFormatter.Format(result.WorstFitness)}\n");
+                strBuilder.Append($"  Średnia wartość:          {NumberFormatter.Format(result.MeanFitness)}\n");
+                strBuilder.Append($"  Mediana:                  {NumberFormatter.Format(result.MedianFitness)}\n");
+                strBuilder.Append($"  Odchylenie standardowe:   {NumberFormatter.Format(result.StdDevFitness)}\n");
+                strBuilder.Append($"  Współczynnik zmienności:  {NumberFormatter.FormatPercent(result.CoeffOfVariationFitness)}\n\n");
 
                 strBuilder.Append("Najlepsze rozwiązanie:\n");
                 strBuilder.Append("  [");
-                strBuilder.Append(string.Join(", ", result.BestSolution.Select(x => x.ToString("F6"))));
+                strBuilder.Append(string.Join(", ", result.BestSolution.Select(x => NumberFormatter.Format(x))));
                 strBuilder.AppendLine("]\n");
             }
 
@@ -404,19 +407,19 @@ namespace GrayWolf.Services
             var mostConsistent = results.OrderBy(r => r.CoeffOfVariationFitness).First();
 
             strBuilder.AppendLine($"Najlepsza wydajność (według najlepszego wyniku): {bestResult.FunctionName}");
-            strBuilder.AppendLine($"   Fitness: {bestResult.BestFitness:E6}\n");
+            strBuilder.AppendLine($"   Fitness: {NumberFormatter.Format(bestResult.BestFitness)}\n");
 
             strBuilder.AppendLine($"Najbardziej spójna wydajność (najniższy CV): {mostConsistent.FunctionName}");
-            strBuilder.AppendLine($"   Współczynnik zmienności: {mostConsistent.CoeffOfVariationFitness:F2}%\n");
+            strBuilder.AppendLine($"   Współczynnik zmienności: {NumberFormatter.FormatPercent(mostConsistent.CoeffOfVariationFitness)}\n");
 
             strBuilder.AppendLine($"Najgorsza wydajność: {worstResult.FunctionName}");
-            strBuilder.AppendLine($"   Fitness: {worstResult.BestFitness:E6}\n");
+            strBuilder.AppendLine($"   Fitness: {NumberFormatter.Format(worstResult.BestFitness)}\n");
 
             double avgBestFitness = results.Average(r => r.BestFitness);
             double avgMeanFitness = results.Average(r => r.MeanFitness);
 
-            strBuilder.AppendLine($"Średnia najlepszych wyników ze wszystkich funkcji: {avgBestFitness:E6}");
-            strBuilder.AppendLine($"Średnia średnich wyników ze wszystkich funkcji: {avgMeanFitness:E6}");
+            strBuilder.AppendLine($"Średnia najlepszych wyników ze wszystkich funkcji: {NumberFormatter.Format(avgBestFitness)}");
+            strBuilder.AppendLine($"Średnia średnich wyników ze wszystkich funkcji: {NumberFormatter.Format(avgMeanFitness)}");
 
             // Recommendations
             strBuilder.Append("\n" + new string('-', 80) + "\n");
@@ -442,7 +445,7 @@ namespace GrayWolf.Services
 
             for (int i = 0; i < sortedResults.Count; i++)
             {
-                strBuilder.AppendLine($"  {i + 1}. {sortedResults[i].FunctionName} (fitness: {sortedResults[i].BestFitness:E6})");
+                strBuilder.AppendLine($"  {i + 1}. {sortedResults[i].FunctionName} (fitness: {NumberFormatter.Format(sortedResults[i].BestFitness)})");
             }
 
             string path = Path.Combine(

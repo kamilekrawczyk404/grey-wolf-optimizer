@@ -24,9 +24,21 @@ namespace GrayWolf.Algorithms
         private double[] PulseRates;  // r
         private double[] InitialPulseRates;
 
-        public BaOptimizer(int n, int dim, int iterNum, IBenchmarkFunc function, double minRange, double maxRange, string stateFilePath)
-            : base(n, dim, iterNum, function, minRange, maxRange, stateFilePath)
+        private double _qMin;
+        private double _qMax;
+        private double _alpha;
+        private double _gamma;
+
+        public BaOptimizer(int n, int dim, int iterNum, IBenchmarkFunc function, double minRange, double maxRange,
+            string stateFilePath, Dictionary<string, double>? parameters)
+            : base(n, dim, iterNum, function, minRange, maxRange, stateFilePath, parameters)
         {
+            _qMin = Parameters.ContainsKey("Qmin") ? Parameters["Qmin"] : 0.0;
+            _qMax = Parameters.ContainsKey("Qmax") ? Parameters["Qmax"] : 2.0;
+            _alpha = Parameters.ContainsKey("Alpha") ? Parameters["Alpha"] : 0.9;
+            _gamma = Parameters.ContainsKey("Gamma") ? Parameters["Gamma"] : 0.9;
+
+
             Velocities = new double[N][];
             Loudness = new double[N];
             PulseRates = new double[N];
@@ -64,7 +76,7 @@ namespace GrayWolf.Algorithms
                 double[] currentBat = Population[i];
                 double[] newPosition = new double[Dim];
 
-                double Q = Qmin + (Qmax - Qmin) * RandomGenerator.NextDouble();
+                double Q = _qMin + (_qMax - _qMin) * RandomGenerator.NextDouble();
 
                 //aktualizacja każdej współrzędnej
                 for(int d = 0; d<Dim;d++)
@@ -90,8 +102,8 @@ namespace GrayWolf.Algorithms
                 {
                     Population[i] = newPosition;
                     FitnessValues[i] = newFitness;
-                    Loudness[i] = Alpha * Loudness[i];
-                    PulseRates[i] = InitialPulseRates[i] * (1.0 - Math.Exp(-Gamma * iteration));
+                    Loudness[i] = _alpha * Loudness[i];
+                    PulseRates[i] = InitialPulseRates[i] * (1.0 - Math.Exp(-_gamma * iteration));
                 }
 
                 if(newFitness<FBest)

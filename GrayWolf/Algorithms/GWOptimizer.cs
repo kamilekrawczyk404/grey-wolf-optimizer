@@ -20,8 +20,9 @@ namespace GrayWolf.Algorithms
         public double[] X_delta { get; set; }
         public double f_alpha { get; set; }
 
-        public GWOptimizer(int n, int D, int IterNum, IBenchmarkFunc funkcja, double min_range, double max_range, string stateFilePath)
-            : base(n, D, IterNum, funkcja, min_range, max_range, stateFilePath)
+        public GWOptimizer(int n, int D, int IterNum, IBenchmarkFunc funkcja, double min_range, double max_range,
+            string stateFilePath, Dictionary<string, double>? parameters = null)
+            : base(n, D, IterNum, funkcja, min_range, max_range, stateFilePath, parameters)
         {
         }
 

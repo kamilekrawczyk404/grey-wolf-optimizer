@@ -49,4 +49,23 @@ namespace GrayWolf.Model
         public StatisticalSummary Statistics { get; set; }
         public string Message { get; set; }
     }
+
+    public class MultiTrialCheckpointData
+    {
+        public string RunId { get; set; }
+        public string AlgorithmName { get; set; }
+        public string FunctionName { get; set; }
+        public int TotalTrials { get; set; }
+        public int CompletedTrials { get; set; }
+        public List<TrialResult> CompletedTrialResults { get; set; }
+        public DateTime LastUpdated { get; set; }
+
+        // Configuration to validate resumption
+        public int PopulationSize { get; set; }
+        public int Dimensions { get; set; }
+        public int Iterations { get; set; }
+        public double LowerBound { get; set; }
+        public double UpperBound { get; set; }
+        public Dictionary<string, double>? Parameters { get; set; }
+    }
 }

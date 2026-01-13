@@ -240,4 +240,19 @@ namespace GrayWolf.Model
         public int TrialsCount { get; set; }
         public int Rank { get; set; }
     }
+
+    public class AlgorithmParameterInfo
+    {
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public double Min { get; set; }
+        public double Max { get; set; }
+        public double Step { get; set; }
+        public double DefaultValue { get; set; }
+    }
+    public class AlgorithmMetadata
+    {
+        public string AlgorithmName { get; set; }
+        public List<AlgorithmParameterInfo> Parameters { get; set; } = new List<AlgorithmParameterInfo>();
+    }
 }

@@ -20,10 +20,20 @@ namespace GrayWolf.Algorithms
         double MutationRate = 0.05;
         double MutationStrength = 0.01;
         int TournamentSize = 3;
-        public GaOptimizer(int n, int dim, int iterNum, IBenchmarkFunc function, double minRange, double maxRange, string stateFilePath)
-            : base(n, dim, iterNum, function, minRange, maxRange, stateFilePath)
+
+        private double _crossoverProb;
+        private double _mutationRate;
+        private double _mutationStrength;
+        private int _tournamentSize;
+
+        public GaOptimizer(int n, int dim, int iterNum, IBenchmarkFunc function, double minRange, double maxRange,
+            string stateFilePath, Dictionary<string, double>? parameters)
+            : base(n, dim, iterNum, function, minRange, maxRange, stateFilePath, parameters)
         {
-            
+            _crossoverProb = Parameters.ContainsKey("CrossoverProbability") ? Parameters["CrossoverProbability"] : 0.8;
+            _mutationRate = Parameters.ContainsKey("MutationRate") ? Parameters["MutationRate"] : 0.05;
+            _mutationStrength = Parameters.ContainsKey("MutationStrength") ? Parameters["MutationStrength"] : 0.01;
+            _tournamentSize = (int)(Parameters.ContainsKey("TournamentSize") ? Parameters["TournamentSize"] : 3);
         }
 
         protected override void InitializeLeaders(double[][] pop, double[] fit)
@@ -44,7 +54,7 @@ namespace GrayWolf.Algorithms
                 double[] parent2 = Selection();
                 double[] child = new double[Dim];
 
-                if (RandomGenerator.NextDouble() < CrossoverProbability)
+                if (RandomGenerator.NextDouble() < _crossoverProb)
                 {
                     for (int d = 0; d < Dim; d++)
                     {
@@ -68,9 +78,9 @@ namespace GrayWolf.Algorithms
                 //mutacja
                 for(int d = 0;d < Dim; d++)
                 {
-                    if(RandomGenerator.NextDouble()<MutationRate)
+                    if(RandomGenerator.NextDouble()< _mutationRate)
                     {
-                        child[d] +=  (RandomGenerator.NextDouble() * 2.0 - 1.0) * (MaxRange - MinRange) * MutationStrength;
+                        child[d] +=  (RandomGenerator.NextDouble() * 2.0 - 1.0) * (MaxRange - MinRange) * _mutationStrength;
                     }
                 }
 
@@ -101,7 +111,7 @@ namespace GrayWolf.Algorithms
             double bestVal = double.MaxValue;
 
             
-            for (int k = 0; k < TournamentSize; k++)
+            for (int k = 0; k < _tournamentSize; k++)
             {
                 int randIdx = RandomGenerator.Next(0, N);
                 if (FitnessValues[randIdx] < bestVal)
