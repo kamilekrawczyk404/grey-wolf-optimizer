@@ -115,7 +115,7 @@ const GwoCanvas = ({
     if (!canvas || !ctx) return;
 
     // Canvas styling definition
-    const gridColor = "#333333";
+    const gridColor = "#495057";
     const axisColor = "#525252";
     const textColor = "#a3a3a3";
 
