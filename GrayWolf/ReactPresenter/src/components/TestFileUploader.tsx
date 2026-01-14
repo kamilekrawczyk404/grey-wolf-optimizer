@@ -48,9 +48,9 @@ const TestFileUploader = ({ onSingleFileLoaded }: TestFileUploaderProps) => {
             // Format benchmark function name
 
             const functionName = parsedFile.properties.benchmarkFunction;
-            const formattedFunctionName = functionName.indexOf(" ") === -1
+            let formattedFunctionName = functionName.indexOf(" ") === -1
                     ? functionName as BenchmarkFunctions
-                    : functionName.substring(0, functionName.indexOf(' ')) as BenchmarkFunctions;
+                    : functionName.substring(0, functionName.indexOf(' ')).replaceAll('.', '') as BenchmarkFunctions;
 
             if (!Object.keys(BenchmarkFunctions).includes(formattedFunctionName)) {
               setIsInvalidType(true);
