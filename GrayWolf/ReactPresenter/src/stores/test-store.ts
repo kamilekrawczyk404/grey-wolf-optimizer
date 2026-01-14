@@ -669,7 +669,7 @@ export const useTestStore = create<TestStore>()(
                           upperBound: funcUpperBound,
                           history: row.historyJson,
                           solution: row.solution,
-                          // parameters: parameters,
+                          parameters: parameters,
                         },
                       });
                     }

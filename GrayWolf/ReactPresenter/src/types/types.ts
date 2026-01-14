@@ -34,6 +34,7 @@ export type OptimizationRun = {
   solution: number[][];
   dimensions: number;
   history: IterationSnapshot[];
+  parameters?: AlgorithmParameters;
 };
 
 type UserLocalFileProperties = Omit<OptimizationRun, "history">;
