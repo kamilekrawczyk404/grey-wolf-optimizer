@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {IterationSnapshot, OptimizationRun} from "@/types/types";
 import {Slider} from "@/components/ui/slider";
+import {benchmarkFunctions} from "@/utils/benchmarks";
+import {generateHeatmapTexture} from "@/utils/heatmapGenerator";
 
 type Point = {
   x: number;
@@ -11,6 +13,7 @@ type Point = {
 };
 
 export type CanvasConfig = {
+  heatmapTransparency: number;
   animationDuration: number;
   visibleIterations: number;
   solutionSize: number;
@@ -25,9 +28,10 @@ export type CanvasConfig = {
 };
 
 export const defaultConfig: CanvasConfig = {
+  heatmapTransparency: 0.2,
   animationDuration: 20,
   visibleIterations: 10,
-  solutionSize: 15,
+  solutionSize: 20,
   agentRadius: 5,
   colors: {
     solution: { r: 34, g: 197, b: 94 },
@@ -95,6 +99,12 @@ const GwoCanvas = ({
     return { min, max };
   }, [properties]);
 
+  const heatMap = useMemo<HTMLCanvasElement
+  | null>(() => {
+    if (!properties.benchmarkFunction) return null;
+
+    return generateHeatmapTexture(properties.benchmarkFunction, bounds, 150)
+  }, [properties.benchmarkFunction, bounds])
 
   const optimizationHistory = properties.history;
 
@@ -104,13 +114,23 @@ const GwoCanvas = ({
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
 
-    // Clear canvas area
-    ctx.clearRect(0, 0, size, size);
-
     // Canvas styling definition
     const gridColor = "#333333";
     const axisColor = "#525252";
     const textColor = "#a3a3a3";
+
+    // Clear canvas area
+    ctx.clearRect(0, 0, size, size);
+
+    // Draw heatmap
+    if (heatMap) {
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      ctx.globalAlpha = options?.heatmapTransparency ?? 0.2;
+      ctx.drawImage(heatMap, 0, 0, size, size);
+      ctx.globalAlpha = 1.0;
+    }
 
     ctx.lineWidth = 1;
     ctx.font = "10px monospace";
@@ -171,7 +191,7 @@ const GwoCanvas = ({
         ...agent,
         snapshotIteration: snapshot.iteration
       }));
-    });
+    }).sort((a, b) => Number(a.isLeader) - Number(b.isLeader));
 
     // Drawing the agents
     pointsToDraw.forEach((agent) => {
@@ -180,7 +200,6 @@ const GwoCanvas = ({
       const windowSize = Math.max(1, iteration - startIndex);
       const opacity = Math.max(0.1, age / windowSize); // Min 0.1, żeby nie zniknęły całkowicie
 
-      // Wybór koloru (Leader vs Follower)
       const baseColor = agent.isLeader
           ? options.colors.agents.leader
           : options.colors.agents.follower;
@@ -240,7 +259,8 @@ const GwoCanvas = ({
     properties,
     options,
     size,
-    bounds
+    bounds,
+    heatMap,
   ]);
 
   return (

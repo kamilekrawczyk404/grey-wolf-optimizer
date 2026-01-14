@@ -1,5 +1,5 @@
 import React, { ChangeEvent, useEffect, useRef, useState } from "react";
-import {isExperimentRecord, ExperimentRecord, UserLocalFile} from "../types/types";
+import {isExperimentRecord, ExperimentRecord, UserLocalFile, BenchmarkFunctions} from "../types/types";
 import useFileUploader from "../hooks/fileUploader";
 import {CardTitle} from "@/components/ui/card";
 
@@ -45,9 +45,28 @@ const TestFileUploader = ({ onSingleFileLoaded }: TestFileUploaderProps) => {
               break;
             }
 
-            // Extract algorithm name
+            // Format benchmark function name
 
-            onSingleFileLoaded(parsedFile, ++i === files.length);
+            const functionName = parsedFile.properties.benchmarkFunction;
+            const formattedFunctionName = functionName.indexOf(" ") === -1
+                    ? functionName as BenchmarkFunctions
+                    : functionName.substring(0, functionName.indexOf(' ')) as BenchmarkFunctions;
+
+            if (!Object.keys(BenchmarkFunctions).includes(formattedFunctionName)) {
+              setIsInvalidType(true);
+              break;
+            }
+
+            const formattedFile: UserLocalFile = {
+              ...parsedFile,
+              properties: {
+                ...parsedFile.properties,
+                benchmarkFunction: formattedFunctionName
+              }
+            }
+
+            // Extract algorithm name
+            onSingleFileLoaded(formattedFile, ++i === files.length);
           }
         }
       } catch (error) {

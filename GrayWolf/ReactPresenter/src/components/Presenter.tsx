@@ -188,14 +188,22 @@ const Presenter = () => {
   const displayedTests = useMemo<ExperimentRecord[]>(() => {
     if (isExternalData) {
       return userExternalFiles.map(
-        (file) =>
-          ({
+        (file) => {
+          const functionName = file.properties.benchmarkFunction;
+
+          return {
             description: file.description,
             properties: {
-              history: file.history,
               ...file.properties,
+              history: file.history,
+              // Assuming that function name is on the first place
+              benchmarkFunction:
+                  functionName.indexOf(" ") === -1
+                      ? functionName
+                      : functionName.substring(0, functionName.indexOf(' ')),
             },
-          } as ExperimentRecord)
+          } as ExperimentRecord
+        }
       );
     }
 

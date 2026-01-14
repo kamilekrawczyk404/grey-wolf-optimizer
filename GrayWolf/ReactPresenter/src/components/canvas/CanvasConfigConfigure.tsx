@@ -202,6 +202,24 @@ const CanvasConfigConfigure = ({
                             disabled={isRunning}
                         />
                     </div>
+
+                    <div className="space-y-2">
+                        <div className="flex justify-between">
+                            <Label className="text-xs text-neutral-400">Heatmap transparency</Label>
+                            <span className="text-xs text-neutral-300 font-mono">{config.heatmapTransparency}</span>
+                        </div>
+                        <Slider
+                            disabled={isRunning}
+                            min={0}
+                            max={1}
+                            step={0.01}
+                            value={[config.heatmapTransparency]}
+                            onValueChange={(vals) =>
+                                updateConfig((prev) => ({...prev, heatmapTransparency: vals[0]}))
+                            }
+                            className="[&_.bg-primary]:bg-blue-500"
+                        />
+                    </div>
                 </div>
             </CardContent>
         </Card>
@@ -224,7 +242,7 @@ const ColorPicker = ({
                     "w-8 h-8 rounded-full border border-neutral-700 shadow-sm cursor-pointer transition-transform hover:scale-105",
                     disabled && "opacity-50 cursor-not-allowed hover:scale-100"
                 )}
-                style={{ backgroundColor: color }}
+                style={{backgroundColor: color}}
             >
                 <input
                     type="color"
