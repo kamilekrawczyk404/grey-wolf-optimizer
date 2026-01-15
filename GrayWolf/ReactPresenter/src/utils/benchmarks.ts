@@ -18,4 +18,8 @@ export const benchmarkFunctions: Record<BenchmarkFunctions, BenchmarkFunctionSch
     [BenchmarkFunctions.RosenBrock]: (x, y) => {
         return (1 - x) ** 2 + 100 * (y - x ** 2) ** 2
     },
+    [BenchmarkFunctions.Transformer]: (x, y) => {
+
+        return 0;//przecie¿ nie wkleje tutaj ca³ego kodu, on ma 300+ linijek
+    },
 }

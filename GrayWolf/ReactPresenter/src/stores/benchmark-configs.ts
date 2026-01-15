@@ -48,7 +48,12 @@ export const BENCHMARK_CONFIGS: Record<BenchmarkFunctions, BenchmarkConfig> = {
     upperBound: 5,
     dimensions: 2, // BukinN6 jest zawsze 2D
     optimalSolution: [-10, 1],
-  },
+    },
+    [BenchmarkFunctions.Transformer]: {
+        dimensions: 3,//zawsze w 3D
+        lowerBound: 0.5,
+        upperBound: 1.5,
+    },
 };
 
 // Konfiguracje dla algorytm�w

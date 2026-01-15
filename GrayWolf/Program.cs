@@ -890,6 +890,7 @@ public static class BenchmarkFactory
             "Beale" => new BealeFunc(),
             "RosenBrock" => new Rosenbrock(),
             "BukinN6" => new BukinFuncN6(),
+            "Transformer" => new TransformerFunc(),
             _ => new Rastrigin()
         };
     }

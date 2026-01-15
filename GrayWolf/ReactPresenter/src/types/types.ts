@@ -138,6 +138,7 @@ export enum BenchmarkFunctions {
   Beale = "Beale",
   RosenBrock = "RosenBrock",
   BukinN6 = "BukinN6",
+  Transformer = "Transformer",
 }
 
 export interface AlgorithmParameterInfo {

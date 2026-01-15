@@ -461,6 +461,9 @@ export function TestConfigurationForm({ session }: TestConfigurationFormProps) {
                         <SelectItem value={BenchmarkFunctions.BukinN6}>
                           Bukin N.6
                         </SelectItem>
+                        <SelectItem value={BenchmarkFunctions.Transformer}>
+                          Transformer (12-pulse)
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
