@@ -22,7 +22,7 @@ namespace GrayWolf
         {
             return "Transformer Function (minimum globalne - gdzieś na pewno)";
         }
-        public double[][] GlobalMinimum => new[] { new double[] { -0, -0 } };
+        public double[][] GlobalMinimum => new[] { new double[] { 1.0, 1.0, 1.0 } };
         //public double[][] GlobalMinimum = new[] { new double[] { -2137, 2137 } };
     }
 
